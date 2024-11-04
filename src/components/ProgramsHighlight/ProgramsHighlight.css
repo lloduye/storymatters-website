@@ -1,0 +1,46 @@
+.programs-section {
+    padding: 60px 20px;
+    background-color: var(--background);
+}
+
+.programs-section h2 {
+    text-align: center;
+    margin-bottom: 40px;
+    color: var(--text-dark);
+}
+
+.programs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.program-card {
+    padding: 30px;
+    background: var(--background);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow);
+    transition: transform 0.3s ease;
+}
+
+.program-card:hover {
+    transform: translateY(-5px);
+}
+
+.program-card h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.program-card p {
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .programs-grid {
+        grid-template-columns: 1fr;
+    }
+} 

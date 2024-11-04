@@ -1,0 +1,66 @@
+.get-involved {
+    padding: 40px 20px;
+}
+
+.get-involved h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-dark);
+}
+
+.involvement-intro {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 60px;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.involvement-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.involvement-card {
+    padding: 30px;
+    background: var(--background);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow);
+    text-align: center;
+}
+
+.involvement-card h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.involvement-card p {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.action-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--primary);
+    color: var(--background);
+    border-radius: 25px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+@media (max-width: 768px) {
+    .involvement-options {
+        grid-template-columns: 1fr;
+    }
+} 

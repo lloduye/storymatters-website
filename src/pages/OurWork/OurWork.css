@@ -1,0 +1,48 @@
+.our-work {
+    padding: 40px 20px;
+}
+
+.our-work h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-dark);
+}
+
+.work-intro {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 60px;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.work-areas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.work-area {
+    padding: 30px;
+    background: var(--background);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow);
+}
+
+.work-area h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.work-area p {
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .work-areas {
+        grid-template-columns: 1fr;
+    }
+} 

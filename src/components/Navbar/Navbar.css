@@ -1,9 +1,9 @@
 .header {
-    position:fixed;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 20px 10%;
+    padding: 20px 5%;
     background: rgb(255, 255, 255);
     display: flex;
     justify-content: space-between;
@@ -13,31 +13,139 @@
 
 .logo {
     font-size: 32px;
-    color: #000000;
+    color: var(--text-dark);
     font-weight: 700;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.logo::before {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.logo:hover {
+    transform: translateY(-2px);
+}
+
+.logo:hover::before {
+    width: 100%;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+}
+
+.hamburger {
+    display: none;
+    cursor: pointer;
+}
+
+.bar {
+    display: block;
+    width: 25px;
+    height: 3px;
+    margin: 5px auto;
+    transition: all 0.3s ease-in-out;
+    background-color: #000000;
+}
+
+@media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
+    .hamburger.active .bar:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hamburger.active .bar:nth-child(1) {
+        transform: translateY(8px) rotate(45deg);
+    }
+
+    .hamburger.active .bar:nth-child(3) {
+        transform: translateY(-8px) rotate(-45deg);
+    }
+
+    .navbar {
+        position: fixed;
+        left: -100%;
+        top: 70px;
+        gap: 0;
+        flex-direction: column;
+        background-color: white;
+        width: 100%;
+        text-align: center;
+        transition: 0.3s;
+        padding: 20px 0;
+    }
+
+    .navbar.active {
+        left: 0;
+    }
+
+    .navbar a {
+        margin: 16px 0;
+    }
+
+    .donate-btn {
+        margin: 16px auto;
+        width: max-content;
+    }
 }
 
 .navbar a {
     position: relative;
     font-size: 18px;
-    color: #000000;
+    color: var(--text-dark);
     font-weight: 500;
     margin-left: 40px;
     text-transform: uppercase;
+    transition: transform 0.3s ease;
 }
 
 .navbar a::before {
     content: '';
-    position:absolute ;
+    position: absolute;
     top: 100%;
     left: 0;
     width: 0;
     height: 2px;
-    background: #000000;
-    transition: .3s;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.navbar a:hover {
+    color: var(--primary);
+    transform: translateY(-2px);
 }
 
 .navbar a:hover::before {
     width: 100%;
+}
+
+.donate-btn {
+    background-color: var(--primary);
+    padding: 10px 20px;
+    border-radius: 25px;
+    transition: all 0.3s ease !important;
+    color: white !important;
+}
+
+.donate-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+.donate-btn::before {
+    display: none;
 }
 

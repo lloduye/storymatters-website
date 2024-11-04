@@ -1,0 +1,124 @@
+.donation-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.donation-form {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.donation-form h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.donation-type {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.donation-type button {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid var(--primary);
+    background: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.donation-type button.active {
+    background: var(--primary);
+    color: white;
+}
+
+.amount-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.amount-buttons button {
+    padding: 12px;
+    border: 2px solid var(--primary);
+    background: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-dark);
+}
+
+.amount-buttons button.active {
+    background: var(--primary);
+    color: white;
+}
+
+.custom-amount {
+    margin-bottom: 25px;
+}
+
+.custom-amount label {
+    display: block;
+    margin-bottom: 8px;
+    color: #666;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 8px 15px;
+}
+
+.input-wrapper span {
+    color: #666;
+    margin-right: 8px;
+}
+
+.input-wrapper input {
+    border: none;
+    flex: 1;
+    font-size: 16px;
+    outline: none;
+}
+
+.donate-submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--secondary);
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.donate-submit-btn:hover {
+    background: var(--secondary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.donate-submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+@media (max-width: 480px) {
+    .amount-buttons {
+        grid-template-columns: 1fr;
+    }
+} 
