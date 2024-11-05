@@ -133,3 +133,33 @@
     }
 }
 
+@media (max-width: 768px) {
+    .navbar {
+        position: fixed;
+        top: 60px;
+        left: -100%;
+        width: 100%;
+        padding: 10px 0;
+        background: var(--background);
+        box-shadow: 0 4px 15px var(--shadow);
+        transition: 0.3s ease;
+        z-index: 999;
+    }
+
+    .navbar.active {
+        left: 0;
+    }
+
+    .navbar a {
+        display: block;
+        padding: 8px 20px;
+        margin: 2px 0;
+        text-align: center;
+    }
+
+    .donate-btn {
+        margin: 5px 20px;
+        padding: 8px 20px;
+    }
+}
+

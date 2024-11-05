@@ -1,8 +1,9 @@
 .footer {
     background: var(--background);
     color: var(--text-dark);
-    padding: 20px 20px;
+    padding: 15px 20px;
     box-shadow: 0 -4px 15px var(--shadow);
+    min-height: 80px;
 }
 
 .footer-content {
@@ -14,13 +15,13 @@
 }
 
 .footer-section {
-    padding: 0 10px;
+    padding: 0 8px;
 }
 
 .footer-section h3 {
     color: var(--primary);
     margin-bottom: 8px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
 }
 
@@ -31,7 +32,7 @@
 }
 
 .footer-section ul li {
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     color: var(--text-light);
     font-size: 0.9rem;
 }
@@ -51,13 +52,13 @@
 
 .social-links {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     margin-top: 8px;
 }
 
 .social-links a {
     color: var(--primary);
-    font-size: 1.2rem;
+    font-size: 1rem;
 }
 
 .social-links a:hover {
@@ -68,16 +69,16 @@
 @media (max-width: 768px) {
     .footer-content {
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+        gap: 15px;
     }
     
     .footer-section h3 {
-        font-size: 1.1rem;
+        font-size: 0.9rem;
     }
     
     .footer-section ul li,
     .footer-section a {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 }
 
