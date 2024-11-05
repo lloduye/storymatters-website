@@ -14,8 +14,15 @@
     max-width: 800px;
     margin: 0 auto 30px;
     color: var(--text-light);
-    line-height: 1.4;
-    font-size: 1rem;
+    line-height: 1.5;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .programs-intro {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
 }
 
 .programs-grid {

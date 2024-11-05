@@ -51,13 +51,13 @@ html {
 
 @media (max-width: 768px) {
     html {
-        font-size: 14px;
+        font-size: 15px;
     }
 }
 
 @media (max-width: 480px) {
     html {
-        font-size: 12px;
+        font-size: 14px;
     }
 }
 
@@ -70,4 +70,16 @@ a {
     display: flex;
     flex-direction: column;
     position: relative;
+}
+
+p {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    p {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
 }
