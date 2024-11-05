@@ -1,6 +1,7 @@
 import React from 'react';
 import './AboutUs.css';
 import ScrollAnimation from '../../components/ScrollAnimation/ScrollAnimation';
+import Newsletter from '../../components/Newsletter/Newsletter';
 
 // SVG icons as components
 const EducationIcon = () => (
@@ -27,7 +28,8 @@ const AboutUs = () => {
       <div 
         className="about-banner"
         style={{ 
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/images/hero/about-banner.jpg')` 
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+            url('https://placehold.co/1920x600/4A90E2/FFFFFF/png?text=About+Us')` 
         }}
       >
         <h1>About Us</h1>
@@ -120,6 +122,8 @@ const AboutUs = () => {
           </div>
         </section>
       </ScrollAnimation>
+
+      <Newsletter />
     </div>
   );
 };
