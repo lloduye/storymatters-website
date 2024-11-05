@@ -15,7 +15,7 @@ const Navbar = () => {
 
   return (
     <header className="header">
-      <Link to="/" className="logo">Story Matters</Link>
+      <Link to="/" className="logo">Story Matters Entertainment</Link>
       <nav className={`navbar ${isMenuActive ? 'active' : ''}`}>
         <Link to="/about-us" onClick={handleLinkClick}>About Us</Link>
         <Link to="/our-work" onClick={handleLinkClick}>Our Work</Link>
