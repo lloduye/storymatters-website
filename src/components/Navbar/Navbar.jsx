@@ -9,16 +9,20 @@ const Navbar = () => {
     setIsMenuActive(!isMenuActive);
   };
 
+  const handleLinkClick = () => {
+    setIsMenuActive(false);
+  };
+
   return (
     <header className="header">
       <Link to="/" className="logo">Story Matters</Link>
       <nav className={`navbar ${isMenuActive ? 'active' : ''}`}>
-        <Link to="/about-us">About Us</Link>
-        <Link to="/our-work">Our Work</Link>
-        <Link to="/programs">Programs</Link>
-        <Link to="/get-involved">Get Involved</Link>
-        <Link to="/news">News & Impact</Link>
-        <Link to="/donate" className="donate-btn">Support Us</Link>
+        <Link to="/about-us" onClick={handleLinkClick}>About Us</Link>
+        <Link to="/our-work" onClick={handleLinkClick}>Our Work</Link>
+        <Link to="/programs" onClick={handleLinkClick}>Programs</Link>
+        <Link to="/get-involved" onClick={handleLinkClick}>Get Involved</Link>
+        <Link to="/news" onClick={handleLinkClick}>News & Impact</Link>
+        <Link to="/donate" className="donate-btn" onClick={handleLinkClick}>Support Us</Link>
       </nav>
       <div 
         className={`hamburger ${isMenuActive ? 'active' : ''}`}
