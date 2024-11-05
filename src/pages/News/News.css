@@ -168,11 +168,24 @@
 
 @media (max-width: 768px) {
     .page-banner h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
 
     .news-card h2 {
-        font-size: 1.75rem;
+        font-size: 1.8rem;
+    }
+
+    .news-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .news-date {
+        font-size: 1rem;
+    }
+
+    .news-category {
+        font-size: 1rem;
     }
 
     .newsletter-form {

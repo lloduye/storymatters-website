@@ -44,20 +44,25 @@ body::before {
     z-index: -1;
 }
 
-/* Add responsive font sizing */
+/* Update base font sizes */
 html {
     font-size: 16px;
 }
 
 @media (max-width: 768px) {
     html {
-        font-size: 15px;
+        font-size: 16px; /* Changed from 15px to maintain size on mobile */
+    }
+    
+    p {
+        font-size: 1.1rem !important; /* Make paragraphs bigger on mobile */
+        line-height: 1.6;
     }
 }
 
 @media (max-width: 480px) {
     html {
-        font-size: 14px;
+        font-size: 16px; /* Changed from 14px to maintain size on mobile */
     }
 }
 
