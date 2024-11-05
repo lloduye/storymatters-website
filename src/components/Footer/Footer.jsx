@@ -1,7 +1,30 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
+  const quickLinksColumn1 = [
+    { name: 'About Us', path: '/about-us' },
+    { name: 'Our Work', path: '/our-work' },
+    { name: 'Programs', path: '/programs' }
+  ];
+
+  const quickLinksColumn2 = [
+    { name: 'Get Involved', path: '/get-involved' },
+    { name: 'News & Impact', path: '/news' },
+    { name: 'Support Us', path: '/donate' }
+  ];
+
+  const socialLinksColumn1 = [
+    { name: 'Facebook', url: '#' },
+    { name: 'Twitter', url: '#' }
+  ];
+
+  const socialLinksColumn2 = [
+    { name: 'Instagram', url: '#' },
+    { name: 'LinkedIn', url: '#' }
+  ];
+
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -19,21 +42,41 @@ const Footer = () => {
         
         <div className="footer-section">
           <h3>Quick Links</h3>
-          <ul>
-            <li><a href="">What We Do</a></li>
-            <li><a href="">Where We Work</a></li>
-            <li><a href="">About Us</a></li>
-            <li><a href="">News & Updates</a></li>
-          </ul>
+          <div className="quick-links-grid">
+            <ul>
+              {quickLinksColumn1.map((link, index) => (
+                <li key={index}><Link to={link.path}>{link.name}</Link></li>
+              ))}
+            </ul>
+            <ul>
+              {quickLinksColumn2.map((link, index) => (
+                <li key={index}><Link to={link.path}>{link.name}</Link></li>
+              ))}
+            </ul>
+          </div>
         </div>
         
         <div className="footer-section">
           <h3>Follow Us</h3>
-          <div className="social-links">
-            <a href="">Facebook</a>
-            <a href="">Twitter</a>
-            <a href="">Instagram</a>
-            <a href="">LinkedIn</a>
+          <div className="quick-links-grid">
+            <ul>
+              {socialLinksColumn1.map((link, index) => (
+                <li key={index}>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                    {link.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <ul>
+              {socialLinksColumn2.map((link, index) => (
+                <li key={index}>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                    {link.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
