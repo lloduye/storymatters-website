@@ -4,37 +4,41 @@ import ScrollAnimation from '../../../components/ScrollAnimation/ScrollAnimation
 import ImagePlaceholder from '../../../components/ImagePlaceholder/ImagePlaceholder';
 import Newsletter from '../../../components/Newsletter/Newsletter';
 
-const RefugeeTeensTalk = () => {
+const KakumaTheatre = () => {
   const stats = {
-    beneficiaries: "200+",
-    workshops: "24",
-    communities: "12"
+    events: "15+",
+    participants: "150+",
+    performances: "30+",
+    projects: "45"
   };
 
   const objectives = [
-    "Empower teenage mothers through education",
-    "Provide sexual reproductive health education",
-    "Address gender-based violence issues",
-    "Improve hygiene awareness",
-    "Provide access to sanitary supplies",
-    "Support education through stationery provision"
+    "Train youth in photography and videography",
+    "Provide social media and video editing training",
+    "Address community issues through theatrical performances",
+    "Showcase youth talent in drama and performing arts",
+    "Promote cultural and modern performances",
+    "Combat drug abuse through awareness",
+    "Reduce crime through youth engagement",
+    "Create sustainable theatre platforms",
+    "Document community stories and events"
   ];
 
   const impacts = [
     {
-      title: "Education Support",
-      description: "Providing stationery and resources to reduce school dropout rates",
-      image: "Education+Support"
+      title: "Entertainment & Education",
+      description: "Using theatre and performing arts to address social issues and educate the community",
+      image: "Entertainment+Education"
     },
     {
-      title: "Health & Hygiene",
-      description: "Distribution of sanitary supplies and hygiene education",
-      image: "Health+Hygiene"
+      title: "Youth Development",
+      description: "Training and showcasing young talent in drama, music, dance, photography and video editing",
+      image: "Youth+Development"
     },
     {
-      title: "Community Awareness",
-      description: "Training and workshops on gender-based violence prevention",
-      image: "Community+Awareness"
+      title: "Community Transformation",
+      description: "Reducing crime and substance abuse through creative engagement while documenting community stories",
+      image: "Community+Change"
     }
   ];
 
@@ -44,21 +48,21 @@ const RefugeeTeensTalk = () => {
         <ImagePlaceholder 
           width={1920} 
           height={400} 
-          text="Refugee+Teens+Talk"
+          text="Kakuma+Theatre"
           className="banner-image"
         />
-        <h1>Refugee Teens Talk</h1>
+        <h1>Kakuma Theatre</h1>
       </div>
 
       <ScrollAnimation>
         <section className="program-intro">
           <h2>About the Program</h2>
           <p>
-            Our project seeks to help teenage mothers change their lives by empowering 
-            and educating them on sexual reproductive health, gender-based violence, hygiene and 
-            providing them with sanitary towels and stationeries. Our objective is to ensure they 
-            realize their potential and achieve their dreams which is a long lasting positive 
-            impact on the community.
+            Kakuma Theatre aims to enhance community well-being through dramatic performances, media production, 
+            and other forms of creative expression. We address community issues and transform lives through 
+            theatre, photography, and videography, showcasing youth talent via drama, music, cultural dance, 
+            and modern performances. Our mission is to engage, educate, and promote youth talents while documenting 
+            community stories and making the community free of vandalism and crimes.
           </p>
           <div className="program-stats">
             {Object.entries(stats).map(([key, value]) => (
@@ -108,9 +112,10 @@ const RefugeeTeensTalk = () => {
         <section className="program-sustainability">
           <h2>Sustainability</h2>
           <p>
-            To ensure the longevity of positive outcomes, we have developed a sustainable plan. 
+            To ensure the longevity of positive outcomes, we have devised a sustainable plan. 
             This includes community engagement strategies, capacity building, and income-generating 
-            initiatives that empower the community to take ownership of the program.
+            initiatives that empower the community to take ownership of the program. Through 
+            regular monitoring and evaluation, we ensure transparency and optimize our impact.
           </p>
         </section>
       </ScrollAnimation>
@@ -131,4 +136,4 @@ const RefugeeTeensTalk = () => {
   );
 };
 
-export default RefugeeTeensTalk; 
+export default KakumaTheatre;

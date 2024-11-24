@@ -69,7 +69,7 @@ const AboutUs = () => {
             </div>
             <div className="objective-card">
               <h3>Foster Peaceful Coexistence</h3>
-              <p>We promote harmony between diverse nationalities within the camp and with the host community.</p>
+              <p>We promote peace and harmony between diverse nationalities within the camp and with the host community.</p>
             </div>
             <div className="objective-card">
               <h3>Community Awareness</h3>

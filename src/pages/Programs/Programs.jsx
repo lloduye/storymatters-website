@@ -8,19 +8,19 @@ const Programs = () => {
   const programs = [
     {
       title: "Refugee Teens Talk Program",
-      description: "Empowering vulnerable teenage girls and mothers through workshops, support services, and awareness campaigns.",
+      description: "Empowering vulnerable teenage mothers through workshops, support services, and awareness campaigns.",
       image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Refugee+Teens+Talk",
       link: "/programs/refugee-teens-talk"
     },
     {
-      title: "Kakuma Laugh Industry",
-      description: "A talent showcase platform promoting awareness of drug abuse and crime through creative expression.",
-      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Kakuma+Laugh+Industry",
-      link: "/programs/laugh-industry"
+      title: "Kakuma Theatre",
+      description: "A creative platform combining theatre and media production to address community issues through drama, photography, and videography while showcasing youth talent.",
+      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Kakuma+Theatre",
+      link: "/programs/theatre"
     },
     {
       title: "Kakuma Media Production",
-      description: "Training in photography and video editing, plus organizing events like the Miss Kakuma-Kalobeyei Beauty Pageant.",
+      description: "Training youth in photography, videography, and storytelling.",
       image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Media+Production",
       link: "/programs/media-production"
     },

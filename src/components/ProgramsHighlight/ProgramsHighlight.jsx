@@ -5,15 +5,15 @@ const ProgramsHighlight = () => {
   const programs = [
     {
       title: "Refugee Teens Talk Program",
-      description: "Empowering vulnerable teenage girls and mothers through workshops and support services."
+      description: "Empowering vulnerable teenage mothers through workshops and support services."
     },
     {
-      title: "Kakuma Laugh Industry",
-      description: "Promoting awareness of social issues through talent showcases."
+      title: "Kakuma Theatre",
+      description: "A creative platform combining theatre and media production to showcase youth talent and address community issues."
     },
     {
       title: "Kakuma Media Production",
-      description: "Training youth in photography and video editing while organizing community events."
+      description: "Training youth in photography, videography, and storytelling."
     }
   ];
 

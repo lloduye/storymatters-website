@@ -11,7 +11,7 @@ import News from './pages/News/News';
 import Donate from './pages/Donate/Donate';
 import RefugeeTeensTalk from './pages/Programs/ProgramPages/RefugeeTeensTalk';
 import KakumaMediaProduction from './pages/Programs/ProgramPages/KakumaMediaProduction';
-import KakumaLaughIndustry from './pages/Programs/ProgramPages/KakumaLaughIndustry';
+import KakumaTheatre from './pages/Programs/ProgramPages/KakumaTheatre';
 
 function App() {
   return (
@@ -29,7 +29,7 @@ function App() {
             <Route path="/donate" element={<Donate />} />
             <Route path="/programs/refugee-teens-talk" element={<RefugeeTeensTalk />} />
             <Route path="/programs/media-production" element={<KakumaMediaProduction />} />
-            <Route path="/programs/laugh-industry" element={<KakumaLaughIndustry />} />
+            <Route path="/programs/theatre" element={<KakumaTheatre />} />
           </Routes>
         </main>
         <Footer />
