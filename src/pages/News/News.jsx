@@ -2,34 +2,45 @@ import React from 'react';
 import './News.css';
 import ScrollAnimation from '../../components/ScrollAnimation/ScrollAnimation';
 import ImagePlaceholder from '../../components/ImagePlaceholder/ImagePlaceholder';
+import Newsletter from '../../components/Newsletter/Newsletter';
 
 const News = () => {
-  const newsItems = [
-    {
-      title: "Youth Media Workshop Success",
-      subtitle: "Empowering Future Storytellers",
-      date: "March 15, 2024",
-      description: "30 young refugees completed advanced media training, mastering skills in digital storytelling, photography, and video production. The workshop culminated in a showcase of their original works.",
-      image: "Youth+Media+Workshop",
-      category: "Education"
-    },
-    {
-      title: "Community Theater Festival",
-      subtitle: "Celebrating Cultural Expression",
-      date: "March 1, 2024",
-      description: "Annual performance showcase highlights refugee talent through powerful performances addressing social issues and celebrating diverse cultural heritage.",
-      image: "Theater+Festival",
-      category: "Events"
-    },
-    {
-      title: "New Art Program Launch",
-      subtitle: "Creative Horizons Expand",
-      date: "February 20, 2024",
-      description: "Expanding creative opportunities for youth with the introduction of our comprehensive visual arts program, including painting, sculpture, and digital art.",
-      image: "Art+Program",
-      category: "Programs"
-    }
-  ];
+  const newsItem = {
+    title: "Community Dialogues Forum in Kakuma and Kalobeyei Seeks Solutions to Local Conflicts",
+    date: "March 2024",
+    category: "Community",
+    content: [
+      {
+        text: `The Kenya Community Media Network, in collaboration with REF-FM and Atanayeche, hosted a crucial forum this month in Kakuma and Kalobeyei to address the underlying causes of conflicts in the area. The Community Dialogues Forum served as a platform for bringing together community members, local leaders, and experts to discuss and find sustainable solutions to pressing issues such as land disputes, resource-based conflicts, and gender-based violence (GBV). The event aimed to foster dialogue and collaboration in resolving the challenges faced by both the host and refugee communities.
+
+The forum addressed critical problems such as land conflicts driven by deforestation for charcoal production, exacerbated by a growing population and strained relationships between the host and refugee communities. It also tackled inadequate access to water and food, which continues to fuel tension in the area. Attendees engaged in discussions aimed at fostering unity and promoting peacebuilding initiatives.`,
+        image: {
+          src: "Forum+Discussion",
+          caption: "Community members engaging in dialogue during the forum"
+        }
+      },
+      {
+        text: `The forum featured a diverse panel of speakers, including Senior Chief Cosmas Nakayart Esuguru from Kakuma, probation Assistant Director of Turkana West Beatrice Kotoca, and Sub-County Probation Officer Sylvester Ekuwan, among others. They addressed questions from the community and offered advice on conflict resolution. The discussions centered on practical measures to address the issues and included contributions from community representatives, such as Beverlyne Maraka, who highlighted the impact of poverty on GBV. She cited cases of young girls being forced into sexual activities, leading to unaddressed pregnancies and unresolved legal cases.
+
+Panelists underscored the need for better communication to resolve resource-based conflicts and intercommunity disputes. Lucia Nyumju, the chairlady of Kalobeyei Valley Two, pointed out that tensions between the host and refugee communities are often rooted in past experiences and misunderstandings. She advocated for community education on self-care, conflict resolution, and letting go of grudges to promote healing.`,
+        image: {
+          src: "Panel+Discussion",
+          caption: "Panel of speakers addressing community concerns"
+        }
+      },
+      {
+        text: `The forum emphasized the importance of environmental conservation, noting that deforestation for charcoal production is against Article 109 of Kenya's constitution, which mandates the protection of the environment. Community leaders called for tree planting initiatives as a step toward sustainable resource management.
+
+Senior Chief Cosmas Nakayart encouraged both the host and refugee communities to work together, stressing that peace in Kakuma could only be achieved through collective efforts. "Time will come when there will be no difference between the host and refugee communities. If we want Kakuma to be a peaceful place, let us work together in unity and learn to love one another," he said.
+
+The Community Dialogues Forum marks a step towards fostering peace and addressing the underlying causes of conflicts in the region, with a strong emphasis on community-driven solutions and the need for ongoing collaboration among all stakeholders.`,
+        image: {
+          src: "Community+Unity",
+          caption: "Host and refugee community members working together"
+        }
+      }
+    ]
+  };
 
   return (
     <div className="news">
@@ -50,39 +61,58 @@ const News = () => {
       </ScrollAnimation>
 
       <ScrollAnimation>
-        <div className="news-grid">
-          {newsItems.map((item, index) => (
-            <div key={index} className="news-card">
-              <div className="news-image">
-                <ImagePlaceholder 
-                  width={800} 
-                  height={400} 
-                  text={item.image}
-                />
-                <span className="news-category">{item.category}</span>
-              </div>
-              <div className="news-content">
-                <span className="news-date">{item.date}</span>
-                <h2>{item.title}</h2>
-                <h3>{item.subtitle}</h3>
-                <p>{item.description}</p>
-                <a href="#" className="read-more">Read Full Story →</a>
-              </div>
+        <article className="news-article">
+          <div className="article-header">
+            <h2>{newsItem.title}</h2>
+            <div className="article-meta">
+              <span className="article-date">{newsItem.date}</span>
+              <span className="article-category">{newsItem.category}</span>
             </div>
-          ))}
-        </div>
+          </div>
+          
+          <div className="article-sections">
+            {newsItem.content.map((section, idx) => (
+              <div key={idx} className="content-section">
+                {idx % 2 === 0 ? (
+                  <>
+                    <div className="text-content">
+                      {section.text.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx}>{paragraph}</p>
+                      ))}
+                    </div>
+                    <figure className="section-image">
+                      <ImagePlaceholder 
+                        width={600} 
+                        height={400} 
+                        text={section.image.src}
+                      />
+                      <figcaption>{section.image.caption}</figcaption>
+                    </figure>
+                  </>
+                ) : (
+                  <>
+                    <figure className="section-image">
+                      <ImagePlaceholder 
+                        width={600} 
+                        height={400} 
+                        text={section.image.src}
+                      />
+                      <figcaption>{section.image.caption}</figcaption>
+                    </figure>
+                    <div className="text-content">
+                      {section.text.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </article>
       </ScrollAnimation>
 
-      <ScrollAnimation>
-        <div className="newsletter-section">
-          <h2>Stay Connected</h2>
-          <p>Subscribe to our newsletter for regular updates on our impact and initiatives.</p>
-          <form className="newsletter-form">
-            <input type="email" placeholder="Enter your email" />
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-      </ScrollAnimation>
+      <Newsletter />
     </div>
   );
 };

@@ -1,0 +1,101 @@
+.news-detail {
+  padding: 40px 20px;
+}
+
+.story-banner {
+  position: relative;
+  margin-bottom: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.story-header {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+}
+
+.story-category {
+  display: inline-block;
+  padding: 5px 15px;
+  background: var(--primary);
+  border-radius: 20px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.story-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.story-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  opacity: 0.9;
+}
+
+.story-date {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.story-content {
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.main-content {
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+  white-space: pre-line;
+}
+
+.story-section {
+  margin-bottom: 40px;
+}
+
+.story-section h2 {
+  color: var(--text-dark);
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.story-section p {
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
+
+.section-image {
+  margin: 30px 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .story-header {
+    padding: 20px;
+  }
+
+  .story-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .story-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .main-content,
+  .story-section p {
+    font-size: 1rem;
+  }
+
+  .story-section h2 {
+    font-size: 1.5rem;
+  }
+} 

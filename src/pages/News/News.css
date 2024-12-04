@@ -1,5 +1,6 @@
 .news {
-    padding: 40px 20px;
+    padding: 40px 0;
+    width: 100%;
 }
 
 .page-banner {
@@ -7,7 +8,6 @@
     margin-bottom: 60px;
     height: 400px;
     overflow: hidden;
-    border-radius: 10px;
 }
 
 .page-banner h1 {
@@ -27,172 +27,107 @@
     color: var(--text-light);
     font-size: 1.2rem;
     line-height: 1.6;
+    padding: 0 20px;
 }
 
-.news-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
+.news-article {
+    width: 100%;
+    background: var(--background);
+    padding: 40px 20px;
+}
+
+.article-header {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    text-align: center;
+}
+
+.article-header h2 {
+    font-size: 2.5rem;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    line-height: 1.3;
+}
+
+.article-meta {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.article-date {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.article-category {
+    padding: 5px 15px;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.article-sections {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-.news-card {
-    background: var(--background);
-    border-radius: 10px;
-    box-shadow: 0 4px 15px var(--shadow);
-    overflow: hidden;
-    transition: transform 0.3s ease;
+.content-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 60px;
+    align-items: start;
 }
 
-.news-card:hover {
-    transform: translateY(-5px);
+.content-section.image-left {
+    grid-template-columns: 1fr 1fr;
 }
 
-.news-image {
-    width: 100%;
-    height: 250px;
-    overflow: hidden;
-    position: relative;
+.content-section.image-right {
+    grid-template-columns: 1fr 1fr;
 }
 
-.news-category {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: var(--primary);
-    color: white;
-    padding: 5px 15px;
-    border-radius: 15px;
-    font-size: 0.9rem;
+.text-content {
+    padding: 20px;
 }
 
-.news-content {
-    padding: 25px;
-}
-
-.news-date {
-    display: inline-block;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-}
-
-.news-card h2 {
-    color: var(--text-dark);
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    line-height: 1.2;
-    font-weight: 700;
-}
-
-.news-card h3 {
-    color: var(--primary);
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    font-weight: 500;
-}
-
-.news-card p {
-    color: var(--text-light);
-    line-height: 1.6;
+.text-content p {
     margin-bottom: 20px;
+    line-height: 1.8;
+    color: var(--text-light);
 }
 
-.read-more {
-    display: inline-block;
-    color: var(--primary);
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.read-more:hover {
-    transform: translateX(10px);
-    color: var(--primary-dark);
-}
-
-.newsletter-section {
-    max-width: 600px;
-    margin: 80px auto 0;
-    text-align: center;
-    padding: 40px;
-    background: var(--background);
+.section-image {
+    width: 100%;
     border-radius: 10px;
+    overflow: hidden;
     box-shadow: 0 4px 15px var(--shadow);
 }
 
-.newsletter-section h2 {
-    color: var(--text-dark);
-    margin-bottom: 15px;
-}
-
-.newsletter-section p {
+figcaption {
+    padding: 15px;
+    text-align: center;
     color: var(--text-light);
-    margin-bottom: 25px;
-}
-
-.newsletter-form {
-    display: flex;
-    gap: 10px;
-}
-
-.newsletter-form input {
-    flex: 1;
-    padding: 12px 20px;
-    border: 2px solid var(--shadow);
-    border-radius: 25px;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.3s ease;
-}
-
-.newsletter-form input:focus {
-    border-color: var(--primary);
-}
-
-.newsletter-form button {
-    padding: 12px 30px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.newsletter-form button:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
+    font-size: 0.9rem;
+    background: var(--background);
 }
 
 @media (max-width: 768px) {
-    .page-banner h1 {
-        font-size: 2.5rem;
+    .content-section,
+    .content-section.image-left,
+    .content-section.image-right {
+        grid-template-columns: 1fr;
+        gap: 20px;
     }
 
-    .news-card h2 {
+    .article-header h2 {
         font-size: 1.8rem;
     }
 
-    .news-card p {
-        font-size: 1.1rem;
-        line-height: 1.6;
-    }
-
-    .news-date {
-        font-size: 1rem;
-    }
-
-    .news-category {
-        font-size: 1rem;
-    }
-
-    .newsletter-form {
-        flex-direction: column;
-    }
-
-    .newsletter-form button {
-        width: 100%;
+    .text-content {
+        padding: 0;
     }
 } 
