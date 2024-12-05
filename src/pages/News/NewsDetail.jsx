@@ -30,33 +30,59 @@ const NewsDetail = () => {
       <ScrollAnimation>
         <div className="story-content">
           {story.content.map((section, idx) => (
-            <div key={idx} className="content-section">
-              {idx % 2 === 0 ? (
+            <div key={idx} className={`content-section layout-${idx + 1}`}>
+              {idx === 0 && (
+                // First section: Side by side
                 <>
                   <div className="text-content">
                     {section.text.split('\n\n').map((paragraph, pIdx) => (
                       <p key={pIdx}>{paragraph}</p>
                     ))}
                   </div>
-                  <figure className="section-image">
+                  <div className="section-image">
                     <img 
                       src={section.image.src}
-                      alt={section.image.caption}
+                      alt=""
                       className="story-image"
                     />
-                    <figcaption>{section.image.caption}</figcaption>
-                  </figure>
+                  </div>
                 </>
-              ) : (
+              )}
+              {idx === 1 && (
                 <>
-                  <figure className="section-image">
+                  <div className="content-section layout-2">
+                    <div className="section-image full-width">
+                      <img 
+                        src={section.image.src}
+                        alt=""
+                        className="story-image"
+                      />
+                    </div>
+                    <div className="text-content">
+                      {section.text.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                  {section.fullWidthText && (
+                    <div className="full-width-content">
+                      {section.fullWidthText.split('\n\n').map((paragraph, pIdx) => (
+                        <p key={pIdx}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {idx === 2 && (
+                // Third section: Image on left
+                <>
+                  <div className="section-image">
                     <img 
                       src={section.image.src}
-                      alt={section.image.caption}
+                      alt=""
                       className="story-image"
                     />
-                    <figcaption>{section.image.caption}</figcaption>
-                  </figure>
+                  </div>
                   <div className="text-content">
                     {section.text.split('\n\n').map((paragraph, pIdx) => (
                       <p key={pIdx}>{paragraph}</p>
@@ -66,6 +92,25 @@ const NewsDetail = () => {
               )}
             </div>
           ))}
+
+          {story.additionalImages && story.additionalImages.length > 0 && (
+            <div className="additional-content full-width-gallery">
+              <h2>More Pictures from the Event</h2>
+              <div className="gallery-container">
+                <div className="gallery-scroll">
+                  {story.additionalImages.map((imageSrc, idx) => (
+                    <div key={idx} className="gallery-item">
+                      <img 
+                        src={imageSrc}
+                        alt=""
+                        className="gallery-image"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </ScrollAnimation>
 
