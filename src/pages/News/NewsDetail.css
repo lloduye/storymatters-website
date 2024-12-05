@@ -1,12 +1,19 @@
 .news-detail {
-  padding: 40px 20px;
+  padding: 40px 0;
+  width: 100%;
 }
 
 .story-banner {
   position: relative;
   margin-bottom: 40px;
-  border-radius: 10px;
+  height: 500px;
   overflow: hidden;
+}
+
+.story-banner .banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .story-header {
@@ -30,13 +37,7 @@
 
 .story-header h1 {
   font-size: 2.5rem;
-  margin-bottom: 10px;
-}
-
-.story-header h2 {
-  font-size: 1.5rem;
   margin-bottom: 15px;
-  opacity: 0.9;
 }
 
 .story-date {
@@ -45,36 +46,44 @@
 }
 
 .story-content {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
+}
+
+.content-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 60px;
+  align-items: start;
+}
+
+.text-content p {
+  margin-bottom: 20px;
   line-height: 1.8;
-}
-
-.main-content {
-  font-size: 1.1rem;
-  margin-bottom: 40px;
-  white-space: pre-line;
-}
-
-.story-section {
-  margin-bottom: 40px;
-}
-
-.story-section h2 {
-  color: var(--text-dark);
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-}
-
-.story-section p {
-  margin-bottom: 20px;
-  white-space: pre-line;
+  color: var(--text-light);
 }
 
 .section-image {
-  margin: 30px 0;
+  width: 100%;
   border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 4px 15px var(--shadow);
+}
+
+.story-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+}
+
+figcaption {
+  padding: 15px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  background: var(--background);
 }
 
 @media (max-width: 768px) {
@@ -86,16 +95,8 @@
     font-size: 1.8rem;
   }
 
-  .story-header h2 {
-    font-size: 1.2rem;
-  }
-
-  .main-content,
-  .story-section p {
-    font-size: 1rem;
-  }
-
-  .story-section h2 {
-    font-size: 1.5rem;
+  .content-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 } 
