@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && mkdir -p dist/images && cp -r public/images/* dist/images/ && cp public/_redirects dist/",
+    "build": "vite build && mkdir -p dist/images && cp -r public/images/* dist/images/ && cp public/_redirects dist/ && cp -r public/favicon dist/favicon",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

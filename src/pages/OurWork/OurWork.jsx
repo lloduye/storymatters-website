@@ -31,10 +31,9 @@ const OurWork = () => {
   return (
     <div className="our-work">
       <div className="page-banner">
-        <ImagePlaceholder 
-          width={1920} 
-          height={400} 
-          text="Our+Work+In+Action"
+        <img 
+          src={`${import.meta.env.BASE_URL}images/banners/our-work-banner.jpeg`}
+          alt="Our Work"
           className="banner-image"
         />
         <h1>Our Work</h1>

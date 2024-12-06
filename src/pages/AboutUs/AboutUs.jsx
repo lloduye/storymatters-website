@@ -25,13 +25,12 @@ const CreativityIcon = () => (
 const AboutUs = () => {
   return (
     <div className="about-us">
-      <div 
-        className="about-banner"
-        style={{ 
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-            url('https://placehold.co/1920x600/4A90E2/FFFFFF/png?text=About+Us')` 
-        }}
-      >
+      <div className="about-banner">
+        <img 
+          src={`${import.meta.env.BASE_URL}images/banners/about-us-banner.jpeg`}
+          alt="About Us"
+          className="banner-image"
+        />
         <h1>About Us</h1>
       </div>
 

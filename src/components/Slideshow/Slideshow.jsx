@@ -6,24 +6,20 @@ const Slideshow = () => {
 
   const slides = [
     {
-      url: 'https://placehold.co/800x600/4A90E2/FFFFFF?text=Community+Impact',
+      url: `${import.meta.env.BASE_URL}images/homepage/slide1.jpeg`,
       caption: 'Making a Difference in Kakuma'
     },
     {
-      url: 'https://placehold.co/800x600/45B7AF/FFFFFF?text=Youth+Empowerment',
+      url: `${import.meta.env.BASE_URL}images/homepage/slide2.jpeg`,
       caption: 'Empowering Young Voices'
     },
     {
-      url: 'https://placehold.co/800x600/FF6B6B/FFFFFF?text=Arts+and+Culture',
+      url: `${import.meta.env.BASE_URL}images/homepage/slide3.jpeg`,
       caption: 'Celebrating Creative Expression'
     },
     {
-      url: 'https://placehold.co/800x600/50E3C2/FFFFFF?text=Education',
+      url: `${import.meta.env.BASE_URL}images/homepage/slide4.jpeg`,
       caption: 'Building Skills for Tomorrow'
-    },
-    {
-      url: 'https://placehold.co/800x600/9B59B6/FFFFFF?text=Community+Events',
-      caption: 'Bringing People Together'
     }
   ];
 
@@ -45,6 +41,10 @@ const Slideshow = () => {
     setCurrentSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
   };
 
+  const handleImageError = (index) => {
+    console.error(`Failed to load image at index: ${index}`);
+  };
+
   return (
     <div className="slideshow">
       <div className="slides-container">
@@ -52,7 +52,7 @@ const Slideshow = () => {
           <div
             key={index}
             className={`slide ${index === currentSlide ? 'active' : ''}`}
-            style={{ backgroundImage: `url(${slide.url})` }}
+            style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${slide.url})` }}
           >
             <div className="slide-caption">{slide.caption}</div>
           </div>

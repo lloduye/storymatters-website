@@ -13,10 +13,13 @@ import RefugeeTeensTalk from './pages/Programs/ProgramPages/RefugeeTeensTalk';
 import KakumaMediaProduction from './pages/Programs/ProgramPages/KakumaMediaProduction';
 import KakumaTheatre from './pages/Programs/ProgramPages/KakumaTheatre';
 import NewsDetail from './pages/News/NewsDetail';
+import Volunteer from './pages/Volunteer/Volunteer';
+import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="app-container">
         <Navbar />
         <main className="main-content">
@@ -32,6 +35,7 @@ function App() {
             <Route path="/programs/refugee-teens-talk" element={<RefugeeTeensTalk />} />
             <Route path="/programs/media-production" element={<KakumaMediaProduction />} />
             <Route path="/programs/theatre" element={<KakumaTheatre />} />
+            <Route path="/volunteer" element={<Volunteer />} />
           </Routes>
         </main>
         <Footer />
