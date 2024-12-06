@@ -2,19 +2,36 @@ import React from 'react';
 import './ImagePlaceholder.css';
 
 const ImagePlaceholder = ({ width, height, text, className }) => {
-  const imageUrl = `https://placehold.co/${width}x${height}/4A90E2/FFFFFF/png?text=${encodeURIComponent(text)}`;
+  // Convert text to proper image filename format
+  const imageFileName = text.toLowerCase().replace(/\+/g, '-');
   
+  // Try multiple image paths
+  const imagePaths = [
+    `/images/${imageFileName}.jpg`,
+    `/images/news/${imageFileName}.jpg`,
+    `/images/programs/${imageFileName}.jpg`,
+    `/images/stories/${imageFileName}.jpg`
+  ];
+
   return (
-    <div className={`image-placeholder ${className || ''}`}>
-      <img 
-        src={imageUrl} 
-        alt={text}
-        loading="lazy"
-        onError={(e) => {
-          e.target.src = `https://placehold.co/${width}x${height}/cccccc/666666/png?text=Image+Not+Found`;
-        }}
-      />
-    </div>
+    <img
+      src={imagePaths[0]} // Start with first path
+      alt={text.replace(/\+/g, ' ')}
+      className={className}
+      onError={(e) => {
+        // Try next path if current fails
+        const currentIndex = imagePaths.indexOf(e.target.src);
+        const nextPath = imagePaths[currentIndex + 1];
+        
+        if (nextPath) {
+          e.target.src = nextPath;
+        } else {
+          // If all paths fail, use placeholder
+          e.target.src = `https://placehold.co/${width}x${height}/4A90E2/FFFFFF/png?text=${text}`;
+          e.target.onerror = null; // Prevent infinite loop
+        }
+      }}
+    />
   );
 };
 

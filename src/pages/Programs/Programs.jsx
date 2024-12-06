@@ -9,25 +9,25 @@ const Programs = () => {
     {
       title: "Refugee Teens Talk Program",
       description: "Empowering vulnerable teenage mothers through workshops, support services, and awareness campaigns.",
-      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Refugee+Teens+Talk",
+      image: "/images/refugee-teens-talk.jpg",
       link: "/programs/refugee-teens-talk"
     },
     {
       title: "Kakuma Theatre",
       description: "A creative platform combining theatre and media production to address community issues through drama, photography, and videography while showcasing youth talent.",
-      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Kakuma+Theatre",
+      image: "/images/kakuma-theatre.jpg",
       link: "/programs/theatre"
     },
     {
       title: "Kakuma Media Production",
       description: "Training youth in photography, videography, and storytelling.",
-      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Media+Production",
+      image: "/images/media-production.jpg",
       link: "/programs/media-production"
     },
     {
       title: "Art and Craft Initiatives",
       description: "Drawing workshops for children and raising awareness about critical social issues through art.",
-      image: "https://placehold.co/800x600/4A90E2/FFFFFF/png?text=Art+and+Craft",
+      image: "/images/art-craft.jpg",
       link: "/programs/art-craft"
     }
   ];
