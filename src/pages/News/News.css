@@ -78,15 +78,16 @@
 
 .news-card-image {
     position: relative;
-    height: 250px;
+    width: 100%;
+    height: auto;
     overflow: hidden;
 }
 
 .card-image {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
+    height: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .news-card:hover .card-image {
@@ -185,5 +186,15 @@
 
     .news-card-content h2 {
         font-size: 1.3rem;
+    }
+
+    .news-card-image {
+        max-height: none;
+    }
+
+    .card-image {
+        position: relative;
+        height: auto;
+        width: 100%;
     }
 } 
