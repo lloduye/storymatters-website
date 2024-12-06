@@ -8,5 +8,10 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     copyPublicDir: true
-  }
+  },
+  server: {
+    port: 3000,
+    host: true
+  },
+  publicDir: 'public'
 })
