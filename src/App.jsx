@@ -22,6 +22,7 @@ import AdminDashboard from './pages/Admin/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import './pages/Admin/Login.css';
 import './pages/Admin/AdminDashboard.css';
+import './pages/Admin/components/Stories.css';
 
 // Layout component for the main site
 const MainLayout = () => {
@@ -67,7 +68,9 @@ function App() {
                 element={
                   <ErrorBoundary>
                     <ProtectedRoute>
-                      <AdminDashboard />
+                      <div className="admin-dashboard">
+                        <AdminDashboard />
+                      </div>
                     </ProtectedRoute>
                   </ErrorBoundary>
                 } 

@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import './Stories.css';
 
 const PREDEFINED_CATEGORIES = [
   "Refugee Teens Talk",
@@ -253,6 +254,31 @@ const Stories = () => {
     }
     await handleSubmit(e);
   };
+
+  useEffect(() => {
+    // Auto-resize all textareas
+    const textareas = document.querySelectorAll('textarea');
+    
+    const adjustHeight = (element) => {
+      element.style.height = '48px';  // Reset height to single line
+      element.style.height = element.scrollHeight + 'px';  // Set to content height
+    };
+
+    textareas.forEach(textarea => {
+      // Initial adjustment
+      adjustHeight(textarea);
+      
+      // Add input event listener
+      textarea.addEventListener('input', () => adjustHeight(textarea));
+    });
+
+    // Cleanup
+    return () => {
+      textareas.forEach(textarea => {
+        textarea.removeEventListener('input', () => adjustHeight(textarea));
+      });
+    };
+  }, [isModalOpen]); // Re-run when modal opens
 
   if (!authChecked) {
     return <div>Loading...</div>;
