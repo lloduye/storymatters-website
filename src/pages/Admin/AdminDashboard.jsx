@@ -30,20 +30,24 @@ const AdminDashboard = () => {
       </div>
       <div className="admin-content">
         <header className="admin-header">
-          <h1>Admin Dashboard</h1>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
+          <div className="header-content">
+            <h1>Admin Dashboard</h1>
+            <button onClick={handleLogout} className="logout-button">
+              Logout
+            </button>
+          </div>
         </header>
-        <Routes>
-          <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<Overview />} />
-          <Route path="stories" element={<Stories />} />
-          <Route path="programs" element={<Programs />} />
-          <Route path="donations" element={<Donations />} />
-          <Route path="volunteers" element={<Volunteers />} />
-          <Route path="settings" element={<Settings />} />
-        </Routes>
+        <div className="content-wrapper">
+          <Routes>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<Overview />} />
+            <Route path="stories" element={<Stories />} />
+            <Route path="programs" element={<Programs />} />
+            <Route path="donations" element={<Donations />} />
+            <Route path="volunteers" element={<Volunteers />} />
+            <Route path="settings" element={<Settings />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );
