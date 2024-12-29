@@ -9,7 +9,7 @@ import {
 } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle, FaFacebook, FaGithub } from 'react-icons/fa';
-import './Admin.css';
+import './Login.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');

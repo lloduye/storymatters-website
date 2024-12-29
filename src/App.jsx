@@ -20,6 +20,8 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import Login from './pages/Admin/Login';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
+import './pages/Admin/Login.css';
+import './pages/Admin/AdminDashboard.css';
 
 // Layout component for the main site
 const MainLayout = () => {

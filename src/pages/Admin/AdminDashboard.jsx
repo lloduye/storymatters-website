@@ -9,7 +9,7 @@ import Programs from './components/Programs';
 import Donations from './components/Donations';
 import Volunteers from './components/Volunteers';
 import Settings from './components/Settings';
-import './Admin.css';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -25,25 +25,25 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      <AdminSidebar />
-      <div className="admin-main">
+      <div className="admin-sidebar">
+        <AdminSidebar />
+      </div>
+      <div className="admin-content">
         <header className="admin-header">
           <h1>Admin Dashboard</h1>
           <button onClick={handleLogout} className="logout-button">
             Logout
           </button>
         </header>
-        <div className="admin-content">
-          <Routes>
-            <Route index element={<Navigate to="overview" replace />} />
-            <Route path="overview" element={<Overview />} />
-            <Route path="stories" element={<Stories />} />
-            <Route path="programs" element={<Programs />} />
-            <Route path="donations" element={<Donations />} />
-            <Route path="volunteers" element={<Volunteers />} />
-            <Route path="settings" element={<Settings />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="stories" element={<Stories />} />
+          <Route path="programs" element={<Programs />} />
+          <Route path="donations" element={<Donations />} />
+          <Route path="volunteers" element={<Volunteers />} />
+          <Route path="settings" element={<Settings />} />
+        </Routes>
       </div>
     </div>
   );

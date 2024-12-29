@@ -1,0 +1,87 @@
+/* Admin Dashboard Layout */
+.admin-dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styles */
+.admin-sidebar {
+    width: 250px;
+    background: white;
+    padding: 20px;
+    box-shadow: 2px 0 5px var(--shadow);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+.admin-logo {
+    font-size: 1.2rem;
+    color: var(--text-dark);
+    font-weight: 600;
+    margin-bottom: 30px;
+    display: block;
+    text-decoration: none;
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-nav a {
+    padding: 12px 15px;
+    border-radius: 25px;
+    color: var(--text-dark);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-nav a:hover {
+    background: var(--shadow);
+    transform: translateX(5px);
+}
+
+.admin-nav a.active {
+    background: var(--primary);
+    color: white;
+}
+
+.admin-nav svg {
+    font-size: 1.1rem;
+}
+
+.admin-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 30px;
+    background: var(--background);
+}
+
+@media (max-width: 768px) {
+    .admin-sidebar {
+        width: 60px;
+        padding: 20px 10px;
+    }
+
+    .admin-logo,
+    .admin-nav span {
+        display: none;
+    }
+
+    .admin-content {
+        margin-left: 60px;
+        padding: 20px;
+    }
+
+    .admin-nav a {
+        justify-content: center;
+        padding: 12px;
+    }
+}
