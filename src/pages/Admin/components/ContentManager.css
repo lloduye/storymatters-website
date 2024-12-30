@@ -1262,3 +1262,258 @@
   background: #E5E7EB;
   color: #374151;
 }
+
+/* View Modes */
+.content-view {
+  width: 100%;
+}
+
+/* Grid View */
+.content-view.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* List View */
+.content-view.list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.content-view.list .content-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow);
+  overflow: hidden;
+}
+
+.content-list-item {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.content-list-info {
+  flex: 1;
+}
+
+.content-list-info h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.content-list-info p {
+  margin: 0 0 15px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.content-list-image {
+  width: 200px;
+  height: 150px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.content-list-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content-view.list .content-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.content-date,
+.content-author {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-list-item {
+    flex-direction: column;
+  }
+
+  .content-list-image {
+    width: 100%;
+    height: 200px;
+    order: -1;
+  }
+}
+
+.content-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.content-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--shadow);
+}
+
+.section-header h3 {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 1.2rem;
+}
+
+.count-badge {
+  background: var(--background);
+  color: var(--text-light);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Status-specific section styling */
+.content-section:has(.section-header h3:contains("Draft")) {
+  border-left: 4px solid #FEF3C7;
+}
+
+.content-section:has(.section-header h3:contains("Published")) {
+  border-left: 4px solid #D1FAE5;
+}
+
+.content-section:has(.section-header h3:contains("Archived")) {
+  border-left: 4px solid #E5E7EB;
+}
+
+/* Adjust existing content view styles */
+.content-section .content-view {
+  margin: 0;
+}
+
+.content-section .content-view.grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-section {
+    padding: 15px;
+  }
+  
+  .section-header {
+    margin-bottom: 15px;
+  }
+}
+
+/* Content Stats Styles */
+.content-stats,
+.content-list-stats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--shadow);
+  background: var(--background);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.like-btn.liked {
+  color: #e53e3e;
+}
+
+.like-btn.liked svg {
+  fill: #e53e3e;
+}
+
+/* List view specific stats */
+.content-list-stats {
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+.content-list-stats .stat-item {
+  padding: 5px 10px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+/* Hover effects */
+.stat-item:hover {
+  color: var(--primary);
+}
+
+.stat-item:hover svg {
+  transform: scale(1.1);
+}
+
+/* Add to your imports */
+.content-meta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.meta-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-stats,
+  .content-list-stats {
+    padding: 10px;
+  }
+
+  .stat-item span {
+    font-size: 0.8rem;
+  }
+}

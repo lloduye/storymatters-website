@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { db, storage } from '../../../firebase/config';
 import { 
   collection, query, orderBy, getDocs, addDoc, updateDoc, 
-  deleteDoc, doc, serverTimestamp, where, writeBatch 
+  deleteDoc, doc, serverTimestamp, where, writeBatch, getDoc, setDoc, increment, arrayUnion, arrayRemove 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaEye, 
-  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive 
+  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart 
 } from 'react-icons/fa';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './ContentManager.css';
+import { auth } from '../../../firebase/config';
 
 const ContentManager = () => {
   const [content, setContent] = useState([]);
@@ -59,6 +60,7 @@ const ContentManager = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState(null);
   const [previewDevice, setPreviewDevice] = useState('desktop');
+  const [contentStats, setContentStats] = useState({});
 
   useEffect(() => {
     loadContent();
@@ -67,6 +69,17 @@ const ContentManager = () => {
   useEffect(() => {
     loadUnpublishedStories();
   }, []);
+
+  useEffect(() => {
+    const loadAllStats = async () => {
+      const promises = content.map(item => loadContentStats(item.id));
+      await Promise.all(promises);
+    };
+    
+    if (content.length > 0) {
+      loadAllStats();
+    }
+  }, [content]);
 
   const loadContent = async () => {
     try {
@@ -438,6 +451,76 @@ const ContentManager = () => {
     }
   };
 
+  const organizeContentByStatus = (contentItems) => {
+    return contentItems.reduce((acc, item) => {
+      const status = item.status || 'draft';
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+      acc[status].push(item);
+      return acc;
+    }, {});
+  };
+
+  const loadContentStats = async (contentId) => {
+    try {
+      const statsDoc = await getDoc(doc(db, 'contentStats', contentId));
+      if (statsDoc.exists()) {
+        setContentStats(prev => ({
+          ...prev,
+          [contentId]: statsDoc.data()
+        }));
+      } else {
+        // Initialize stats if they don't exist
+        const initialStats = {
+          views: 0,
+          likes: 0,
+          comments: 0,
+          likedBy: []
+        };
+        await setDoc(doc(db, 'contentStats', contentId), initialStats);
+        setContentStats(prev => ({
+          ...prev,
+          [contentId]: initialStats
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading content stats:', error);
+    }
+  };
+
+  const handleLike = async (contentId) => {
+    try {
+      const userId = auth.currentUser.uid; // Assuming you have Firebase Auth
+      const statsRef = doc(db, 'contentStats', contentId);
+      const statsDoc = await getDoc(statsRef);
+      
+      if (statsDoc.exists()) {
+        const stats = statsDoc.data();
+        const isLiked = stats.likedBy.includes(userId);
+        
+        await updateDoc(statsRef, {
+          likes: increment(isLiked ? -1 : 1),
+          likedBy: isLiked ? arrayRemove(userId) : arrayUnion(userId)
+        });
+        
+        // Update local state
+        setContentStats(prev => ({
+          ...prev,
+          [contentId]: {
+            ...prev[contentId],
+            likes: prev[contentId].likes + (isLiked ? -1 : 1),
+            likedBy: isLiked 
+              ? prev[contentId].likedBy.filter(id => id !== userId)
+              : [...prev[contentId].likedBy, userId]
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating like:', error);
+    }
+  };
+
   return (
     <div className="content-manager">
       {/* Header Section */}
@@ -542,47 +625,121 @@ const ContentManager = () => {
         ) : content.length === 0 ? (
           <div className="empty-state">No content found</div>
         ) : (
-          <div className="content-grid">
-            {content.map(item => (
-              <div key={item.id} className="content-card">
-                <div className="content-image">
-                  {item.featuredImage ? (
-                    <img src={item.featuredImage} alt={item.title} />
-                  ) : (
-                    <div className="placeholder-image">No Image</div>
-                  )}
+          <div className="content-sections">
+            {Object.entries(organizeContentByStatus(content)).map(([status, items]) => (
+              <div key={status} className="content-section">
+                <div className="section-header">
+                  <h3>{status.charAt(0).toUpperCase() + status.slice(1)} Stories</h3>
+                  <span className="count-badge">{items.length}</span>
                 </div>
-                <div className="content-info">
-                  <h3>{item.title}</h3>
-                  <p>{item.excerpt}</p>
-                  <div className="content-meta">
-                    <span className={`status-badge ${item.status}`}>
-                      {item.status}
-                    </span>
-                    <span className="type-badge">{item.type}</span>
-                  </div>
-                </div>
-                <div className="content-actions">
-                  <button onClick={() => handlePreview(item)} title="Preview">
-                    <FaEye />
-                  </button>
-                  <button onClick={() => setShowVersions(true)} title="Versions">
-                    <FaHistory />
-                  </button>
-                  <button onClick={() => setShowScheduler(true)} title="Schedule">
-                    <FaClock />
-                  </button>
-                  <button onClick={() => {
-                    setSelectedContent(item);
-                    setContentForm(item);
-                    setImagePreview(item.featuredImage);
-                    setShowEditor(true);
-                  }} title="Edit">
-                    <FaEdit />
-                  </button>
-                  <button onClick={() => handleDelete(item.id)} title="Delete">
-                    <FaTrash />
-                  </button>
+                <div className={`content-view ${viewMode}`}>
+                  {items.map(item => (
+                    <div key={item.id} className="content-card">
+                      {viewMode === 'grid' ? (
+                        <>
+                          <div className="content-image">
+                            {item.featuredImage ? (
+                              <img src={item.featuredImage} alt={item.title} />
+                            ) : (
+                              <div className="placeholder-image">No Image</div>
+                            )}
+                          </div>
+                          <div className="content-info">
+                            <h3>{item.title}</h3>
+                            <p>{item.excerpt}</p>
+                            <div className="content-meta">
+                              <span className={`status-badge ${item.status}`}>
+                                {item.status}
+                              </span>
+                              <span className="type-badge">{item.type}</span>
+                            </div>
+                          </div>
+                          <div className="content-stats">
+                            <div className="stat-item">
+                              <FaEye />
+                              <span>{contentStats[item.id]?.views || 0}</span>
+                            </div>
+                            <div className="stat-item">
+                              <FaComment />
+                              <span>{contentStats[item.id]?.comments || 0}</span>
+                            </div>
+                            <button 
+                              className={`like-btn ${contentStats[item.id]?.likedBy?.includes(auth.currentUser?.uid) ? 'liked' : ''}`}
+                              onClick={() => handleLike(item.id)}
+                            >
+                              <FaHeart />
+                              <span>{contentStats[item.id]?.likes || 0}</span>
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="content-list-item">
+                          <div className="content-list-info">
+                            <h3>{item.title}</h3>
+                            <p>{item.excerpt}</p>
+                            <div className="content-meta">
+                              <span className={`status-badge ${item.status}`}>
+                                {item.status}
+                              </span>
+                              <span className="type-badge">{item.type}</span>
+                              <span className="content-date">
+                                <FaCalendar /> {new Date(item.publishDate).toLocaleDateString()}
+                              </span>
+                              <span className="content-author">
+                                <FaUser /> {item.author || 'Anonymous'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="content-list-image">
+                            {item.featuredImage ? (
+                              <img src={item.featuredImage} alt={item.title} />
+                            ) : (
+                              <div className="placeholder-image">No Image</div>
+                            )}
+                          </div>
+                          <div className="content-list-stats">
+                            <div className="stat-item">
+                              <FaEye />
+                              <span>{contentStats[item.id]?.views || 0} views</span>
+                            </div>
+                            <div className="stat-item">
+                              <FaComment />
+                              <span>{contentStats[item.id]?.comments || 0} comments</span>
+                            </div>
+                            <button 
+                              className={`like-btn ${contentStats[item.id]?.likedBy?.includes(auth.currentUser?.uid) ? 'liked' : ''}`}
+                              onClick={() => handleLike(item.id)}
+                            >
+                              <FaHeart />
+                              <span>{contentStats[item.id]?.likes || 0} likes</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <div className="content-actions">
+                        <button onClick={() => handlePreview(item)} title="Preview">
+                          <FaEye />
+                        </button>
+                        <button onClick={() => setShowVersions(true)} title="Versions">
+                          <FaHistory />
+                        </button>
+                        <button onClick={() => setShowScheduler(true)} title="Schedule">
+                          <FaClock />
+                        </button>
+                        <button onClick={() => {
+                          setSelectedContent(item);
+                          setContentForm(item);
+                          setImagePreview(item.featuredImage);
+                          setShowEditor(true);
+                        }} title="Edit">
+                          <FaEdit />
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} title="Delete">
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
