@@ -16,6 +16,12 @@ import './AdminDashboard.css';
 
 // Import available component
 import Stories from './components/Stories';
+import Dashboard from './components/Dashboard';
+import Communications from './components/Communications';
+import Submissions from './components/Submissions';
+import Donations from './components/Donations';
+import Team from './components/Team';
+import Settings from './components/Settings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('content');
@@ -45,17 +51,17 @@ const AdminDashboard = () => {
       case 'content':
         return <Stories />;
       case 'dashboard':
-        return <div>Dashboard Coming Soon</div>;
+        return <Dashboard />;
       case 'communications':
-        return <div>Communications Coming Soon</div>;
+        return <Communications />;
       case 'submissions':
-        return <div>Form Submissions Coming Soon</div>;
+        return <Submissions />;
       case 'donations':
-        return <div>Donation Records Coming Soon</div>;
+        return <Donations />;
       case 'team':
-        return <div>Team Management Coming Soon</div>;
+        return <Team />;
       case 'settings':
-        return <div>Settings Coming Soon</div>;
+        return <Settings />;
       default:
         return <Stories />;
     }
