@@ -17,7 +17,6 @@ import {
 import './AdminDashboard.css';
 
 // Import available component
-import Stories from './components/Stories';
 import Dashboard from './components/Dashboard';
 import Communications from './components/Communications';
 import Submissions from './components/Submissions';
@@ -42,8 +41,7 @@ const AdminDashboard = () => {
 
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FaTachometerAlt },
-    { id: 'content', label: 'Stories', icon: FaNewspaper },
-    { id: 'content-manager', label: 'Content Manager', icon: FaFileAlt },
+    { id: 'content', label: 'Content Manager', icon: FaNewspaper },
     { id: 'communications', label: 'Communications', icon: FaEnvelope },
     { id: 'mailbox', label: 'Mailbox', icon: FaInbox },
     { id: 'submissions', label: 'Submissions', icon: FaClipboardList },
@@ -57,8 +55,6 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'content':
-        return <Stories />;
-      case 'content-manager':
         return <ContentManager />;
       case 'communications':
         return <Communications />;

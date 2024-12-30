@@ -134,10 +134,63 @@ const ContentManager = () => {
   };
 
   const handleImageUpload = async (file) => {
-    if (!file) return null;
-    const storageRef = ref(storage, `content/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    try {
+      if (!file) return null;
+      
+      // Create a compressed version of the image
+      const compressedFile = await compressImage(file);
+      
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, `content/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, compressedFile);
+      return await getDownloadURL(storageRef);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  const compressImage = async (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            }));
+          }, 'image/jpeg', 0.7); // Compress with 70% quality
+        };
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -146,20 +199,25 @@ const ContentManager = () => {
     try {
       let imageUrl = contentForm.featuredImage;
       
-      if (imagePreview && imagePreview !== contentForm.featuredImage) {
-        const file = await fetch(imagePreview).then(r => r.blob());
+      if (imagePreview && imagePreview.startsWith('data:')) {
+        // Convert data URL to Blob
+        const response = await fetch(imagePreview);
+        const blob = await response.blob();
+        const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
         imageUrl = await handleImageUpload(file);
       }
 
       const timestamp = serverTimestamp();
       const contentData = {
         ...contentForm,
-        featuredImage: imageUrl,
+        featuredImage: imageUrl, // Now this will be a storage URL, not a data URL
         image: imageUrl,
         description: contentForm.excerpt,
         timestamp: timestamp,
         updatedAt: timestamp,
-        content: [{
+        type: contentForm.type || 'news',
+        content: contentForm.content || '',
+        contentSections: [{
           text: contentForm.content,
           image: imageUrl ? {
             src: imageUrl,
@@ -168,26 +226,67 @@ const ContentManager = () => {
         }]
       };
 
+      // Remove any data URLs from the content data
+      Object.keys(contentData).forEach(key => {
+        if (typeof contentData[key] === 'string' && contentData[key].startsWith('data:')) {
+          delete contentData[key];
+        }
+      });
+
       if (!selectedContent) {
         contentData.createdAt = timestamp;
         contentData.publishedAt = contentData.status === 'published' ? timestamp : null;
         
         const docRef = await addDoc(collection(db, 'content'), contentData);
         
-        if (contentData.type === 'news' || contentData.type === 'article') {
-          console.log('Saving to stories:', contentData);
-          await setDoc(doc(db, 'stories', docRef.id), contentData);
-        }
+        await setDoc(doc(db, 'stories', docRef.id), {
+          ...contentData,
+          id: docRef.id,
+          title: contentData.title,
+          status: contentData.status,
+          category: contentData.category,
+          author: contentData.author,
+          description: contentData.description,
+          image: contentData.image,
+          mainImageCredit: contentData.mainImageCredit,
+          content: contentData.content,
+          publishedAt: contentData.publishedAt,
+          timestamp: timestamp,
+          views: 0,
+          likes: 0,
+          comments: 0
+        });
+        
+        console.log('New story saved:', {
+          content: contentData,
+          id: docRef.id
+        });
       } else {
         if (contentData.status === 'published' && !selectedContent.publishedAt) {
           contentData.publishedAt = timestamp;
         }
         
         await updateDoc(doc(db, 'content', selectedContent.id), contentData);
-        if (contentData.type === 'news' || contentData.type === 'article') {
-          console.log('Updating story:', contentData);
-          await updateDoc(doc(db, 'stories', selectedContent.id), contentData);
-        }
+        
+        await updateDoc(doc(db, 'stories', selectedContent.id), {
+          ...contentData,
+          id: selectedContent.id,
+          title: contentData.title,
+          status: contentData.status,
+          category: contentData.category,
+          author: contentData.author,
+          description: contentData.description,
+          image: contentData.image,
+          mainImageCredit: contentData.mainImageCredit,
+          content: contentData.content,
+          publishedAt: contentData.publishedAt,
+          timestamp: timestamp
+        });
+
+        console.log('Story updated:', {
+          content: contentData,
+          id: selectedContent.id
+        });
       }
 
       setShowEditor(false);
@@ -221,15 +320,22 @@ const ContentManager = () => {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setContentForm(prev => ({ ...prev, featuredImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Create a preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+        
+        // Don't set the featuredImage field yet - wait for actual upload
+        setContentForm(prev => ({ ...prev, featuredImage: '' }));
+      } catch (error) {
+        console.error('Error handling image:', error);
+      }
     }
   };
 
@@ -257,7 +363,7 @@ const ContentManager = () => {
   const resetForm = () => {
     setContentForm({
       title: '',
-      type: 'article',
+      type: 'news',
       status: 'draft',
       content: '',
       excerpt: '',
@@ -269,7 +375,7 @@ const ContentManager = () => {
       location: '',
       editor: '',
       mainImageCredit: '',
-      content: [],
+      content: '',
       publishedAt: null,
       seo: {
         metaTitle: '',
@@ -278,6 +384,13 @@ const ContentManager = () => {
       }
     });
     setImagePreview(null);
+    setSelectedContent(null);
+    setShowEditor(true);
+  };
+
+  const handleNewContent = () => {
+    resetForm();
+    setShowEditor(true);
   };
 
   const saveVersion = async () => {
@@ -462,31 +575,56 @@ const ContentManager = () => {
   const handleStatusChange = async (contentId, newStatus) => {
     try {
       setLoading(true);
-      await updateDoc(doc(db, 'content', contentId), {
+      const timestamp = serverTimestamp();
+      
+      // Get the current content document
+      const contentRef = doc(db, 'content', contentId);
+      const contentDoc = await getDoc(contentRef);
+      const contentData = contentDoc.data();
+
+      // Prepare update data
+      const updateData = {
+        ...contentData,
         status: newStatus,
-        ...(newStatus === 'published' ? { publishedAt: serverTimestamp() } : {})
+        updatedAt: timestamp,
+        timestamp: timestamp,
+        publishedAt: newStatus === 'published' ? timestamp : null
+      };
+
+      // Update content collection
+      await updateDoc(contentRef, updateData);
+
+      // Update stories collection
+      const storyRef = doc(db, 'stories', contentId);
+      await setDoc(storyRef, {
+        ...updateData,
+        id: contentId,
+        title: contentData.title,
+        status: newStatus,
+        category: contentData.category,
+        author: contentData.author,
+        description: contentData.description || contentData.excerpt,
+        image: contentData.image || contentData.featuredImage,
+        mainImageCredit: contentData.mainImageCredit,
+        content: contentData.content,
+        publishedAt: newStatus === 'published' ? timestamp : null,
+        timestamp: timestamp,
+        views: contentData.views || 0,
+        likes: contentData.likes || 0,
+        comments: contentData.comments || 0
+      }, { merge: true });
+
+      console.log('Status updated:', {
+        contentId,
+        newStatus,
+        updateData
       });
-      
-      // Update local state
-      setContent(prevContent => 
-        prevContent.map(item => 
-          item.id === contentId 
-            ? { ...item, status: newStatus } 
-            : item
-        )
-      );
-      
-      // Update preview content
-      setPreviewContent(prev => ({ ...prev, status: newStatus }));
-      
-      // Refresh unpublished stories if needed
-      if (newStatus === 'published' || newStatus === 'draft') {
-        loadUnpublishedStories();
-      }
-      
-      setLoading(false);
+
+      loadContent();
+      loadUnpublishedStories();
     } catch (error) {
-      console.error('Error changing content status:', error);
+      console.error('Error changing status:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -567,7 +705,10 @@ const ContentManager = () => {
       <div className="content-header">
         <div className="header-left">
           <h2>Content Management</h2>
-          <button className="add-content-btn" onClick={() => setShowEditor(true)}>
+          <button 
+            className="new-content-btn" 
+            onClick={handleNewContent}
+          >
             <FaPlus /> New Content
           </button>
         </div>
@@ -1238,6 +1379,26 @@ const ContentManager = () => {
           </div>
         </div>
       )}
+
+      <button
+        className="debug-btn"
+        onClick={async () => {
+          const contentSnapshot = await getDocs(collection(db, 'content'));
+          const storiesSnapshot = await getDocs(collection(db, 'stories'));
+          
+          console.log('Content collection:', contentSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })));
+          
+          console.log('Stories collection:', storiesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })));
+        }}
+      >
+        Debug DB
+      </button>
     </div>
   );
 };
