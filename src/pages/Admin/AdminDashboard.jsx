@@ -10,7 +10,8 @@ import {
   FaUsers,
   FaHandHoldingHeart,
   FaClipboardList,
-  FaCog
+  FaCog,
+  FaInbox
 } from 'react-icons/fa';
 import './AdminDashboard.css';
 
@@ -22,6 +23,7 @@ import Submissions from './components/Submissions';
 import Donations from './components/Donations';
 import Team from './components/Team';
 import Settings from './components/Settings';
+import Mailbox from './components/Mailbox';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('content');
@@ -38,22 +40,25 @@ const AdminDashboard = () => {
 
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FaTachometerAlt },
-    { id: 'content', label: 'Content Management', icon: FaNewspaper },
+    { id: 'content', label: 'Stories', icon: FaNewspaper },
     { id: 'communications', label: 'Communications', icon: FaEnvelope },
-    { id: 'submissions', label: 'Form Submissions', icon: FaClipboardList },
-    { id: 'donations', label: 'Donation Records', icon: FaHandHoldingHeart },
-    { id: 'team', label: 'Team Management', icon: FaUsers },
+    { id: 'mailbox', label: 'Mailbox', icon: FaInbox },
+    { id: 'submissions', label: 'Submissions', icon: FaClipboardList },
+    { id: 'donations', label: 'Donations', icon: FaHandHoldingHeart },
+    { id: 'team', label: 'Team', icon: FaUsers },
     { id: 'settings', label: 'Settings', icon: FaCog }
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'content':
-        return <Stories />;
       case 'dashboard':
         return <Dashboard />;
+      case 'content':
+        return <Stories />;
       case 'communications':
         return <Communications />;
+      case 'mailbox':
+        return <Mailbox />;
       case 'submissions':
         return <Submissions />;
       case 'donations':
@@ -63,7 +68,7 @@ const AdminDashboard = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <Stories />;
+        return <Dashboard />;
     }
   };
 

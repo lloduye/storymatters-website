@@ -116,9 +116,14 @@
 }
 
 .content-wrapper {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding: 1rem;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+
+.content-wrapper .mailbox-container {
+    padding: 0;
+    height: 100%;
 }
 
 @media (max-width: 1024px) {
@@ -156,6 +161,10 @@
     }
 
     .content-wrapper {
-        padding: 1rem;
+        padding: 0.5rem;
+    }
+
+    .content-wrapper .mailbox-container {
+        min-height: calc(100vh - 120px);
     }
 }
