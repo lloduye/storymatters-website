@@ -7,7 +7,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaEye, 
-  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser 
+  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive 
 } from 'react-icons/fa';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -406,6 +406,38 @@ const ContentManager = () => {
     }, 100);
   };
 
+  const handleStatusChange = async (contentId, newStatus) => {
+    try {
+      setLoading(true);
+      await updateDoc(doc(db, 'content', contentId), {
+        status: newStatus,
+        ...(newStatus === 'published' ? { publishedAt: serverTimestamp() } : {})
+      });
+      
+      // Update local state
+      setContent(prevContent => 
+        prevContent.map(item => 
+          item.id === contentId 
+            ? { ...item, status: newStatus } 
+            : item
+        )
+      );
+      
+      // Update preview content
+      setPreviewContent(prev => ({ ...prev, status: newStatus }));
+      
+      // Refresh unpublished stories if needed
+      if (newStatus === 'published' || newStatus === 'draft') {
+        loadUnpublishedStories();
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error changing content status:', error);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="content-manager">
       {/* Header Section */}
@@ -564,9 +596,25 @@ const ContentManager = () => {
           <div className="editor-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{selectedContent ? 'Edit Content' : 'New Content'}</h3>
-              <button onClick={() => setShowEditor(false)} className="close-btn">
-                <FaTimes />
-              </button>
+              <div className="modal-header-actions">
+                <button 
+                  onClick={() => {
+                    handlePreview(contentForm);
+                    setShowEditor(false);
+                  }} 
+                  className="preview-btn"
+                  title="Preview"
+                >
+                  <FaEye /> Preview
+                </button>
+                <button 
+                  onClick={() => setShowEditor(false)} 
+                  className="close-btn"
+                  title="Close"
+                >
+                  <FaTimes />
+                </button>
+              </div>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
@@ -860,16 +908,32 @@ const ContentManager = () => {
                 </button>
               </div>
               <div className="preview-actions">
-                {previewContent?.status === 'draft' && (
+                <div className="status-buttons">
                   <button 
-                    className="preview-action-btn"
-                    onClick={() => handlePublish(previewContent.id)}
-                    disabled={loading}
-                    title="Publish"
+                    className={`status-btn ${previewContent?.status === 'draft' ? 'active' : ''}`}
+                    onClick={() => handleStatusChange(previewContent.id, 'draft')}
+                    disabled={loading || previewContent?.status === 'draft'}
+                    data-status="draft"
                   >
-                    <FaCheck /> {loading ? 'Publishing...' : 'Publish'}
+                    <FaPencilAlt /> Draft
                   </button>
-                )}
+                  <button 
+                    className={`status-btn ${previewContent?.status === 'published' ? 'active' : ''}`}
+                    onClick={() => handleStatusChange(previewContent.id, 'published')}
+                    disabled={loading || previewContent?.status === 'published'}
+                    data-status="published"
+                  >
+                    <FaCheck /> Publish
+                  </button>
+                  <button 
+                    className={`status-btn ${previewContent?.status === 'archived' ? 'active' : ''}`}
+                    onClick={() => handleStatusChange(previewContent.id, 'archived')}
+                    disabled={loading || previewContent?.status === 'archived'}
+                    data-status="archived"
+                  >
+                    <FaArchive /> Archive
+                  </button>
+                </div>
                 <button 
                   className="preview-action-btn"
                   onClick={() => {

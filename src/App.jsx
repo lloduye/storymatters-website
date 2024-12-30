@@ -6,7 +6,6 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 // Components
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
-import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Public Pages
@@ -31,7 +30,6 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <ScrollToTop />
         <ErrorBoundary>
           <div className="app">
             {/* Public Routes */}
