@@ -11,8 +11,7 @@ import {
   FaHandHoldingHeart,
   FaClipboardList,
   FaCog,
-  FaInbox,
-  FaFileAlt
+  FaInbox
 } from 'react-icons/fa';
 import './AdminDashboard.css';
 
@@ -25,7 +24,6 @@ import Donations from './components/Donations';
 import Team from './components/Team';
 import Settings from './components/Settings';
 import Mailbox from './components/Mailbox';
-import ContentManager from './components/ContentManager';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('content');
@@ -43,7 +41,6 @@ const AdminDashboard = () => {
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FaTachometerAlt },
     { id: 'content', label: 'Stories', icon: FaNewspaper },
-    { id: 'content-manager', label: 'Content Manager', icon: FaFileAlt },
     { id: 'communications', label: 'Communications', icon: FaEnvelope },
     { id: 'mailbox', label: 'Mailbox', icon: FaInbox },
     { id: 'submissions', label: 'Submissions', icon: FaClipboardList },
@@ -58,8 +55,6 @@ const AdminDashboard = () => {
         return <Dashboard />;
       case 'content':
         return <Stories />;
-      case 'content-manager':
-        return <ContentManager />;
       case 'communications':
         return <Communications />;
       case 'mailbox':

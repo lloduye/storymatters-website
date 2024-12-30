@@ -1,0 +1,136 @@
+.news-detail {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.story-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.story-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.story-meta {
+  display: flex;
+  gap: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.main-content {
+  margin-bottom: 3rem;
+}
+
+.story-image-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.story-image-container img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.story-description {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Side by side layout */
+.content-section.side-by-side {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  align-items: start;
+}
+
+.content-section.side-by-side .text-content,
+.content-section.side-by-side .section-image-container {
+  direction: ltr;
+  width: 100%;
+}
+
+.content-section.side-by-side .section-image-container {
+  position: sticky;
+  top: 2rem;
+}
+
+.content-section.side-by-side .section-image-container img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+}
+
+.content-section.side-by-side .text-content {
+  display: block;
+  height: auto;
+}
+
+.content-section.side-by-side p {
+  margin: 0 0 1rem 0;
+  line-height: 1.8;
+}
+
+/* Maintain the reverse layout */
+.content-section.side-by-side.reverse {
+  direction: rtl;
+}
+
+/* Full width sections */
+.content-section.full-width {
+  margin-bottom: 3rem;
+}
+
+.content-section p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+.image-credit {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .story-header h1 {
+    font-size: 2rem;
+  }
+
+  .content-section.side-by-side {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .content-section.side-by-side.reverse {
+    direction: ltr;
+  }
+
+  .story-description {
+    font-size: 1.1rem;
+  }
+
+  .content-section p {
+    font-size: 1rem;
+  }
+
+  .content-section.side-by-side .section-image-container {
+    position: relative;
+    top: 0;
+  }
+} 
