@@ -1,15 +1,12 @@
 import React from 'react';
-import { useNavigate, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
-import AdminSidebar from './components/AdminSidebar';
-import Overview from './components/Overview';
-import Stories from './components/Stories';
-import Programs from './components/Programs';
-import Donations from './components/Donations';
-import Volunteers from './components/Volunteers';
-import Settings from './components/Settings';
+import { FaSignOutAlt } from 'react-icons/fa';
 import './AdminDashboard.css';
+
+// Import available component
+import Stories from './components/Stories';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -25,29 +22,21 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      <div className="admin-sidebar">
-        <AdminSidebar />
-      </div>
-      <div className="admin-content">
-        <header className="admin-header">
-          <div className="header-content">
+      <header className="admin-header">
+        <div className="header-content">
+          <div className="header-nav">
             <h1>Admin Dashboard</h1>
+          </div>
+          <div className="header-actions">
             <button onClick={handleLogout} className="logout-button">
-              Logout
+              <FaSignOutAlt /> Logout
             </button>
           </div>
-        </header>
-        <div className="content-wrapper">
-          <Routes>
-            <Route index element={<Navigate to="overview" replace />} />
-            <Route path="overview" element={<Overview />} />
-            <Route path="stories" element={<Stories />} />
-            <Route path="programs" element={<Programs />} />
-            <Route path="donations" element={<Donations />} />
-            <Route path="volunteers" element={<Volunteers />} />
-            <Route path="settings" element={<Settings />} />
-          </Routes>
         </div>
+      </header>
+
+      <div className="content-wrapper">
+        <Stories />
       </div>
     </div>
   );
