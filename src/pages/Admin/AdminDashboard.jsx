@@ -63,33 +63,36 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-header">
-        <div className="header-content">
-          <div className="header-nav">
-            <h1>Admin Dashboard</h1>
-            <nav className="nav-links">
-              {navigationTabs.map(tab => (
-                <button 
-                  key={tab.id}
-                  className={`nav-link ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <tab.icon /> {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-          <div className="header-actions">
-            <button onClick={handleLogout} className="logout-button">
-              <FaSignOutAlt /> Logout
-            </button>
-          </div>
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <h1>Admin Panel</h1>
         </div>
-      </header>
+        <nav className="sidebar-nav">
+          {navigationTabs.map(tab => (
+            <button 
+              key={tab.id}
+              className={`nav-link ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <tab.icon /> {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <button onClick={handleLogout} className="logout-button">
+            <FaSignOutAlt /> Logout
+          </button>
+        </div>
+      </aside>
 
-      <div className="content-wrapper">
-        {renderContent()}
-      </div>
+      <main className="main-content">
+        <header className="content-header">
+          <h2>{navigationTabs.find(tab => tab.id === activeTab)?.label}</h2>
+        </header>
+        <div className="content-wrapper">
+          {renderContent()}
+        </div>
+      </main>
     </div>
   );
 };
