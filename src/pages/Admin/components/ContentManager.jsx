@@ -37,6 +37,11 @@ const ContentManager = () => {
     tags: [],
     author: '',
     publishDate: new Date().toISOString().split('T')[0],
+    location: '',
+    editor: '',
+    mainImageCredit: '',
+    content: [],
+    publishedAt: null,
     seo: {
       metaTitle: '',
       metaDescription: '',
@@ -141,23 +146,48 @@ const ContentManager = () => {
     try {
       let imageUrl = contentForm.featuredImage;
       
-      // Handle new image upload
       if (imagePreview && imagePreview !== contentForm.featuredImage) {
         const file = await fetch(imagePreview).then(r => r.blob());
         imageUrl = await handleImageUpload(file);
       }
 
+      const timestamp = serverTimestamp();
       const contentData = {
         ...contentForm,
         featuredImage: imageUrl,
-        updatedAt: serverTimestamp()
+        image: imageUrl,
+        description: contentForm.excerpt,
+        timestamp: timestamp,
+        updatedAt: timestamp,
+        content: [{
+          text: contentForm.content,
+          image: imageUrl ? {
+            src: imageUrl,
+            credit: contentForm.mainImageCredit
+          } : null
+        }]
       };
 
-      if (selectedContent) {
-        await updateDoc(doc(db, 'content', selectedContent.id), contentData);
+      if (!selectedContent) {
+        contentData.createdAt = timestamp;
+        contentData.publishedAt = contentData.status === 'published' ? timestamp : null;
+        
+        const docRef = await addDoc(collection(db, 'content'), contentData);
+        
+        if (contentData.type === 'news' || contentData.type === 'article') {
+          console.log('Saving to stories:', contentData);
+          await setDoc(doc(db, 'stories', docRef.id), contentData);
+        }
       } else {
-        contentData.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'content'), contentData);
+        if (contentData.status === 'published' && !selectedContent.publishedAt) {
+          contentData.publishedAt = timestamp;
+        }
+        
+        await updateDoc(doc(db, 'content', selectedContent.id), contentData);
+        if (contentData.type === 'news' || contentData.type === 'article') {
+          console.log('Updating story:', contentData);
+          await updateDoc(doc(db, 'stories', selectedContent.id), contentData);
+        }
       }
 
       setShowEditor(false);
@@ -178,7 +208,12 @@ const ContentManager = () => {
           const imageRef = ref(storage, contentDoc.featuredImage);
           await deleteObject(imageRef);
         }
+        
         await deleteDoc(doc(db, 'content', contentId));
+        if (contentDoc.type === 'article' || contentDoc.type === 'news') {
+          await deleteDoc(doc(db, 'stories', contentId));
+        }
+        
         loadContent();
       } catch (error) {
         console.error('Error deleting content:', error);
@@ -231,6 +266,11 @@ const ContentManager = () => {
       tags: [],
       author: '',
       publishDate: new Date().toISOString().split('T')[0],
+      location: '',
+      editor: '',
+      mainImageCredit: '',
+      content: [],
+      publishedAt: null,
       seo: {
         metaTitle: '',
         metaDescription: '',
@@ -791,9 +831,9 @@ const ContentManager = () => {
                     value={contentForm.type}
                     onChange={(e) => setContentForm(prev => ({ ...prev, type: e.target.value }))}
                   >
+                    <option value="news">News</option>
                     <option value="article">Article</option>
                     <option value="page">Page</option>
-                    <option value="news">News</option>
                   </select>
                 </div>
 
@@ -911,6 +951,33 @@ const ContentManager = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Location</label>
+                  <input
+                    type="text"
+                    value={contentForm.location}
+                    onChange={(e) => setContentForm(prev => ({ ...prev, location: e.target.value }))}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Editor</label>
+                  <input
+                    type="text"
+                    value={contentForm.editor}
+                    onChange={(e) => setContentForm(prev => ({ ...prev, editor: e.target.value }))}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Image Credit</label>
+                  <input
+                    type="text"
+                    value={contentForm.mainImageCredit}
+                    onChange={(e) => setContentForm(prev => ({ ...prev, mainImageCredit: e.target.value }))}
+                  />
                 </div>
 
                 {/* SEO Section */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../../firebase/config';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import './News.css';
 
 const News = () => {
@@ -10,19 +10,47 @@ const News = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
-    const q = query(collection(db, 'stories'), orderBy('timestamp', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const storiesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setStories(storiesData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching stories:', error);
-      setLoading(false);
-    });
+    // First, create the query
+    let q;
+    try {
+      q = query(
+        collection(db, 'stories'), 
+        where('status', '==', 'published'),
+        where('type', 'in', ['article', 'news']),
+        orderBy('timestamp', 'desc') // Change to timestamp for now
+      );
+    } catch (error) {
+      console.error('Error creating query:', error);
+    }
+
+    // Then set up the listener with error handling
+    const unsubscribe = onSnapshot(q, 
+      (snapshot) => {
+        try {
+          const storiesData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            console.log('Story data:', data); // Debug log
+            return {
+              id: doc.id,
+              ...data,
+              publishedAt: data.publishedAt?.toDate() || data.timestamp?.toDate(),
+              image: data.image || data.featuredImage,
+              description: data.description || data.excerpt
+            };
+          });
+          console.log('Processed stories:', storiesData); // Debug log
+          setStories(storiesData);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error processing stories:', error);
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error('Error in snapshot listener:', error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -49,7 +77,7 @@ const News = () => {
           {mainStories.map(story => (
             <Link to={`/news/${story.id}`} key={story.id} className="news-card main-card">
               <div className="story-image-container">
-                <img src={story.image} alt={story.title} />
+                {story.image && <img src={story.image} alt={story.title} />}
                 {story.mainImageCredit && (
                   <div className="image-credit">Photo: {story.mainImageCredit}</div>
                 )}
@@ -57,13 +85,16 @@ const News = () => {
               <div className="news-content">
                 <h2>{story.title}</h2>
                 <div className="news-meta">
-                  <span>{new Date(story.publishedAt).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}</span>
+                  <span>{story.publishedAt 
+                    ? new Date(story.publishedAt).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })
+                    : 'Date not available'
+                  }</span>
                   {story.location && <span className="location">{story.location}</span>}
-                  <span className="category">{story.category}</span>
+                  {story.category && <span className="category">{story.category}</span>}
                 </div>
                 <p>{story.description}</p>
               </div>
