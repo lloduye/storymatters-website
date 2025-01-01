@@ -45,7 +45,7 @@ const NewsDetail = () => {
   useEffect(() => {
     const fetchStory = async () => {
       try {
-        const storyRef = doc(db, 'stories', id);
+        const storyRef = doc(db, 'content', id);
         const storyDoc = await getDoc(storyRef);
         
         if (!storyDoc.exists()) {
@@ -80,9 +80,9 @@ const NewsDetail = () => {
     const fetchOtherStories = async () => {
       try {
         const storiesQuery = query(
-          collection(db, 'stories'),
+          collection(db, 'content'),
           where('status', '==', 'published'),
-          orderBy('timestamp', 'desc'),
+          orderBy('createdAt', 'desc'),
           limit(15)
         );
 

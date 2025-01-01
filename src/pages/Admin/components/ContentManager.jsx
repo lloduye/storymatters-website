@@ -7,7 +7,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaEye, 
-  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart, FaBug 
+  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart, FaBug, FaExclamationTriangle 
 } from 'react-icons/fa';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -69,6 +69,8 @@ const ContentManager = () => {
   const [contentStats, setContentStats] = useState({});
   const [showDebugModal, setShowDebugModal] = useState(false);
   const [debugData, setDebugData] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [contentToDelete, setContentToDelete] = useState(null);
 
   useEffect(() => {
     loadContent();
@@ -92,12 +94,12 @@ const ContentManager = () => {
   const loadContent = async () => {
     try {
       setLoading(true);
-      console.log('Loading content...');
       
-      // Query the content collection
+      // Get all content
       const q = query(
-        collection(db, 'content'), 
-        orderBy('updatedAt', 'desc')
+        collection(db, 'content'),
+        orderBy('status', 'asc'),  // This will order: archived, draft, published
+        orderBy('createdAt', 'desc')
       );
       
       const snapshot = await getDocs(q);
@@ -106,21 +108,22 @@ const ContentManager = () => {
         ...doc.data()
       }));
 
-      // Apply filters
+      // Custom sort order: draft, published, archived
+      const sortedContent = contentData.sort((a, b) => {
+        const statusOrder = { draft: 1, published: 2, archived: 3 };
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status];
+        }
+        // If status is the same, sort by createdAt in descending order
+        return b.createdAt?.seconds - a.createdAt?.seconds;
+      });
+
+      // Apply filters after sorting
       const filteredContent = filter === 'all' 
-        ? contentData 
-        : contentData.filter(item => item.type === filter);
+        ? sortedContent 
+        : sortedContent.filter(item => item.type === filter);
 
-      // Apply search
-      const searchedContent = searchTerm
-        ? filteredContent.filter(item => 
-            item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.content?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        : filteredContent;
-
-      console.log('Content loaded:', searchedContent);
-      setContent(searchedContent);
+      setContent(filteredContent);
     } catch (error) {
       console.error('Error loading content:', error);
     } finally {
@@ -277,23 +280,24 @@ const ContentManager = () => {
   };
 
   const handleDelete = async (contentId) => {
-    if (window.confirm('Are you sure you want to delete this content?')) {
-      try {
-        const contentDoc = content.find(item => item.id === contentId);
-        if (contentDoc.featuredImage) {
-          const imageRef = ref(storage, contentDoc.featuredImage);
-          await deleteObject(imageRef);
-        }
-        
-        await deleteDoc(doc(db, 'content', contentId));
-        if (contentDoc.type === 'article' || contentDoc.type === 'news') {
-          await deleteDoc(doc(db, 'stories', contentId));
-        }
-        
-        loadContent();
-      } catch (error) {
-        console.error('Error deleting content:', error);
+    setContentToDelete(contentId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const contentDoc = content.find(item => item.id === contentToDelete);
+      if (contentDoc.image) {
+        const imageRef = ref(storage, contentDoc.image);
+        await deleteObject(imageRef);
       }
+      
+      await deleteDoc(doc(db, 'content', contentToDelete));
+      loadContent();
+      setShowDeleteModal(false);
+      setContentToDelete(null);
+    } catch (error) {
+      console.error('Error deleting content:', error);
     }
   };
 
@@ -614,7 +618,7 @@ const ContentManager = () => {
       }
       acc[status].push(item);
       return acc;
-    }, {});
+    }, { draft: [], published: [], archived: [] });
   };
 
   const loadContentStats = async (contentId) => {
@@ -795,134 +799,117 @@ const ContentManager = () => {
         </div>
       )}
 
-      {/* Content List */}
-      <div className="content-list">
-        {loading ? (
-          <div className="loading">Loading content...</div>
-        ) : content.length === 0 ? (
-          <div className="empty-state">No content found</div>
-        ) : (
-          <div className="content-sections">
-            {Object.entries(organizeContentByStatus(content)).map(([status, items]) => (
-              <div key={status} className="content-section">
-                <div className="section-header">
-                  <h3>{status.charAt(0).toUpperCase() + status.slice(1)} Stories</h3>
-                  <span className="count-badge">{items.length}</span>
-                </div>
-                <div className={`content-view ${viewMode}`}>
-                  {items.map(item => (
-                    <div key={item.id} className="content-card">
-                      {viewMode === 'grid' ? (
-                        <>
-                          <div className="content-image">
-                            {item.featuredImage ? (
-                              <img src={item.featuredImage} alt={item.title} />
-                            ) : (
-                              <div className="placeholder-image">No Image</div>
-                            )}
-                          </div>
-                          <div className="content-info">
-                            <h3>{item.title}</h3>
-                            <p>{item.excerpt}</p>
-                            <div className="content-meta">
-                              <span className={`status-badge ${item.status}`}>
-                                {item.status}
-                              </span>
-                              <span className="type-badge">{item.type}</span>
-                            </div>
-                          </div>
-                          <div className="content-stats">
-                            <div className="stat-item">
-                              <FaEye />
-                              <span>{contentStats[item.id]?.views || 0}</span>
-                            </div>
-                            <div className="stat-item">
-                              <FaComment />
-                              <span>{contentStats[item.id]?.comments || 0}</span>
-                            </div>
-                            <button 
-                              className={`like-btn ${contentStats[item.id]?.likedBy?.includes(auth.currentUser?.uid) ? 'liked' : ''}`}
-                              onClick={() => handleLike(item.id)}
-                            >
-                              <FaHeart />
-                              <span>{contentStats[item.id]?.likes || 0}</span>
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="content-list-item">
-                          <div className="content-list-info">
-                            <h3>{item.title}</h3>
-                            <p>{item.excerpt}</p>
-                            <div className="content-meta">
-                              <span className={`status-badge ${item.status}`}>
-                                {item.status}
-                              </span>
-                              <span className="type-badge">{item.type}</span>
-                              <span className="content-date">
-                                <FaCalendar /> {new Date(item.publishDate).toLocaleDateString()}
-                              </span>
-                              <span className="content-author">
-                                <FaUser /> {item.author || 'Anonymous'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="content-list-image">
-                            {item.featuredImage ? (
-                              <img src={item.featuredImage} alt={item.title} />
-                            ) : (
-                              <div className="placeholder-image">No Image</div>
-                            )}
-                          </div>
-                          <div className="content-list-stats">
-                            <div className="stat-item">
-                              <FaEye />
-                              <span>{contentStats[item.id]?.views || 0} views</span>
-                            </div>
-                            <div className="stat-item">
-                              <FaComment />
-                              <span>{contentStats[item.id]?.comments || 0} comments</span>
-                            </div>
-                            <button 
-                              className={`like-btn ${contentStats[item.id]?.likedBy?.includes(auth.currentUser?.uid) ? 'liked' : ''}`}
-                              onClick={() => handleLike(item.id)}
-                            >
-                              <FaHeart />
-                              <span>{contentStats[item.id]?.likes || 0} likes</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      <div className="content-actions">
-                        <button onClick={() => handlePreview(item)} title="Preview">
-                          <FaEye />
-                        </button>
-                        <button onClick={() => setShowVersions(true)} title="Versions">
-                          <FaHistory />
-                        </button>
-                        <button onClick={() => setShowScheduler(true)} title="Schedule">
-                          <FaClock />
-                        </button>
-                        <button onClick={() => {
-                          setSelectedContent(item);
-                          setContentForm(item);
-                          setImagePreview(item.featuredImage);
-                          setShowEditor(true);
-                        }} title="Edit">
-                          <FaEdit />
-                        </button>
-                        <button onClick={() => handleDelete(item.id)} title="Delete">
-                          <FaTrash />
-                        </button>
+      {/* Content Grid/List */}
+      {Object.entries(organizeContentByStatus(content)).map(([status, items]) => (
+        items.length > 0 && (
+          <div key={status} className="content-section">
+            <div className="section-header">
+              <h3>{status.charAt(0).toUpperCase() + status.slice(1)} Content</h3>
+              <span className="count-badge">{items.length}</span>
+            </div>
+            <div className={viewMode === 'grid' ? 'content-grid' : 'content-list'}>
+              {items.map(item => (
+                <div key={item.id} className="content-item">
+                  <div className="content-image">
+                    {item.image ? (
+                      <img src={item.image} alt={item.title} />
+                    ) : (
+                      <div className="placeholder-image">
+                        <FaImage /> No Image
                       </div>
+                    )}
+                  </div>
+                  <div className="content-info">
+                    <h3 className="content-title">{item.title}</h3>
+                    <p className="content-excerpt">{item.excerpt || item.description}</p>
+                    <div className="content-meta">
+                      <span className="meta-date">
+                        <FaCalendar /> {new Date(item.createdAt?.toDate()).toLocaleDateString()}
+                      </span>
+                      {item.author && (
+                        <span className="meta-author">
+                          <FaUser /> {item.author}
+                        </span>
+                      )}
+                      <span className={`status-badge ${item.status}`}>
+                        {item.status}
+                      </span>
+                      {item.type && (
+                        <span className="type-badge">
+                          {item.type}
+                        </span>
+                      )}
                     </div>
-                  ))}
+                    <div className="content-stats">
+                      <span className="stat-item">
+                        <FaEye /> {contentStats[item.id]?.views || 0}
+                      </span>
+                      <span className="stat-item">
+                        <FaComment /> {contentStats[item.id]?.comments || 0}
+                      </span>
+                      <span className="stat-item">
+                        <FaHeart /> {contentStats[item.id]?.likes || 0}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="content-actions">
+                    <button 
+                      className="action-btn"
+                      onClick={() => handlePreview(item)}
+                      title="Preview"
+                    >
+                      <FaEye />
+                    </button>
+                    <button 
+                      className="action-btn"
+                      onClick={() => {
+                        setSelectedContent(item);
+                        setContentForm({
+                          ...item,
+                          seo: item.seo || {
+                            metaTitle: '',
+                            metaDescription: '',
+                            keywords: ''
+                          }
+                        });
+                        setImagePreview(item.image);
+                        setShowEditor(true);
+                      }}
+                      title="Edit"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button 
+                      className="action-btn"
+                      onClick={() => setShowVersions(true)}
+                      title="Version History"
+                    >
+                      <FaHistory />
+                    </button>
+                    <button 
+                      className="action-btn"
+                      onClick={() => {
+                        setSelectedContent(item);
+                        setShowScheduler(true);
+                      }}
+                      title="Schedule"
+                    >
+                      <FaClock />
+                    </button>
+                    <button 
+                      className="action-btn delete"
+                      onClick={() => handleDelete(item.id)}
+                      title="Delete"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+        )
+      ))}
 
       {/* Content Editor Modal */}
       {showEditor && (
@@ -1468,6 +1455,39 @@ const ContentManager = () => {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="delete-modal" onClick={e => e.stopPropagation()}>
+            <div className="delete-modal-header">
+              <h3>Confirm Delete</h3>
+              <button className="close-btn" onClick={() => setShowDeleteModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="delete-modal-content">
+              <FaExclamationTriangle className="warning-icon" />
+              <p>Are you sure you want to delete this content?</p>
+              <p className="warning-text">This action cannot be undone.</p>
+            </div>
+            <div className="delete-modal-actions">
+              <button 
+                className="cancel-btn"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="delete-btn"
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
