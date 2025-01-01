@@ -1,0 +1,118 @@
+.custom-notification {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  min-width: 300px;
+  max-width: 400px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1100;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.notification-message {
+  flex-grow: 1;
+}
+
+.notification-message h4 {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-dark);
+  font-size: 1rem;
+}
+
+.notification-message p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--text-light);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.close-button:hover {
+  opacity: 1;
+}
+
+.notification-progress {
+  height: 3px;
+  background: var(--background-light);
+  width: 100%;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  animation: progress linear;
+}
+
+.custom-notification.success {
+  border-left: 4px solid var(--primary);
+}
+
+.custom-notification.success .notification-icon {
+  color: var(--primary);
+}
+
+.custom-notification.success .progress-bar {
+  background: var(--primary);
+}
+
+.custom-notification.error {
+  border-left: 4px solid #EF4444;
+}
+
+.custom-notification.error .notification-icon {
+  color: #EF4444;
+}
+
+.custom-notification.error .progress-bar {
+  background: #EF4444;
+}
+
+@keyframes slideIn {
+  from { 
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (max-width: 768px) {
+  .custom-notification {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+} 

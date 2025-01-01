@@ -18,7 +18,7 @@ const GetInvolved = () => {
     {
       title: "Partner With Us",
       description: "Organizations can collaborate with us to create greater impact together.",
-      link: "#contact"
+      link: "/partner"
     }
   ];
 

@@ -81,7 +81,7 @@ const Partner = () => {
         contactName: formData.contactName,
         email: formData.email,
         phone: formData.phone || 'Not provided',
-        website: formData.website || 'Not provided',
+        website: formData.website ? formData.website : 'Not provided',
         organizationType: formData.organizationType,
         partnershipTypes: formData.partnershipType.map(typeId => 
           partnershipTypes.find(t => t.id === typeId)?.name
@@ -177,7 +177,7 @@ const Partner = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="website">Website</label>
+                  <label htmlFor="website">Website (Optional)</label>
                   <input
                     type="url"
                     id="website"
