@@ -13,6 +13,12 @@ const News = () => {
     const fetchNews = async () => {
       try {
         setLoading(true);
+        console.log('Fetching news...'); // Debug log
+        console.log('Firebase config:', {
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
+        });
+
         const newsRef = collection(db, 'news');
         const q = query(newsRef, orderBy('timestamp', 'desc'));
         const querySnapshot = await getDocs(q);
@@ -26,7 +32,7 @@ const News = () => {
         setNews(newsData);
       } catch (err) {
         console.error('Error fetching news:', err);
-        setError('Failed to load news stories');
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -46,15 +52,19 @@ const News = () => {
   if (error) {
     return (
       <div className="news-container">
-        <div className="error">{error}</div>
+        <div className="error">
+          Error loading news: {error}
+          <br />
+          <small>Please try refreshing the page</small>
+        </div>
       </div>
     );
   }
 
-  if (news.length === 0) {
+  if (!news || news.length === 0) {
     return (
       <div className="news-container">
-        <div className="no-news">No news stories available</div>
+        <div className="no-news">No news stories available at the moment</div>
       </div>
     );
   }
@@ -66,7 +76,7 @@ const News = () => {
         {news.map((story) => (
           <Link to={`/news/${story.id}`} key={story.id} className="news-card">
             <div className="news-image">
-              <img src={story.imageUrl} alt={story.title} />
+              {story.imageUrl && <img src={story.imageUrl} alt={story.title} />}
             </div>
             <div className="news-content">
               <h2>{story.title}</h2>
