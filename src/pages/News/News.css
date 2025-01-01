@@ -556,3 +556,18 @@
   --primary-dark: #0056b3;
   --hover-transition: 0.2s ease-in-out;
 }
+
+.loading, .error, .no-news {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: var(--text-dark);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.no-news {
+  color: var(--text-light);
+}
