@@ -120,3 +120,47 @@
     font-size: 2rem;
   }
 }
+
+/* Newsletter section specific to news page */
+.news-page .newsletter-section {
+  margin: 4rem auto;
+  background: var(--background-light);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+}
+
+.news-page .newsletter-content {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.news-page .subscribe-form {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .news-page .newsletter-section {
+    margin: 2rem 1rem;
+    padding: 1.5rem;
+  }
+
+  .news-page .subscribe-form {
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .news-page .subscribe-form button {
+    width: 100%;
+  }
+}
+
+/* Reuse the rest of the newsletter styles from NewsDetail.css */

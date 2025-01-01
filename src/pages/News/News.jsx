@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import './News.css';
 import { Link } from 'react-router-dom';
+import NewsletterSubscribe from '../../components/NewsletterSubscribe';
 
 const News = () => {
   const [news, setNews] = useState([]);
@@ -113,6 +114,8 @@ const News = () => {
           </Link>
         ))}
       </div>
+
+      <NewsletterSubscribe source="news_page" />
     </div>
   );
 };

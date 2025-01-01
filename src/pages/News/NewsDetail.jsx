@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, updateDoc, increment, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { FaCalendar, FaUser, FaFolder, FaEye, FaHeart, FaComment, FaArrowLeft } from 'react-icons/fa';
 import './NewsDetail.css';
@@ -8,6 +8,7 @@ import {
   FacebookShareButton, TwitterShareButton, WhatsappShareButton,
   FacebookIcon, TwitterIcon, WhatsappIcon
 } from 'react-share';
+import NewsletterSubscribe from '../../components/NewsletterSubscribe';
 
 const CopyLinkButton = ({ url }) => {
   const [copied, setCopied] = useState(false);
@@ -352,6 +353,8 @@ const NewsDetail = () => {
           )}
         </aside>
       </div>
+
+      <NewsletterSubscribe source="news_detail" />
     </div>
   );
 };
