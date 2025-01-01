@@ -72,3 +72,15 @@
     width: 100%;
   }
 } 
+
+.subscribe-form button.exists {
+  background: #6B7280;  /* Gray color for already subscribed state */
+}
+
+.info-message {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+} 

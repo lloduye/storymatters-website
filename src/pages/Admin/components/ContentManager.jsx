@@ -71,6 +71,7 @@ const ContentManager = () => {
   const [debugData, setDebugData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState(null);
+  const [additionalImages, setAdditionalImages] = useState([]);
 
   useEffect(() => {
     loadContent();
@@ -238,7 +239,8 @@ const ContentManager = () => {
             src: imageUrl,
             credit: contentForm.mainImageCredit
           } : null
-        }]
+        }],
+        additionalImages: additionalImages,
       };
 
       // Remove any data URLs from the content data
@@ -699,6 +701,26 @@ const ContentManager = () => {
     }
   };
 
+  const handleAdditionalImages = async (e) => {
+    const files = Array.from(e.target.files);
+    setLoading(true);
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const storageRef = ref(storage, `content/${file.name}`);
+        await uploadBytes(storageRef, file);
+        return getDownloadURL(storageRef);
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setAdditionalImages(prev => [...prev, ...urls]);
+    } catch (error) {
+      console.error('Error uploading additional images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="content-manager">
       {/* Header Section */}
@@ -810,46 +832,28 @@ const ContentManager = () => {
             <div className={viewMode === 'grid' ? 'content-grid' : 'content-list'}>
               {items.map(item => (
                 <div key={item.id} className="content-item">
-                  <div className="content-image">
-                    {item.image ? (
-                      <img src={item.image} alt={item.title} />
-                    ) : (
-                      <div className="placeholder-image">
-                        <FaImage /> No Image
-                      </div>
-                    )}
-                  </div>
-                  <div className="content-info">
-                    <h3 className="content-title">{item.title}</h3>
-                    <p className="content-excerpt">{item.excerpt || item.description}</p>
-                    <div className="content-meta">
-                      <span className="meta-date">
-                        <FaCalendar /> {new Date(item.createdAt?.toDate()).toLocaleDateString()}
-                      </span>
-                      {item.author && (
-                        <span className="meta-author">
-                          <FaUser /> {item.author}
-                        </span>
-                      )}
-                      <span className={`status-badge ${item.status}`}>
-                        {item.status}
-                      </span>
-                      {item.type && (
-                        <span className="type-badge">
-                          {item.type}
-                        </span>
+                  <div className="content-preview">
+                    <div className="content-image">
+                      {item.image ? (
+                        <img src={item.image} alt={item.title} />
+                      ) : (
+                        <div className="no-image-placeholder">
+                          <FaImage />
+                          <span>No Featured Image</span>
+                        </div>
                       )}
                     </div>
-                    <div className="content-stats">
-                      <span className="stat-item">
-                        <FaEye /> {contentStats[item.id]?.views || 0}
-                      </span>
-                      <span className="stat-item">
-                        <FaComment /> {contentStats[item.id]?.comments || 0}
-                      </span>
-                      <span className="stat-item">
-                        <FaHeart /> {contentStats[item.id]?.likes || 0}
-                      </span>
+                    <div className="content-info">
+                      <h3>{item.title}</h3>
+                      <div className="content-meta">
+                        <span>{item.type}</span>
+                        <span>{item.status}</span>
+                        <span className="content-views">
+                          <FaEye /> {item.views || 0}
+                        </span>
+                        <span>{item.createdAt?.toDate().toLocaleDateString()}</span>
+                      </div>
+                      <p>{item.description || item.excerpt}</p>
                     </div>
                   </div>
                   <div className="content-actions">
@@ -1102,6 +1106,34 @@ const ContentManager = () => {
                     value={contentForm.mainImageCredit}
                     onChange={(e) => setContentForm(prev => ({ ...prev, mainImageCredit: e.target.value }))}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label>Additional Images</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleAdditionalImages}
+                  />
+                  {additionalImages.length > 0 && (
+                    <div className="image-preview-grid">
+                      {additionalImages.map((url, index) => (
+                        <div key={index} className="preview-item">
+                          <img src={url} alt={`Preview ${index + 1}`} />
+                          <button
+                            type="button"
+                            onClick={() => setAdditionalImages(prev => 
+                              prev.filter((_, i) => i !== index)
+                            )}
+                            className="remove-image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* SEO Section */}

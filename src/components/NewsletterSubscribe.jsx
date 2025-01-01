@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp, 
+  query, 
+  where, 
+  getDocs 
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
 import './NewsletterSubscribe.css';
 
@@ -12,17 +19,37 @@ const NewsletterSubscribe = ({ source }) => {
     setStatus('loading');
 
     try {
-      await addDoc(collection(db, 'subscribers'), {
-        email,
+      // Validate email
+      if (!email || !email.includes('@')) {
+        throw new Error('Invalid email address');
+      }
+
+      // Check if email already exists
+      const subscribersRef = collection(db, 'subscribers');
+      const q = query(subscribersRef, where('email', '==', email.toLowerCase().trim()));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setStatus('exists');
+        setTimeout(() => setStatus('idle'), 3000);
+        return;
+      }
+
+      // Create new subscriber
+      const subscriberData = {
+        email: email.toLowerCase().trim(),
         subscribedAt: serverTimestamp(),
-        source: source || 'general'
-      });
+        source: source || 'general',
+        status: 'active'
+      };
+
+      await addDoc(collection(db, 'subscribers'), subscriberData);
 
       setStatus('success');
       setEmail('');
       setTimeout(() => setStatus('idle'), 3000);
     } catch (error) {
-      console.error('Error subscribing:', error);
+      console.error('Subscription error:', error);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 3000);
     }
@@ -49,6 +76,7 @@ const NewsletterSubscribe = ({ source }) => {
           >
             {status === 'loading' ? 'Subscribing...' : 
              status === 'success' ? 'Subscribed!' : 
+             status === 'exists' ? 'Already Subscribed' :
              status === 'error' ? 'Try Again' : 
              'Subscribe'}
           </button>
@@ -57,6 +85,11 @@ const NewsletterSubscribe = ({ source }) => {
         {status === 'success' && (
           <p className="success-message">
             Thank you for subscribing!
+          </p>
+        )}
+        {status === 'exists' && (
+          <p className="info-message">
+            This email is already subscribed to our newsletter.
           </p>
         )}
         {status === 'error' && (

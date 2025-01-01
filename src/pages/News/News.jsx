@@ -89,33 +89,80 @@ const News = () => {
         <p>Stay updated with our latest stories and announcements</p>
       </div>
       
-      <div className="news-grid">
-        {news.map((story) => (
-          <Link to={`/news/${story.id}`} key={story.id} className="news-card">
-            <div className="news-image">
-              {story.image && (
-                <img 
-                  src={story.image} 
-                  alt={story.title}
-                  className="news-thumbnail"
-                />
-              )}
-            </div>
-            <div className="news-content">
-              <h2 className="news-title">{story.title}</h2>
-              <p className="news-date">
-                {story.createdAt?.toDate().toLocaleDateString() || 'No date'}
-              </p>
-              <p className="news-excerpt">
-                {story.description || story.excerpt}
-              </p>
-              <span className="read-more">Read More →</span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <div className="news-layout">
+        <aside className="news-sidebar">
+          <div className="sidebar-section">
+            <h3>Categories</h3>
+            <ul className="category-list">
+              <li><Link to="/news?category=updates">Updates</Link></li>
+              <li><Link to="/news?category=stories">Stories</Link></li>
+              <li><Link to="/news?category=events">Events</Link></li>
+              <li><Link to="/news?category=announcements">Announcements</Link></li>
+            </ul>
+          </div>
 
-      <NewsletterSubscribe source="news_page" />
+          <div className="sidebar-section">
+            <h3>Featured Stories</h3>
+            <div className="featured-stories">
+              {news.slice(0, 3).map((story) => (
+                <Link to={`/news/${story.id}`} key={story.id} className="featured-story">
+                  {story.image && (
+                    <div className="featured-image">
+                      <img src={story.image} alt={story.title} />
+                    </div>
+                  )}
+                  <div className="featured-content">
+                    <h4>{story.title}</h4>
+                    <span className="featured-date">
+                      {story.createdAt?.toDate().toLocaleDateString()}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3>Popular Tags</h3>
+            <div className="tag-cloud">
+              {['Community', 'Events', 'Updates', 'Stories', 'News', 'Announcements'].map(tag => (
+                <Link key={tag} to={`/news?tag=${tag.toLowerCase()}`} className="tag">
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <div className="news-main">
+          <div className="news-grid">
+            {news.map((story) => (
+              <Link to={`/news/${story.id}`} key={story.id} className="news-card">
+                <div className="news-image">
+                  {story.image && (
+                    <img 
+                      src={story.image} 
+                      alt={story.title}
+                      className="news-thumbnail"
+                    />
+                  )}
+                </div>
+                <div className="news-content">
+                  <h2 className="news-title">{story.title}</h2>
+                  <p className="news-date">
+                    {story.createdAt?.toDate().toLocaleDateString() || 'No date'}
+                  </p>
+                  <p className="news-excerpt">
+                    {story.description || story.excerpt}
+                  </p>
+                  <span className="read-more">Read More →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <NewsletterSubscribe source="news_page" />
+        </div>
+      </div>
     </div>
   );
 };

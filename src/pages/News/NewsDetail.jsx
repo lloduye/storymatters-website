@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, increment, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { FaCalendar, FaUser, FaFolder, FaEye, FaHeart, FaComment, FaArrowLeft } from 'react-icons/fa';
+import { FaCalendar, FaUser, FaFolder, FaEye, FaHeart, FaComment, FaArrowLeft, FaImages } from 'react-icons/fa';
 import './NewsDetail.css';
 import { 
   FacebookShareButton, TwitterShareButton, WhatsappShareButton,
@@ -256,6 +256,25 @@ const NewsDetail = () => {
               ))
             )}
           </div>
+
+          {story.additionalImages && story.additionalImages.length > 0 && (
+            <div className="story-gallery">
+              <h3 className="gallery-title">
+                <FaImages /> More Images
+              </h3>
+              <div className="gallery-grid">
+                {story.additionalImages.map((image, index) => (
+                  <div key={index} className="gallery-item">
+                    <img 
+                      src={image} 
+                      alt={`${story.title} - Image ${index + 1}`}
+                      onClick={() => window.open(image, '_blank')}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <ShareButtons 
             url={window.location.href}

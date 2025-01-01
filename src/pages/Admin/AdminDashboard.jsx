@@ -25,6 +25,7 @@ import Team from './components/Team';
 import Settings from './components/Settings';
 import Mailbox from './components/Mailbox';
 import ContentManager from './components/ContentManager';
+import SubscriberManagement from './components/SubscriberManagement';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('content');
@@ -47,7 +48,8 @@ const AdminDashboard = () => {
     { id: 'submissions', label: 'Submissions', icon: FaClipboardList },
     { id: 'donations', label: 'Donations', icon: FaHandHoldingHeart },
     { id: 'team', label: 'Team', icon: FaUsers },
-    { id: 'settings', label: 'Settings', icon: FaCog }
+    { id: 'settings', label: 'Settings', icon: FaCog },
+    { id: 'subscribers', label: 'Subscribers', icon: FaEnvelope }
   ];
 
   const renderContent = () => {
@@ -68,6 +70,8 @@ const AdminDashboard = () => {
         return <Team />;
       case 'settings':
         return <Settings />;
+      case 'subscribers':
+        return <SubscriberManagement />;
       default:
         return <Dashboard />;
     }
