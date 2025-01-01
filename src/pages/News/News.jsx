@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import './News.css';
 import { Link } from 'react-router-dom';
@@ -13,22 +13,23 @@ const News = () => {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        console.log('Fetching news...'); // Debug log
-        console.log('Firebase config:', {
-          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
-        });
-
-        const newsRef = collection(db, 'news');
-        const q = query(newsRef, orderBy('timestamp', 'desc'));
-        const querySnapshot = await getDocs(q);
+        console.log('Fetching news...');
         
+        // Query the content collection for published items
+        const contentRef = collection(db, 'content');
+        const q = query(
+          contentRef,
+          where('status', '==', 'published'),
+          orderBy('publishedAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
         const newsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         
-        console.log('Fetched news:', newsData); // Debug log
+        console.log('Fetched news:', newsData);
         setNews(newsData);
       } catch (err) {
         console.error('Error fetching news:', err);

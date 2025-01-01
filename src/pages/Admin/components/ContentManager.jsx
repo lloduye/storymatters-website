@@ -7,7 +7,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { 
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaEye, 
-  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart 
+  FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart, FaBug 
 } from 'react-icons/fa';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -67,6 +67,8 @@ const ContentManager = () => {
   const [previewContent, setPreviewContent] = useState(null);
   const [previewDevice, setPreviewDevice] = useState('desktop');
   const [contentStats, setContentStats] = useState({});
+  const [showDebugModal, setShowDebugModal] = useState(false);
+  const [debugData, setDebugData] = useState(null);
 
   useEffect(() => {
     loadContent();
@@ -89,7 +91,15 @@ const ContentManager = () => {
 
   const loadContent = async () => {
     try {
-      const q = query(collection(db, 'content'), orderBy('publishDate', 'desc'));
+      setLoading(true);
+      console.log('Loading content...');
+      
+      // Query the content collection
+      const q = query(
+        collection(db, 'content'), 
+        orderBy('updatedAt', 'desc')
+      );
+      
       const snapshot = await getDocs(q);
       const contentData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -104,15 +114,16 @@ const ContentManager = () => {
       // Apply search
       const searchedContent = searchTerm
         ? filteredContent.filter(item => 
-            item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.content.toLowerCase().includes(searchTerm.toLowerCase())
+            item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.content?.toLowerCase().includes(searchTerm.toLowerCase())
           )
         : filteredContent;
 
+      console.log('Content loaded:', searchedContent);
       setContent(searchedContent);
-      setLoading(false);
     } catch (error) {
       console.error('Error loading content:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -239,26 +250,7 @@ const ContentManager = () => {
         contentData.publishedAt = contentData.status === 'published' ? timestamp : null;
         
         const docRef = await addDoc(collection(db, 'content'), contentData);
-        
-        await setDoc(doc(db, 'stories', docRef.id), {
-          ...contentData,
-          id: docRef.id,
-          title: contentData.title,
-          status: contentData.status,
-          category: contentData.category,
-          author: contentData.author,
-          description: contentData.description,
-          image: contentData.image,
-          mainImageCredit: contentData.mainImageCredit,
-          content: contentData.content,
-          publishedAt: contentData.publishedAt,
-          timestamp: timestamp,
-          views: 0,
-          likes: 0,
-          comments: 0
-        });
-        
-        console.log('New story saved:', {
+        console.log('New content saved:', {
           content: contentData,
           id: docRef.id
         });
@@ -268,23 +260,7 @@ const ContentManager = () => {
         }
         
         await updateDoc(doc(db, 'content', selectedContent.id), contentData);
-        
-        await updateDoc(doc(db, 'stories', selectedContent.id), {
-          ...contentData,
-          id: selectedContent.id,
-          title: contentData.title,
-          status: contentData.status,
-          category: contentData.category,
-          author: contentData.author,
-          description: contentData.description,
-          image: contentData.image,
-          mainImageCredit: contentData.mainImageCredit,
-          content: contentData.content,
-          publishedAt: contentData.publishedAt,
-          timestamp: timestamp
-        });
-
-        console.log('Story updated:', {
+        console.log('Content updated:', {
           content: contentData,
           id: selectedContent.id
         });
@@ -1403,22 +1379,99 @@ const ContentManager = () => {
       <button
         className="debug-btn"
         onClick={async () => {
-          const contentSnapshot = await getDocs(collection(db, 'content'));
-          const storiesSnapshot = await getDocs(collection(db, 'stories'));
-          
-          console.log('Content collection:', contentSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })));
-          
-          console.log('Stories collection:', storiesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })));
+          try {
+            console.log('Starting database debug...');
+            
+            const contentSnapshot = await getDocs(collection(db, 'content'));
+            const contentData = contentSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            
+            const contentByStatus = contentData.reduce((acc, item) => {
+              acc[item.status] = acc[item.status] || [];
+              acc[item.status].push(item);
+              return acc;
+            }, {});
+
+            setDebugData({
+              total: contentData.length,
+              published: contentByStatus.published?.length || 0,
+              draft: contentByStatus.draft?.length || 0,
+              archived: contentByStatus.archived?.length || 0,
+              byStatus: contentByStatus
+            });
+
+            setShowDebugModal(true);
+          } catch (error) {
+            console.error('Debug failed:', error);
+            setDebugData({ error: error.message });
+            setShowDebugModal(true);
+          }
         }}
       >
-        Debug DB
+        <FaBug /> Debug DB
       </button>
+
+      {/* Debug Modal */}
+      {showDebugModal && (
+        <div className="modal-overlay" onClick={() => setShowDebugModal(false)}>
+          <div className="debug-modal" onClick={e => e.stopPropagation()}>
+            <div className="debug-modal-header">
+              <h3>Database Debug Information</h3>
+              <button className="close-btn" onClick={() => setShowDebugModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="debug-modal-content">
+              {debugData?.error ? (
+                <div className="debug-error">
+                  <h4>Error occurred:</h4>
+                  <p>{debugData.error}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="debug-stats">
+                    <div className="stat-item">
+                      <h4>Total Items</h4>
+                      <span>{debugData?.total || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                      <h4>Published</h4>
+                      <span className="published">{debugData?.published || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                      <h4>Draft</h4>
+                      <span className="draft">{debugData?.draft || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                      <h4>Archived</h4>
+                      <span className="archived">{debugData?.archived || 0}</span>
+                    </div>
+                  </div>
+                  <div className="debug-details">
+                    <h4>Recent Content</h4>
+                    <div className="debug-list">
+                      {debugData?.byStatus?.published?.slice(0, 5).map(item => (
+                        <div key={item.id} className="debug-item">
+                          <span className="title">{item.title}</span>
+                          <span className="status published">published</span>
+                        </div>
+                      ))}
+                      {debugData?.byStatus?.draft?.slice(0, 5).map(item => (
+                        <div key={item.id} className="debug-item">
+                          <span className="title">{item.title}</span>
+                          <span className="status draft">draft</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
