@@ -2,11 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 // Components
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
-import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Public Pages
@@ -34,8 +34,8 @@ function App() {
         <ScrollToTop />
         <ErrorBoundary>
           <div className="app">
-            {/* Public Routes */}
             <Routes>
+              {/* Public Routes */}
               <Route
                 path="/*"
                 element={

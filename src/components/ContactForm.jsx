@@ -1,24 +1,24 @@
-// Update the form submission handler
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { EMAIL_CONFIG } from '../utils/emailConfig';
+
 const handleSubmit = async (e) => {
   e.preventDefault();
-  setLoading(true);
+  setSubmitting(true);
 
-  const formData = {
-    name,
-    email,
-    message,
-    phone: phone || null,
-    subject: subject || 'General Inquiry'
-  };
+  try {
+    await addDoc(collection(db, 'messages'), {
+      ...formData,
+      recipientEmail: EMAIL_CONFIG.contactEmail,
+      timestamp: serverTimestamp()
+    });
 
-  const result = await handleFormSubmission(formData, 'contact');
-  
-  if (result.success) {
-    setSubmitted(true);
-    resetForm();
-  } else {
-    setError('Failed to submit form. Please try again.');
+    setSuccess(true);
+    setFormData(initialState);
+  } catch (error) {
+    setError('Failed to send message. Please try again.');
+    console.error('Error:', error);
+  } finally {
+    setSubmitting(false);
   }
-  
-  setLoading(false);
 }; 
