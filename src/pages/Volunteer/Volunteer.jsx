@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import './Volunteer.css';
 import ScrollAnimation from '../../components/ScrollAnimation/ScrollAnimation';
 
@@ -13,6 +15,7 @@ const Volunteer = () => {
     experience: '',
     message: ''
   });
+  const [submitStatus, setSubmitStatus] = useState('idle'); // idle, loading, success, error
 
   const programOptions = [
     {
@@ -49,10 +52,74 @@ const Volunteer = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    setSubmitStatus('loading');
+
+    try {
+      // Create submission object
+      const submissionData = {
+        type: 'volunteer',
+        status: 'pending',
+        submittedAt: serverTimestamp(),
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || 'Not provided',
+        location: formData.location || 'Not provided',
+        programs: formData.programs,
+        availability: formData.availability || 'Not specified',
+        experience: formData.experience || 'Not provided',
+        message: formData.message || 'No additional message',
+        metadata: {
+          selectedPrograms: formData.programs.map(programId => 
+            programOptions.find(p => p.id === programId)?.name
+          ).filter(Boolean)
+        }
+      };
+
+      // Add to Firestore
+      await addDoc(collection(db, 'submissions'), submissionData);
+
+      // Reset form and show success
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        location: '',
+        programs: [],
+        availability: '',
+        experience: '',
+        message: ''
+      });
+      setSubmitStatus('success');
+
+      // Reset success message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus('idle');
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitStatus('error');
+      
+      // Reset error message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus('idle');
+      }, 5000);
+    }
+  };
+
+  const getSubmitButtonText = () => {
+    switch (submitStatus) {
+      case 'loading':
+        return 'Submitting...';
+      case 'success':
+        return 'Application Submitted!';
+      case 'error':
+        return 'Error - Try Again';
+      default:
+        return 'Submit Application';
+    }
   };
 
   return (
@@ -190,9 +257,25 @@ const Volunteer = () => {
               </div>
             </div>
 
-            <button type="submit" className="submit-button">
-              Submit Application
+            <button 
+              type="submit" 
+              className={`submit-button ${submitStatus}`}
+              disabled={submitStatus === 'loading'}
+            >
+              {getSubmitButtonText()}
             </button>
+
+            {submitStatus === 'success' && (
+              <div className="form-message success">
+                Thank you for your application! We'll be in touch soon.
+              </div>
+            )}
+
+            {submitStatus === 'error' && (
+              <div className="form-message error">
+                There was an error submitting your application. Please try again.
+              </div>
+            )}
           </form>
         </div>
       </ScrollAnimation>

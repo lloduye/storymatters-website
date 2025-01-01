@@ -22,6 +22,7 @@ import RefugeeTeensTalk from './pages/Programs/ProgramPages/RefugeeTeensTalk';
 import KakumaMediaProduction from './pages/Programs/ProgramPages/KakumaMediaProduction';
 import KakumaTheatre from './pages/Programs/ProgramPages/KakumaTheatre';
 import Volunteer from './pages/Volunteer/Volunteer';
+import Partner from './pages/Partner/Partner';
 
 // Admin Pages
 import Login from './pages/Admin/Login';
@@ -54,6 +55,7 @@ function App() {
                       <Route path="news/:id" element={<NewsDetail />} />
                       <Route path="donate" element={<Donate />} />
                       <Route path="volunteer" element={<Volunteer />} />
+                      <Route path="partner" element={<Partner />} />
                     </Routes>
                     <Footer />
                   </>

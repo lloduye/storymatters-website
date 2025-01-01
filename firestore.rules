@@ -13,5 +13,18 @@ service cloud.firestore {
       allow create: if true;                // Anyone can subscribe
       allow delete: if request.auth != null; // Only authenticated users can delete
     }
+
+    // Submissions collection rules
+    match /submissions/{submissionId} {
+      allow read: if request.auth != null;    // Only authenticated users can read
+      allow create: if true;                  // Anyone can submit
+      allow update, delete: if request.auth != null;  // Only authenticated users can update/delete
+      
+      // Validate submission data
+      allow create: if request.resource.data.keys().hasAll([
+        'type', 'status', 'submittedAt', 'name', 'email'
+      ]) &&
+      request.resource.data.status == 'pending';
+    }
   }
 } 
