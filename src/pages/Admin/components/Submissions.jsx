@@ -12,6 +12,7 @@ import { saveAs } from 'file-saver';
 import { format } from 'date-fns';
 import SubmissionModal from '../../../components/Modal/SubmissionModal';
 import CustomNotification from '../../../components/CustomNotification/CustomNotification';
+import DeleteConfirmationModal from '../../../components/DeleteConfirmationModal/DeleteConfirmationModal';
 
 const Submissions = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -35,6 +36,7 @@ const Submissions = () => {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState({});
   const [notification, setNotification] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, submissionId: null });
 
   useEffect(() => {
     loadSubmissions();
@@ -132,13 +134,21 @@ const Submissions = () => {
   };
 
   const handleDelete = async (submissionId) => {
-    if (window.confirm('Are you sure you want to delete this submission?')) {
-      try {
-        await deleteDoc(doc(db, 'submissions', submissionId));
-        await loadSubmissions();
-      } catch (error) {
-        console.error('Error deleting submission:', error);
-      }
+    console.log('Delete initiated for submission:', submissionId);
+    try {
+      await deleteDoc(doc(db, 'submissions', submissionId));
+      await loadSubmissions();
+      setNotification({
+        type: 'success',
+        message: 'Submission deleted successfully'
+      });
+      console.log('Delete successful');
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      setNotification({
+        type: 'error',
+        message: 'Error deleting submission'
+      });
     }
   };
 
@@ -300,6 +310,10 @@ const Submissions = () => {
       );
     }
   };
+
+  useEffect(() => {
+    console.log('Delete modal state:', deleteModal);
+  }, [deleteModal]);
 
   return (
     <div className="submissions-manager">
@@ -499,8 +513,9 @@ const Submissions = () => {
                   )}
                   <button
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
-                      handleDelete(submission.id);
+                      setDeleteModal({ isOpen: true, submissionId: submission.id });
                     }}
                     className="delete-btn"
                   >
@@ -532,6 +547,15 @@ const Submissions = () => {
           onClose={() => setNotification(null)}
         />
       )}
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, submissionId: null })}
+        onConfirm={() => {
+          handleDelete(deleteModal.submissionId);
+          setDeleteModal({ isOpen: false, submissionId: null });
+        }}
+      />
     </div>
   );
 };
