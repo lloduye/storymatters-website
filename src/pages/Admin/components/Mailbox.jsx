@@ -19,7 +19,7 @@ const Mailbox = () => {
           </a>
           
           <a 
-            href={`mailto:${import.meta.env.VITE_ZOHO_EMAIL}`} 
+            href={`mailto:info@storymattersentertainment.org`} 
             className="email-button"
           >
             Open in Email Client
