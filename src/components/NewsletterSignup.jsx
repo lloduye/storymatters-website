@@ -1,22 +1,33 @@
-// Update the form submission handler
+import { EMAIL_CONFIG } from '../utils/emailConfig';
+
 const handleSubmit = async (e) => {
   e.preventDefault();
-  setLoading(true);
+  setSubmitting(true);
 
-  const formData = {
-    email,
-    name: name || null,
-    preferences: preferences || [],
-  };
+  try {
+    await addDoc(collection(db, 'newsletter_subscribers'), {
+      email: email,
+      timestamp: serverTimestamp()
+    });
 
-  const result = await handleFormSubmission(formData, 'newsletter');
-  
-  if (result.success) {
-    setSubmitted(true);
-    resetForm();
-  } else {
+    // Send confirmation email
+    await addDoc(collection(db, 'mail'), {
+      to: email,
+      from: EMAIL_CONFIG.noReplyEmail,
+      template: {
+        name: 'newsletter-confirmation',
+        data: {
+          email: email
+        }
+      }
+    });
+
+    setSuccess(true);
+    setEmail('');
+  } catch (error) {
     setError('Failed to subscribe. Please try again.');
+    console.error('Error:', error);
+  } finally {
+    setSubmitting(false);
   }
-  
-  setLoading(false);
 }; 

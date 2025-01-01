@@ -13,6 +13,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './ContentManager.css';
 import { auth } from '../../../firebase/config';
+import { EMAIL_CONFIG } from '../../../utils/emailConfig';
 
 const ContentManager = () => {
   const [content, setContent] = useState([]);
@@ -696,6 +697,25 @@ const ContentManager = () => {
       }
     } catch (error) {
       console.error('Error updating like:', error);
+    }
+  };
+
+  const sendNotification = async (content) => {
+    try {
+      await addDoc(collection(db, 'mail'), {
+        to: EMAIL_CONFIG.contactEmail,
+        from: EMAIL_CONFIG.noReplyEmail,
+        template: {
+          name: 'content-notification',
+          data: {
+            title: content.title,
+            type: content.type,
+            status: content.status
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error sending notification:', error);
     }
   };
 
