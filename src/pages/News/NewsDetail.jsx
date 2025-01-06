@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, increment, collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { FaCalendar, FaUser, FaFolder, FaEye, FaHeart, FaComment, FaArrowLeft, FaImages } from 'react-icons/fa';
+import { FaCalendar, FaUser, FaFolder, FaEye, FaHeart, FaComment, FaArrowLeft, FaImages, FaImage } from 'react-icons/fa';
 import './NewsDetail.css';
 import { 
   FacebookShareButton, TwitterShareButton, WhatsappShareButton,
@@ -55,6 +55,8 @@ const NewsDetail = () => {
         }
 
         const storyData = storyDoc.data();
+        console.log('Loaded story data:', storyData);
+        console.log('Featured image URL:', storyData.featuredImage);
         setStory({
           id: storyDoc.id,
           ...storyData,
@@ -126,6 +128,13 @@ const NewsDetail = () => {
     fetchOtherStories();
   }, [id]);
 
+  useEffect(() => {
+    if (story?.category) {
+      loadRelatedStories(story.category);
+    }
+    loadRecentStories();
+  }, [story?.category]);
+
   const formatDate = (date) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-US', {
@@ -161,6 +170,159 @@ const NewsDetail = () => {
     );
   };
 
+  const RelatedStories = ({ stories }) => {
+    return (
+      <div className="related-stories">
+        {stories.map(story => (
+          <Link to={`/news/${story.id}`} key={story.id} className="related-story">
+            <div className="related-story-image">
+              {(story.featuredImage || story.image) ? (
+                <img src={story.featuredImage || story.image} alt={story.title} />
+              ) : (
+                <div className="placeholder-image">
+                  <FaImage />
+                </div>
+              )}
+            </div>
+            <div className="related-story-content">
+              <h3>{story.title}</h3>
+              <p>{story.excerpt}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
+  const RecentStories = ({ stories }) => {
+    return (
+      <div className="recent-stories">
+        {stories.map(story => (
+          <Link to={`/news/${story.id}`} key={story.id} className="recent-story">
+            <div className="recent-story-image">
+              {story.featuredImage ? (
+                <img src={story.featuredImage} alt={story.title} />
+              ) : (
+                <div className="placeholder-image">
+                  <FaImage />
+                </div>
+              )}
+            </div>
+            <div className="recent-story-content">
+              <h3>{story.title}</h3>
+              <p>{story.excerpt}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
+  const loadRelatedStories = async (category) => {
+    try {
+      const q = query(
+        collection(db, 'content'),
+        where('category', '==', category),
+        where('status', '==', 'published'),
+        limit(3)
+      );
+      const querySnapshot = await getDocs(q);
+      const stories = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Related story data:', {
+          id: doc.id,
+          image: data.image,
+          featuredImage: data.featuredImage,
+          title: data.title
+        });
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
+      setRelatedStories(stories);
+    } catch (error) {
+      console.error('Error loading related stories:', error);
+    }
+  };
+
+  const loadRecentStories = async () => {
+    try {
+      const q = query(
+        collection(db, 'content'),
+        where('status', '==', 'published'),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+      const querySnapshot = await getDocs(q);
+      const stories = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Recent story data:', {
+          id: doc.id,
+          image: data.image,
+          featuredImage: data.featuredImage,
+          title: data.title
+        });
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
+      setRecentStories(stories);
+    } catch (error) {
+      console.error('Error loading recent stories:', error);
+    }
+  };
+
+  const StoryCard = ({ story }) => {
+    return (
+      <div className="story-card">
+        <div className="story-image">
+          {(story.featuredImage || story.image) ? (
+            <img 
+              src={story.featuredImage || story.image} 
+              alt={story.title}
+              loading="lazy"
+            />
+          ) : (
+            <div className="placeholder-image">
+              <FaImage />
+              <span>No image available</span>
+            </div>
+          )}
+        </div>
+        <div className="story-content">
+          <h3>{story.title}</h3>
+          <p>{story.excerpt}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const SidebarStory = ({ story }) => {
+    return (
+      <Link to={`/news/${story.id}`} className="sidebar-story">
+        <div className="story-image">
+          {(story.featuredImage || story.image) ? (
+            <img 
+              src={story.featuredImage || story.image} 
+              alt={story.title}
+              loading="lazy"
+            />
+          ) : (
+            <div className="placeholder-image">
+              <FaImage />
+            </div>
+          )}
+        </div>
+        <div className="story-content">
+          <h4>{story.title}</h4>
+          <p>{story.excerpt}</p>
+        </div>
+      </Link>
+    );
+  };
+
   if (loading) {
     return (
       <div className="news-detail-container">
@@ -191,9 +353,9 @@ const NewsDetail = () => {
 
       <div className="news-detail-layout">
         <article className="story-detail">
-          {story.image && (
+          {story.featuredImage && (
             <div className="story-hero-image">
-              <img src={story.image} alt={story.title} />
+              <img src={story.featuredImage} alt={story.title} />
               {story.mainImageCredit && (
                 <div className="image-credit">Photo: {story.mainImageCredit}</div>
               )}

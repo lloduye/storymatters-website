@@ -4,7 +4,7 @@ import {
   collection, query, orderBy, getDocs, addDoc, updateDoc, 
   deleteDoc, doc, serverTimestamp, where, writeBatch, getDoc, setDoc, increment, arrayUnion, arrayRemove 
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import { 
   FaPlus, FaEdit, FaTrash, FaSearch, FaImage, FaEye, 
   FaTimes, FaTag, FaCalendar, FaFolder, FaHistory, FaClock, FaThLarge, FaList, FaCheck, FaDesktop, FaTabletAlt, FaMobileAlt, FaUser, FaPencilAlt, FaArchive, FaComment, FaHeart, FaBug, FaExclamationTriangle 
@@ -72,6 +72,42 @@ const ContentManager = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    category: '',
+    featuredImage: '',
+    status: 'draft',
+    author: '',
+    slug: '',
+    excerpt: '',
+    tags: [],
+    publishDate: new Date().toISOString().split('T')[0]
+  });
+
+  const modules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ],
+    clipboard: {
+      matchVisual: false
+    }
+  };
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'link', 'image'
+  ];
 
   useEffect(() => {
     loadContent();
@@ -96,18 +132,21 @@ const ContentManager = () => {
     try {
       setLoading(true);
       
-      // Get all content
       const q = query(
         collection(db, 'content'),
-        orderBy('status', 'asc'),  // This will order: archived, draft, published
+        orderBy('status', 'asc'),
         orderBy('createdAt', 'desc')
       );
       
       const snapshot = await getDocs(q);
-      const contentData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const contentData = snapshot.docs.map(doc => {
+        const data = {
+          id: doc.id,
+          ...doc.data()
+        };
+        console.log('Loaded content item:', data);
+        return data;
+      });
 
       // Custom sort order: draft, published, archived
       const sortedContent = contentData.sort((a, b) => {
@@ -115,11 +154,9 @@ const ContentManager = () => {
         if (statusOrder[a.status] !== statusOrder[b.status]) {
           return statusOrder[a.status] - statusOrder[b.status];
         }
-        // If status is the same, sort by createdAt in descending order
         return b.createdAt?.seconds - a.createdAt?.seconds;
       });
 
-      // Apply filters after sorting
       const filteredContent = filter === 'all' 
         ? sortedContent 
         : sortedContent.filter(item => item.type === filter);
@@ -151,18 +188,77 @@ const ContentManager = () => {
 
   const handleImageUpload = async (file) => {
     try {
-      if (!file) return null;
-      
-      // Create a compressed version of the image
-      const compressedFile = await compressImage(file);
-      
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, `content/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, compressedFile);
-      return await getDownloadURL(storageRef);
+      if (!auth.currentUser) {
+        setNotification({
+          type: 'error',
+          message: 'Please login to upload images'
+        });
+        return;
+      }
+
+      setUploading(true);
+
+      // Get the first two words from the title
+      const titleWords = contentForm.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+        .split(' ')
+        .slice(0, 2)
+        .join('-');
+
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+
+      // Create the new filename
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+      const newFileName = `${today}-${titleWords}.${fileExtension}`;
+
+      // Create storage reference with new filename
+      const storageRef = ref(storage, `content/${newFileName}`);
+
+      // Add metadata
+      const metadata = {
+        contentType: file.type,
+        customMetadata: {
+          originalName: file.name,
+          uploadedBy: auth.currentUser.email,
+          uploadedAt: new Date().toISOString(),
+          associatedTitle: contentForm.title
+        }
+      };
+
+      try {
+        // Upload the file
+        const snapshot = await uploadBytes(storageRef, file, metadata);
+        console.log('Upload successful:', snapshot);
+
+        // Get the URL
+        const url = await getDownloadURL(snapshot.ref);
+        console.log('Download URL:', url);
+
+        // Update form
+        setContentForm(prev => ({
+          ...prev,
+          featuredImage: url
+        }));
+
+        setImagePreview(url);
+        setNotification({
+          type: 'success',
+          message: 'Image uploaded successfully!'
+        });
+      } catch (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
+      console.error('Error:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to upload image. Please try again.'
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -211,74 +307,42 @@ const ContentManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      let imageUrl = contentForm.featuredImage;
-      
-      if (imagePreview && imagePreview.startsWith('data:')) {
-        // Convert data URL to Blob
-        const response = await fetch(imagePreview);
-        const blob = await response.blob();
-        const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-        imageUrl = await handleImageUpload(file);
-      }
-
+      setSubmitting(true);
       const timestamp = serverTimestamp();
+      
       const contentData = {
         ...contentForm,
-        featuredImage: imageUrl, // Now this will be a storage URL, not a data URL
-        image: imageUrl,
-        description: contentForm.excerpt,
-        timestamp: timestamp,
+        featuredImage: contentForm.featuredImage,
+        image: contentForm.featuredImage,
         updatedAt: timestamp,
-        type: contentForm.type || 'news',
-        content: contentForm.content || '',
-        contentSections: [{
-          text: contentForm.content,
-          image: imageUrl ? {
-            src: imageUrl,
-            credit: contentForm.mainImageCredit
-          } : null
-        }],
-        additionalImages: additionalImages,
+        createdAt: contentForm.id ? contentForm.createdAt : timestamp,
       };
 
-      // Remove any data URLs from the content data
-      Object.keys(contentData).forEach(key => {
-        if (typeof contentData[key] === 'string' && contentData[key].startsWith('data:')) {
-          delete contentData[key];
-        }
-      });
+      console.log('Saving content with images:', contentData);
 
-      if (!selectedContent) {
-        contentData.createdAt = timestamp;
-        contentData.publishedAt = contentData.status === 'published' ? timestamp : null;
-        
-        const docRef = await addDoc(collection(db, 'content'), contentData);
-        console.log('New content saved:', {
-          content: contentData,
-          id: docRef.id
-        });
+      if (contentForm.id) {
+        await updateDoc(doc(db, 'content', contentForm.id), contentData);
       } else {
-        if (contentData.status === 'published' && !selectedContent.publishedAt) {
-          contentData.publishedAt = timestamp;
-        }
-        
-        await updateDoc(doc(db, 'content', selectedContent.id), contentData);
-        console.log('Content updated:', {
-          content: contentData,
-          id: selectedContent.id
-        });
+        await addDoc(collection(db, 'content'), contentData);
       }
 
+      setNotification({
+        type: 'success',
+        message: `Content ${contentForm.id ? 'updated' : 'created'} successfully!`
+      });
+      
       setShowEditor(false);
-      setSelectedContent(null);
-      resetForm();
       loadContent();
     } catch (error) {
       console.error('Error saving content:', error);
+      setNotification({
+        type: 'error',
+        message: 'Error saving content. Please try again.'
+      });
+    } finally {
+      setSubmitting(false);
     }
-    setLoading(false);
   };
 
   const handleDelete = async (contentId) => {
@@ -306,19 +370,7 @@ const ContentManager = () => {
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      try {
-        // Create a preview
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-        
-        // Don't set the featuredImage field yet - wait for actual upload
-        setContentForm(prev => ({ ...prev, featuredImage: '' }));
-      } catch (error) {
-        console.error('Error handling image:', error);
-      }
+      await handleImageUpload(file);
     }
   };
 
@@ -625,7 +677,11 @@ const ContentManager = () => {
 
   const loadContentStats = async (contentId) => {
     try {
-      const statsDoc = await getDoc(doc(db, 'contentStats', contentId));
+      if (!auth.currentUser) return; // Only try to load stats if user is authenticated
+
+      const statsRef = doc(db, 'content', contentId, 'stats', 'general');
+      const statsDoc = await getDoc(statsRef);
+      
       if (statsDoc.exists()) {
         setContentStats(prev => ({
           ...prev,
@@ -636,10 +692,11 @@ const ContentManager = () => {
         const initialStats = {
           views: 0,
           likes: 0,
-          comments: 0,
-          likedBy: []
+          shares: 0,
+          comments: 0
         };
-        await setDoc(doc(db, 'contentStats', contentId), initialStats);
+        
+        await setDoc(statsRef, initialStats);
         setContentStats(prev => ({
           ...prev,
           [contentId]: initialStats
@@ -647,6 +704,7 @@ const ContentManager = () => {
       }
     } catch (error) {
       console.error('Error loading content stats:', error);
+      // Don't show error notification for stats loading
     }
   };
 
@@ -723,6 +781,9 @@ const ContentManager = () => {
 
   return (
     <div className="content-manager">
+      {/* Add loading indicator when submitting */}
+      {submitting && <div className="loading-overlay">Saving...</div>}
+      
       {/* Header Section */}
       <div className="content-header">
         <div className="header-left">
@@ -834,10 +895,10 @@ const ContentManager = () => {
                 <div key={item.id} className="content-item">
                   <div className="content-preview">
                     <div className="content-image">
-                      {item.image ? (
-                        <img src={item.image} alt={item.title} />
+                      {item.featuredImage ? (
+                        <img src={item.featuredImage} alt={item.title} />
                       ) : (
-                        <div className="no-image-placeholder">
+                        <div className="placeholder-image">
                           <FaImage />
                           <span>No Featured Image</span>
                         </div>
@@ -1022,15 +1083,9 @@ const ContentManager = () => {
                   <ReactQuill
                     value={contentForm.content}
                     onChange={(content) => setContentForm(prev => ({ ...prev, content }))}
-                    modules={{
-                      toolbar: [
-                        [{ 'header': [1, 2, 3, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['link', 'image'],
-                        ['clean']
-                      ]
-                    }}
+                    modules={modules}
+                    formats={formats}
+                    theme="snow"
                   />
                 </div>
 
@@ -1055,25 +1110,38 @@ const ContentManager = () => {
                   </div>
                 </div>
 
-                <div className="form-group full-width">
+                <div className="form-group">
                   <label>Featured Image</label>
                   <div className="image-upload">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleImageChange}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          handleImageUpload(file);
+                        }
+                      }}
                       id="image-upload"
                     />
                     <label htmlFor="image-upload" className="image-upload-label">
                       <FaImage /> Choose Image
                     </label>
-                    {imagePreview && (
+                    {uploading && <p>Uploading...</p>}
+                    {(imagePreview || contentForm.featuredImage) && (
                       <div className="image-preview">
-                        <img src={imagePreview} alt="Preview" />
-                        <button type="button" onClick={() => {
-                          setImagePreview(null);
-                          setContentForm(prev => ({ ...prev, featuredImage: '' }));
-                        }}>
+                        <img 
+                          src={imagePreview || contentForm.featuredImage} 
+                          alt="Preview" 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setImagePreview(null);
+                            setContentForm(prev => ({ ...prev, featuredImage: '' }));
+                          }}
+                          className="remove-image-btn"
+                        >
                           <FaTimes />
                         </button>
                       </div>

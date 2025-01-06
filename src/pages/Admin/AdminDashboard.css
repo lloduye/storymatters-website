@@ -168,3 +168,25 @@
         min-height: calc(100vh - 120px);
     }
 }
+
+/* Add these styles if not already present */
+.sidebar-item.media {
+  position: relative;
+}
+
+.sidebar-item.media:hover {
+  background-color: var(--primary-light);
+}
+
+.sidebar-item.media.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.sidebar-item.media .icon {
+  color: var(--primary);
+}
+
+.sidebar-item.media.active .icon {
+  color: white;
+}

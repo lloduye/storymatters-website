@@ -12,7 +12,9 @@ import {
   FaClipboardList,
   FaCog,
   FaInbox,
-  FaFileAlt
+  FaFileAlt,
+  FaImage,
+  FaUserFriends
 } from 'react-icons/fa';
 import './AdminDashboard.css';
 
@@ -26,6 +28,7 @@ import Settings from './components/Settings';
 import Mailbox from './components/Mailbox';
 import ContentManager from './components/ContentManager';
 import SubscriberManagement from './components/SubscriberManagement';
+import MediaManager from './components/MediaManager';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('content');
@@ -43,13 +46,14 @@ const AdminDashboard = () => {
   const navigationTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: FaTachometerAlt },
     { id: 'content', label: 'Content Manager', icon: FaNewspaper },
+    { id: 'media', label: 'Media Manager', icon: FaImage },
     { id: 'communications', label: 'Communications', icon: FaEnvelope },
     { id: 'mailbox', label: 'Mailbox', icon: FaInbox },
     { id: 'submissions', label: 'Submissions', icon: FaClipboardList },
     { id: 'donations', label: 'Donations', icon: FaHandHoldingHeart },
     { id: 'team', label: 'Team', icon: FaUsers },
     { id: 'settings', label: 'Settings', icon: FaCog },
-    { id: 'subscribers', label: 'Subscribers', icon: FaEnvelope }
+    { id: 'subscribers', label: 'Subscribers', icon: FaUserFriends }
   ];
 
   const renderContent = () => {
@@ -58,6 +62,8 @@ const AdminDashboard = () => {
         return <Dashboard />;
       case 'content':
         return <ContentManager />;
+      case 'media':
+        return <MediaManager />;
       case 'communications':
         return <Communications />;
       case 'mailbox':

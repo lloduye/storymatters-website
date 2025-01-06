@@ -27,6 +27,7 @@ import Partner from './pages/Partner/Partner';
 // Admin Pages
 import Login from './pages/Admin/Login';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import MediaManager from './pages/Admin/components/MediaManager';
 
 function App() {
   return (
@@ -72,6 +73,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/admin/media" element={<MediaManager />} />
 
               {/* 404 Route */}
               <Route path="*" element={<Navigate to="/" replace />} />

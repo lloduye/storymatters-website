@@ -591,4 +591,114 @@
   .gallery-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.related-story-image img,
+.recent-story-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-light);
+  color: var(--text-light);
+  font-size: 0.875rem;
+  gap: 0.5rem;
+  border-radius: 4px;
+}
+
+.related-story-image,
+.recent-story-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+  background: var(--background-light);
+}
+
+/* Story card image styles */
+.story-image {
+  position: relative;
+  width: 100%;
+  height: 240px; /* Fixed height for consistency */
+  overflow: hidden;
+  background-color: var(--background-light);
+  border-radius: 8px;
+}
+
+.story-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top; /* This ensures top half is always shown */
+  transition: transform 0.3s ease;
+}
+
+/* Featured story styles */
+.featured-story .story-image {
+  height: 320px; /* Taller for featured stories */
+}
+
+/* Sidebar story image styles */
+.sidebar-story .story-image {
+  width: 100%;
+  height: 180px;
+  border-radius: 6px;
+}
+
+/* Placeholder styles */
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-light);
+  color: var(--text-light);
+  font-size: 1rem;
+  gap: 0.5rem;
+}
+
+/* Optional: Add hover effect */
+.story-image:hover img {
+  transform: scale(1.05);
+}
+
+/* Make sure parent containers maintain aspect ratio */
+.story-card,
+.featured-story,
+.sidebar-story {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Ensure consistent spacing */
+.story-content {
+  padding: 1rem;
+  flex: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .story-image {
+    height: 200px;
+  }
+  
+  .featured-story .story-image {
+    height: 260px;
+  }
+  
+  .sidebar-story .story-image {
+    height: 160px;
+  }
 } 

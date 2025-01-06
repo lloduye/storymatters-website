@@ -357,9 +357,7 @@
 
 /* Image Upload */
 .image-upload {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin: 1rem 0;
 }
 
 .image-upload input[type="file"] {
@@ -367,42 +365,51 @@
 }
 
 .image-upload-label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px;
-  background: var(--background);
-  border-radius: 8px;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
+  transition: background 0.2s;
 }
 
 .image-upload-label:hover {
-  background: #e9ecef;
+  background: var(--primary-dark);
 }
 
 .image-preview {
+  margin-top: 1rem;
   position: relative;
-  max-width: 200px;
+  max-width: 300px;
 }
 
 .image-preview img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
-.image-preview button {
+.remove-image-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 0.5rem;
+  right: 0.5rem;
   background: rgba(0, 0, 0, 0.5);
   color: white;
   border: none;
   border-radius: 50%;
-  padding: 5px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+
+.remove-image-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
 }
 
 /* SEO Section */
@@ -2125,4 +2132,19 @@
 .no-image-placeholder svg {
   font-size: 1.5rem;
   opacity: 0.5;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  z-index: 1000;
 }
