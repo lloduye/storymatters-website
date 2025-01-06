@@ -1,6 +1,7 @@
 /* News Page Layout */
 .news-page {
   padding: 2rem;
+  padding-top: calc(80px + 2rem);
   max-width: 1200px;
   margin: 0 auto;
   min-height: calc(100vh - 80px);
@@ -156,6 +157,7 @@
 @media (max-width: 768px) {
   .news-page {
     padding: 1rem;
+    padding-top: calc(60px + 1rem);
   }
 
   .news-header {
@@ -204,4 +206,28 @@
 
 .news-author {
   display: none;
+}
+
+/* Newsletter Section */
+.newsletter-section {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Override the NewsletterSubscribe component's default background */
+.newsletter-section .newsletter-container {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .newsletter-section {
+    margin-top: 3rem;
+    padding: 1.5rem;
+  }
 }

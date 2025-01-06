@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { FaCalendar, FaEye, FaUser } from 'react-icons/fa';
+import NewsletterSubscribe from '../../components/NewsletterSubscribe';
 import './News.css';
 
 const News = () => {
@@ -131,6 +132,10 @@ const News = () => {
             </div>
           </Link>
         ))}
+      </div>
+
+      <div className="newsletter-section">
+        <NewsletterSubscribe source="news_page" />
       </div>
     </div>
   );

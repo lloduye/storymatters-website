@@ -96,8 +96,9 @@ const ContentManager = () => {
   const [lastSaved, setLastSaved] = useState(null);
 
   const [locations] = useState([
-    'Kakuma',
-    'Kalobeyei'
+    'Kakuma Refugee Camp',
+    'Kalobeyei Integrated Settlement',
+    'Kakuma Refugee Camp and Kalobeyei Integrated Settlement'
   ]);
 
   const modules = {

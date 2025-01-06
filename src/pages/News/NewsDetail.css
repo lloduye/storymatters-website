@@ -1,8 +1,9 @@
 .news-detail-container {
-  width: 100%;
+  padding: 2rem;
+  padding-top: calc(80px + 2rem);
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  min-height: calc(100vh - 80px);
   background: var(--background-light);
 }
 
@@ -125,6 +126,7 @@
 @media (max-width: 768px) {
   .news-detail-container {
     padding: 1rem;
+    padding-top: calc(60px + 1rem);
   }
 
   .story-content {
