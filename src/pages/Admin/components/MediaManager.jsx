@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { storage, auth } from '../../../firebase/config';
-import { ref, listAll, getDownloadURL, deleteObject, uploadBytes } from 'firebase/storage';
-import { FaImage, FaTrash, FaCopy, FaUpload, FaSearch, FaSort, FaEye, FaExclamationTriangle } from 'react-icons/fa';
+import { storage, auth, db } from '../../../firebase/config';
+import { ref, listAll, getDownloadURL, deleteObject, uploadBytes, getMetadata } from 'firebase/storage';
+import { FaImage, FaTrash, FaCopy, FaUpload, FaSearch, FaSort, FaEye, FaExclamationTriangle, FaTimes, FaExchangeAlt, FaExternalLinkAlt } from 'react-icons/fa';
 import './MediaManager.css';
+import { collection, query, where, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+};
 
 const MediaManager = () => {
   const [mediaItems, setMediaItems] = useState([]);
@@ -12,6 +22,9 @@ const MediaManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [deleteItem, setDeleteItem] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [imageMetadata, setImageMetadata] = useState(null);
+  const [affectedContent, setAffectedContent] = useState([]);
 
   useEffect(() => {
     if (auth.currentUser) {
@@ -57,6 +70,44 @@ const MediaManager = () => {
     }
   };
 
+  const compressImage = async (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions (max 1920px width/height)
+          let width = img.width;
+          let height = img.height;
+          if (width > 1920) {
+            height = (height * 1920) / width;
+            width = 1920;
+          }
+          if (height > 1920) {
+            width = (width * 1920) / height;
+            height = 1920;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            }));
+          }, 'image/jpeg', 0.8); // 80% quality
+        };
+      };
+    });
+  };
+
   const handleUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
@@ -65,31 +116,29 @@ const MediaManager = () => {
       setUploading(true);
       
       for (const file of files) {
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          setNotification({
-            type: 'error',
-            message: `File ${file.name} is too large. Maximum size is 5MB.`
-          });
-          continue;
-        }
-
+        // Compress image before upload
+        const compressedFile = await compressImage(file);
+        
         const timestamp = Date.now();
         const fileName = `${timestamp}_${file.name}`;
         const storageRef = ref(storage, `content/${fileName}`);
 
         // Add metadata
         const metadata = {
-          contentType: file.type,
+          contentType: 'image/jpeg',
           customMetadata: {
+            originalName: file.name,
             uploadedBy: auth.currentUser?.email || 'unknown',
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
+            originalSize: `${file.size}`,
+            compressedSize: `${compressedFile.size}`
           }
         };
 
-        await uploadBytes(storageRef, file, metadata);
+        await uploadBytes(storageRef, compressedFile, metadata);
       }
 
-      await loadMediaItems(); // Reload the list after upload
+      await loadMediaItems();
       setNotification({
         type: 'success',
         message: 'Files uploaded successfully'
@@ -114,6 +163,16 @@ const MediaManager = () => {
         });
         return;
       }
+
+      // Check for content using this image
+      const contentRef = collection(db, 'content');
+      const q = query(contentRef, where('featuredImage', '==', item.url));
+      const querySnapshot = await getDocs(q);
+      
+      setAffectedContent(querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })));
       setDeleteItem(item);
     } catch (error) {
       console.error('Auth check error:', error);
@@ -155,19 +214,37 @@ const MediaManager = () => {
     }
 
     try {
+      // First, find all content using this image
+      const contentRef = collection(db, 'content');
+      const q = query(contentRef, where('featuredImage', '==', deleteItem.url));
+      const querySnapshot = await getDocs(q);
+
+      // Create a batch for updating multiple documents
+      const batch = writeBatch(db);
+
+      // Update all content items that use this image
+      querySnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, {
+          featuredImage: null // Or you could set it to a default image URL
+        });
+      });
+
       // Create a fresh reference to the file
       const fileRef = ref(storage, deleteItem.path);
       
-      // Attempt to delete
+      // Delete the file from storage
       const deleted = await safeDeleteObject(fileRef);
       
       if (deleted) {
-        // Update local state first
+        // Commit the batch update
+        await batch.commit();
+
+        // Update local state
         setMediaItems(prev => prev.filter(item => item.path !== deleteItem.path));
         
         setNotification({
           type: 'success',
-          message: 'File deleted successfully'
+          message: `File deleted successfully${querySnapshot.docs.length > 0 ? ` and ${querySnapshot.docs.length} content items updated` : ''}`
         });
       }
     } catch (error) {
@@ -194,6 +271,109 @@ const MediaManager = () => {
         type: 'error',
         message: 'Error copying URL'
       });
+    }
+  };
+
+  const getAssociatedStories = async (imageUrl) => {
+    try {
+      const contentRef = collection(db, 'content');
+      const q = query(contentRef, where('featuredImage', '==', imageUrl));
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('Error fetching associated stories:', error);
+      return [];
+    }
+  };
+
+  const handleImagePreview = async (item) => {
+    try {
+      const imageRef = ref(storage, item.path);
+      const metadata = await getMetadata(imageRef);
+      const associatedStories = await getAssociatedStories(item.url);
+      
+      setImageMetadata({
+        ...metadata,
+        associatedStories
+      });
+      setPreviewImage(item);
+    } catch (error) {
+      console.error('Error getting image details:', error);
+      setNotification({
+        type: 'error',
+        message: 'Error loading image details'
+      });
+    }
+  };
+
+  const handleReplaceImage = async (event, currentImage) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      // Compress the new image
+      const compressedFile = await compressImage(file);
+      
+      // Create a reference to the existing file path
+      const storageRef = ref(storage, currentImage.path);
+      
+      // Upload the new file to the same path
+      const uploadResult = await uploadBytes(storageRef, compressedFile, {
+        contentType: 'image/jpeg',
+        customMetadata: {
+          replacedAt: new Date().toISOString(),
+          replacedBy: auth.currentUser?.email || 'unknown',
+          originalName: file.name
+        }
+      });
+
+      // Get the new URL
+      const newUrl = await getDownloadURL(uploadResult.ref);
+
+      // Update any stories that use this image
+      if (imageMetadata?.associatedStories?.length > 0) {
+        const updatePromises = imageMetadata.associatedStories.map(story => {
+          const storyRef = doc(db, 'content', story.id);
+          return updateDoc(storyRef, {
+            featuredImage: newUrl
+          });
+        });
+
+        await Promise.all(updatePromises);
+      }
+
+      // Update local state
+      setMediaItems(prev => prev.map(item => 
+        item.path === currentImage.path 
+          ? { ...item, url: newUrl }
+          : item
+      ));
+
+      setNotification({
+        type: 'success',
+        message: 'Image replaced successfully'
+      });
+
+      // Close the preview modal
+      setPreviewImage(null);
+      
+      // Refresh the media items to get the latest data
+      await loadMediaItems();
+
+    } catch (error) {
+      console.error('Replace error:', error);
+      setNotification({
+        type: 'error',
+        message: error.message || 'Error replacing image'
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -261,7 +441,10 @@ const MediaManager = () => {
         <div className="media-grid">
           {filteredAndSortedMedia.map((item) => (
             <div key={item.path} className="media-item">
-              <div className="media-preview">
+              <div 
+                className="media-preview"
+                onClick={() => handleImagePreview(item)}
+              >
                 <img src={item.url} alt={item.name} />
                 <div className="media-overlay">
                   <FaEye />
@@ -292,12 +475,28 @@ const MediaManager = () => {
             </div>
             <div className="delete-modal-content">
               <p>Are you sure you want to delete this file?</p>
+              {affectedContent.length > 0 && (
+                <div className="affected-content">
+                  <p className="warning-text">
+                    This image is used in {affectedContent.length} content item{affectedContent.length !== 1 ? 's' : ''}:
+                  </p>
+                  <ul>
+                    {affectedContent.map(content => (
+                      <li key={content.id}>{content.title}</li>
+                    ))}
+                  </ul>
+                  <p className="warning-text">These items will have their featured images removed.</p>
+                </div>
+              )}
               <p className="warning-text">This action cannot be undone.</p>
             </div>
             <div className="delete-modal-actions">
               <button 
                 className="cancel-btn"
-                onClick={() => setDeleteItem(null)}
+                onClick={() => {
+                  setDeleteItem(null);
+                  setAffectedContent([]);
+                }}
               >
                 Cancel
               </button>
@@ -307,6 +506,91 @@ const MediaManager = () => {
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div className="preview-modal-overlay" onClick={() => setPreviewImage(null)}>
+          <div className="preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>Image Preview</h3>
+              <button className="close-btn" onClick={() => setPreviewImage(null)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="preview-content">
+              <div className="preview-image">
+                <img src={previewImage.url} alt={previewImage.name} />
+                <div className="replace-image">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleReplaceImage(e, previewImage)}
+                    id="replace-image"
+                    disabled={uploading}
+                  />
+                  <label htmlFor="replace-image" className={uploading ? 'uploading' : ''}>
+                    <FaExchangeAlt /> Replace Image
+                  </label>
+                </div>
+              </div>
+              <div className="preview-info">
+                <h4>File Information</h4>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span>Name:</span>
+                    <p>{previewImage.name}</p>
+                  </div>
+                  {imageMetadata && (
+                    <>
+                      <div className="info-item">
+                        <span>Size:</span>
+                        <p>{formatFileSize(imageMetadata.size)}</p>
+                      </div>
+                      <div className="info-item">
+                        <span>Type:</span>
+                        <p>{imageMetadata.contentType}</p>
+                      </div>
+                      <div className="info-item">
+                        <span>Created:</span>
+                        <p>{new Date(imageMetadata.timeCreated).toLocaleString()}</p>
+                      </div>
+                      <div className="info-item">
+                        <span>Updated:</span>
+                        <p>{new Date(imageMetadata.updated).toLocaleString()}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {imageMetadata?.associatedStories?.length > 0 && (
+                  <div className="associated-stories">
+                    <h4>Published In:</h4>
+                    <div className="stories-list">
+                      {imageMetadata.associatedStories.map(story => (
+                        <div key={story.id} className="story-item">
+                          <h5>{story.title}</h5>
+                          <p>Published: {new Date(story.createdAt).toLocaleDateString()}</p>
+                          <Link to={`/news/${story.id}`} target="_blank">
+                            <FaExternalLinkAlt /> View Story
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="preview-actions">
+                  <button onClick={() => copyToClipboard(previewImage.url)}>
+                    <FaCopy /> Copy URL
+                  </button>
+                  <button onClick={() => handleDelete(previewImage)}>
+                    <FaTrash /> Delete
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

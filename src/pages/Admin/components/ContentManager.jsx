@@ -24,7 +24,9 @@ const ContentManager = () => {
   const [selectedContent, setSelectedContent] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [categories] = useState([
-    'News', 'Events', 'Stories', 'Updates', 'Resources'
+    'Stories',
+    'Events',
+    'Resources'
   ]);
 
   const [contentForm, setContentForm] = useState({
@@ -89,6 +91,15 @@ const ContentManager = () => {
     publishDate: new Date().toISOString().split('T')[0]
   });
 
+  const [autoSaveStatus, setAutoSaveStatus] = useState('');
+  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
+  const [lastSaved, setLastSaved] = useState(null);
+
+  const [locations] = useState([
+    'Kakuma',
+    'Kalobeyei'
+  ]);
+
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -108,6 +119,57 @@ const ContentManager = () => {
     'list', 'bullet',
     'link', 'image'
   ];
+
+  const initialFormState = {
+    title: '',
+    content: '',
+    excerpt: '',
+    category: '',
+    location: '',
+    author: '',
+    featuredImage: '',
+    status: 'draft',
+    publishDate: new Date().toISOString().split('T')[0],
+    tags: []
+  };
+
+  const generateSEOContent = (content) => {
+    // Extract first paragraph of content for meta description
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content.content || '';
+    const firstParagraph = tempDiv.querySelector('p')?.textContent || '';
+    
+    // Generate keywords from title, category, and location
+    const keywords = [
+      ...new Set([
+        ...(content.title?.split(' ') || []),
+        content.category,
+        content.location,
+        'KCMN', // Add default keywords
+        'Kenya Community Media Network',
+        content.location === 'Kakuma' ? 'Kakuma Refugee Camp' : 'Kalobeyei Settlement'
+      ].filter(Boolean))
+    ].join(', ');
+
+    return {
+      metaTitle: content.title || '',
+      metaDescription: content.excerpt || firstParagraph.slice(0, 160) + '...',
+      keywords: keywords
+    };
+  };
+
+  useEffect(() => {
+    if (contentForm.title || contentForm.content || contentForm.excerpt) {
+      const seoContent = generateSEOContent(contentForm);
+      setContentForm(prev => ({
+        ...prev,
+        seo: {
+          ...prev.seo,
+          ...seoContent
+        }
+      }));
+    }
+  }, [contentForm.title, contentForm.content, contentForm.excerpt, contentForm.category, contentForm.location]);
 
   useEffect(() => {
     loadContent();
@@ -309,15 +371,16 @@ const ContentManager = () => {
     e.preventDefault();
     try {
       setSubmitting(true);
-      const timestamp = serverTimestamp();
       
       const contentData = {
         ...contentForm,
-        featuredImage: contentForm.featuredImage,
-        image: contentForm.featuredImage,
-        updatedAt: timestamp,
-        createdAt: contentForm.id ? contentForm.createdAt : timestamp,
+        updatedAt: serverTimestamp(),
       };
+
+      if (!selectedContent) {
+        contentData.createdAt = serverTimestamp();
+        contentData.views = 0;
+      }
 
       console.log('Saving content with images:', contentData);
 
@@ -565,34 +628,34 @@ const ContentManager = () => {
     setShowPreview(true);
   };
 
-  const handlePublish = async (contentId) => {
+  const handlePublish = async () => {
     try {
-      setLoading(true);
-      await updateDoc(doc(db, 'content', contentId), {
+      const contentRef = doc(db, 'content', selectedContent.id);
+      
+      // Convert the publish date string to a timestamp
+      const publishDate = new Date(contentForm.publishDate);
+      
+      await updateDoc(contentRef, {
+        ...contentForm,
         status: 'published',
-        publishedAt: serverTimestamp()
+        publishedAt: serverTimestamp(), // Current timestamp for sorting
+        publishDate: publishDate, // Store the user-selected date for display
+        updatedAt: serverTimestamp()
+      });
+
+      setNotification({
+        type: 'success',
+        message: 'Content published successfully!'
       });
       
-      // Update local state
-      setContent(prevContent => 
-        prevContent.map(item => 
-          item.id === contentId 
-            ? { ...item, status: 'published' } 
-            : item
-        )
-      );
-      
-      // Close preview if the content was being previewed
-      if (previewContent?.id === contentId) {
-        setPreviewContent(prev => ({ ...prev, status: 'published' }));
-      }
-      
-      // Refresh unpublished stories
-      loadUnpublishedStories();
-      setLoading(false);
+      loadContent();
+      setShowEditor(false);
     } catch (error) {
       console.error('Error publishing content:', error);
-      setLoading(false);
+      setNotification({
+        type: 'error',
+        message: 'Error publishing content'
+      });
     }
   };
 
@@ -779,6 +842,115 @@ const ContentManager = () => {
     }
   };
 
+  const autoSaveContent = async () => {
+    try {
+      if (!contentForm.title) return; // Don't save if no title
+
+      setAutoSaveStatus('Saving...');
+      
+      const contentData = {
+        ...contentForm,
+        updatedAt: serverTimestamp(),
+        lastAutoSaved: serverTimestamp()
+      };
+
+      if (selectedContent) {
+        // Update existing content
+        const contentRef = doc(db, 'content', selectedContent.id);
+        await updateDoc(contentRef, contentData);
+      } else {
+        // Create new content
+        const contentRef = collection(db, 'content');
+        const docRef = await addDoc(contentRef, {
+          ...contentData,
+          createdAt: serverTimestamp(),
+          status: 'draft'
+        });
+        setSelectedContent({ id: docRef.id, ...contentData });
+      }
+
+      setLastSaved(new Date());
+      setAutoSaveStatus('Saved');
+
+      // Clear status after 3 seconds
+      setTimeout(() => {
+        setAutoSaveStatus('');
+      }, 3000);
+
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setAutoSaveStatus('Save failed');
+    }
+  };
+
+  useEffect(() => {
+    // Clear existing timer when component unmounts
+    return () => {
+      if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showEditor) {
+      // Start auto-save timer
+      const timer = setInterval(autoSaveContent, 10000); // 10 seconds
+      setAutoSaveTimer(timer);
+
+      // Cleanup on editor close
+      return () => {
+        clearInterval(timer);
+        setAutoSaveTimer(null);
+        setAutoSaveStatus('');
+      };
+    }
+  }, [showEditor, contentForm]); // Dependencies
+
+  // Add new state for save notification
+  const [saveNotification, setSaveNotification] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
+  // Update the handleSave function
+  const handleSave = async () => {
+    try {
+      setSubmitting(true);
+      const contentRef = doc(db, 'content', selectedContent.id);
+      
+      await updateDoc(contentRef, {
+        ...contentForm,
+        updatedAt: serverTimestamp()
+      });
+
+      // Show success notification
+      setSaveNotification({
+        show: true,
+        message: 'Content saved successfully!',
+        type: 'success'
+      });
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setSaveNotification(prev => ({ ...prev, show: false }));
+      }, 3000);
+
+      loadContent();
+      // Remove the setShowEditor(false) line to prevent auto-closing
+    } catch (error) {
+      console.error('Error saving content:', error);
+      setSaveNotification({
+        show: true,
+        message: 'Error saving content',
+        type: 'error'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="content-manager">
       {/* Add loading indicator when submitting */}
@@ -898,7 +1070,7 @@ const ContentManager = () => {
                       {item.featuredImage ? (
                         <img src={item.featuredImage} alt={item.title} />
                       ) : (
-                        <div className="placeholder-image">
+                        <div className="no-image">
                           <FaImage />
                           <span>No Featured Image</span>
                         </div>
@@ -1014,67 +1186,78 @@ const ContentManager = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Type</label>
-                  <select
-                    value={contentForm.type}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, type: e.target.value }))}
-                  >
-                    <option value="news">News</option>
-                    <option value="article">Article</option>
-                    <option value="page">Page</option>
-                  </select>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Category</label>
+                    <select
+                      name="category"
+                      value={contentForm.category}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, category: e.target.value }))}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Author</label>
+                    <input
+                      type="text"
+                      name="author"
+                      value={contentForm.author || ''}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, author: e.target.value }))}
+                      placeholder="Enter author name"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row three-columns">
+                  <div className="form-group">
+                    <label>Location</label>
+                    <select
+                      name="location"
+                      value={contentForm.location}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, location: e.target.value }))}
+                    >
+                      <option value="">Select Location</option>
+                      {locations.map(loc => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Status</label>
+                    <select
+                      name="status"
+                      value={contentForm.status}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, status: e.target.value }))}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Publish Date</label>
+                    <input
+                      type="date"
+                      name="publishDate"
+                      value={contentForm.publishDate}
+                      onChange={(e) => setContentForm(prev => ({ ...prev, publishDate: e.target.value }))}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label>Category</label>
-                  <select
-                    value={contentForm.category}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, category: e.target.value }))}
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Status</label>
-                  <select
-                    value={contentForm.status}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, status: e.target.value }))}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Author</label>
-                  <input
-                    type="text"
-                    value={contentForm.author}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, author: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Publish Date</label>
-                  <input
-                    type="date"
-                    value={contentForm.publishDate}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, publishDate: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group full-width">
                   <label>Excerpt</label>
                   <textarea
                     value={contentForm.excerpt}
                     onChange={(e) => setContentForm(prev => ({ ...prev, excerpt: e.target.value }))}
                     rows={3}
+                    placeholder="Enter a brief excerpt..."
                   />
                 </div>
 
@@ -1150,24 +1333,6 @@ const ContentManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Location</label>
-                  <input
-                    type="text"
-                    value={contentForm.location}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, location: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Editor</label>
-                  <input
-                    type="text"
-                    value={contentForm.editor}
-                    onChange={(e) => setContentForm(prev => ({ ...prev, editor: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
                   <label>Image Credit</label>
                   <input
                     type="text"
@@ -1205,35 +1370,47 @@ const ContentManager = () => {
                 </div>
 
                 {/* SEO Section */}
-                <div className="form-group full-width seo-section">
-                  <h4>SEO Settings</h4>
-                  <div className="seo-fields">
+                <div className="form-section">
+                  <h3>SEO Settings</h3>
+                  <div className="form-group">
+                    <label>Meta Title</label>
                     <input
                       type="text"
-                      placeholder="Meta Title"
-                      value={contentForm.seo.metaTitle}
+                      value={contentForm.seo?.metaTitle || ''}
                       onChange={(e) => setContentForm(prev => ({
                         ...prev,
                         seo: { ...prev.seo, metaTitle: e.target.value }
                       }))}
+                      maxLength={60}
                     />
+                    <small>{(contentForm.seo?.metaTitle || '').length}/60 characters</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Meta Description</label>
                     <textarea
-                      placeholder="Meta Description"
-                      value={contentForm.seo.metaDescription}
+                      value={contentForm.seo?.metaDescription || ''}
                       onChange={(e) => setContentForm(prev => ({
                         ...prev,
                         seo: { ...prev.seo, metaDescription: e.target.value }
                       }))}
+                      maxLength={160}
+                      rows={3}
                     />
-                    <input
-                      type="text"
-                      placeholder="Keywords (comma-separated)"
-                      value={contentForm.seo.keywords}
+                    <small>{(contentForm.seo?.metaDescription || '').length}/160 characters</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Keywords</label>
+                    <textarea
+                      value={contentForm.seo?.keywords || ''}
                       onChange={(e) => setContentForm(prev => ({
                         ...prev,
                         seo: { ...prev.seo, keywords: e.target.value }
                       }))}
+                      rows={2}
                     />
+                    <small>Separate keywords with commas</small>
                   </div>
                 </div>
               </div>
@@ -1590,6 +1767,13 @@ const ContentManager = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Save Notification */}
+      {saveNotification.show && (
+        <div className={`save-notification ${saveNotification.type}`}>
+          <span>{saveNotification.message}</span>
         </div>
       )}
     </div>

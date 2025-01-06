@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase/config';
-import './News.css';
 import { Link } from 'react-router-dom';
-import NewsletterSubscribe from '../../components/NewsletterSubscribe';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { FaCalendar, FaEye, FaUser } from 'react-icons/fa';
+import './News.css';
 
 const News = () => {
   const [news, setNews] = useState([]);
@@ -13,39 +13,31 @@ const News = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        setLoading(true);
-        
-        const contentRef = collection(db, 'content');
-        console.log('Fetching content...');
-        
         const q = query(
-          contentRef,
+          collection(db, 'content'),
           where('status', '==', 'published'),
-          orderBy('createdAt', 'desc')
+          orderBy('createdAt', 'desc'),
+          orderBy('__name__', 'desc')
         );
         
         const querySnapshot = await getDocs(q);
-        console.log('Raw snapshot:', querySnapshot.docs.length, 'documents found');
-        
-        const newsData = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log('Document data:', data);  // Log each document
-          return {
-            id: doc.id,
-            title: data.title,
-            description: data.description || data.excerpt,
-            image: data.image || data.featuredImage,
-            createdAt: data.createdAt,
-            status: data.status,
-            type: data.type
-          };
-        });
-        
-        console.log('Processed news data:', newsData);
+        const newsData = querySnapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              publishDate: data.publishDate ? new Date(data.publishDate) : null,
+              createdAt: data.createdAt?.toDate(),
+              updatedAt: data.updatedAt?.toDate()
+            };
+          });
+
+        console.log('Fetched news:', newsData);
         setNews(newsData);
-      } catch (err) {
-        console.error('Error details:', err);
-        setError(err.message);
+      } catch (error) {
+        console.error('Error fetching news:', error);
+        setError('Failed to load news');
       } finally {
         setLoading(false);
       }
@@ -54,10 +46,29 @@ const News = () => {
     fetchNews();
   }, []);
 
+  const formatDate = (date) => {
+    if (!date) return '';
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+    
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return '';
+    return text.length > maxLength 
+      ? text.substring(0, maxLength) + '...'
+      : text;
+  };
+
   if (loading) {
     return (
       <div className="news-page">
-        <div className="loading">Loading news stories...</div>
+        <div className="loading">Loading news...</div>
       </div>
     );
   }
@@ -65,19 +76,19 @@ const News = () => {
   if (error) {
     return (
       <div className="news-page">
-        <div className="error">Error loading news: {error}</div>
+        <div className="error">{error}</div>
       </div>
     );
   }
 
-  if (!news || news.length === 0) {
+  if (!news.length) {
     return (
       <div className="news-page">
         <div className="news-header">
           <h1>Latest News</h1>
           <p>Stay updated with our latest stories and announcements</p>
         </div>
-        <div className="no-news">No news stories available at the moment</div>
+        <div className="no-news">No news articles available.</div>
       </div>
     );
   }
@@ -88,80 +99,38 @@ const News = () => {
         <h1>Latest News</h1>
         <p>Stay updated with our latest stories and announcements</p>
       </div>
-      
-      <div className="news-layout">
-        <aside className="news-sidebar">
-          <div className="sidebar-section">
-            <h3>Categories</h3>
-            <ul className="category-list">
-              <li><Link to="/news?category=updates">Updates</Link></li>
-              <li><Link to="/news?category=stories">Stories</Link></li>
-              <li><Link to="/news?category=events">Events</Link></li>
-              <li><Link to="/news?category=announcements">Announcements</Link></li>
-            </ul>
-          </div>
 
-          <div className="sidebar-section">
-            <h3>Featured Stories</h3>
-            <div className="featured-stories">
-              {news.slice(0, 3).map((story) => (
-                <Link to={`/news/${story.id}`} key={story.id} className="featured-story">
-                  {story.image && (
-                    <div className="featured-image">
-                      <img src={story.image} alt={story.title} />
-                    </div>
-                  )}
-                  <div className="featured-content">
-                    <h4>{story.title}</h4>
-                    <span className="featured-date">
-                      {story.createdAt?.toDate().toLocaleDateString()}
-                    </span>
-                  </div>
-                </Link>
-              ))}
+      <div className="news-grid">
+        {news.map(story => (
+          <Link to={`/news/${story.id}`} key={story.id} className="news-card">
+            <div className="news-image">
+              {story.featuredImage ? (
+                <img 
+                  src={story.featuredImage} 
+                  alt={story.title} 
+                  className="news-thumbnail"
+                />
+              ) : (
+                <div className="placeholder-image" />
+              )}
             </div>
-          </div>
-
-          <div className="sidebar-section">
-            <h3>Popular Tags</h3>
-            <div className="tag-cloud">
-              {['Community', 'Events', 'Updates', 'Stories', 'News', 'Announcements'].map(tag => (
-                <Link key={tag} to={`/news?tag=${tag.toLowerCase()}`} className="tag">
-                  {tag}
-                </Link>
-              ))}
+            <div className="news-content">
+              <h2 className="news-title">{story.title}</h2>
+              <div className="news-meta">
+                <span className="news-date">
+                  <FaCalendar /> {formatDate(story.publishDate)}
+                </span>
+                <span className="news-views">
+                  <FaEye /> {story.views || 0} views
+                </span>
+              </div>
+              <p className="news-excerpt">
+                {story.excerpt || truncateText(story.content)}
+              </p>
+              <span className="read-more">Read More →</span>
             </div>
-          </div>
-        </aside>
-
-        <div className="news-main">
-          <div className="news-grid">
-            {news.map((story) => (
-              <Link to={`/news/${story.id}`} key={story.id} className="news-card">
-                <div className="news-image">
-                  {story.image && (
-                    <img 
-                      src={story.image} 
-                      alt={story.title}
-                      className="news-thumbnail"
-                    />
-                  )}
-                </div>
-                <div className="news-content">
-                  <h2 className="news-title">{story.title}</h2>
-                  <p className="news-date">
-                    {story.createdAt?.toDate().toLocaleDateString() || 'No date'}
-                  </p>
-                  <p className="news-excerpt">
-                    {story.description || story.excerpt}
-                  </p>
-                  <span className="read-more">Read More →</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <NewsletterSubscribe source="news_page" />
-        </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
