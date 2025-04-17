@@ -474,7 +474,7 @@ const ContentManager = () => {
       location: '',
       editor: '',
       mainImageCredit: '',
-      content: '',
+      content: [],
       publishedAt: null,
       seo: {
         metaTitle: '',
@@ -1781,4 +1781,4 @@ const ContentManager = () => {
   );
 };
 
-export default ContentManager; 
+export default ContentManager;
