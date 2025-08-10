@@ -25,6 +25,12 @@
     transform: translateY(-2px);
 }
 
+.logo-image {
+    max-height: 50px;
+    width: auto;
+    display: block;
+}
+
 .navbar {
     display: flex;
     align-items: center;

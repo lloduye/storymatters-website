@@ -29,8 +29,8 @@ const Navbar = () => {
 
   return (
     <header className="header">
-      <Link to="/" className="logo" onClick={handleNavClick('/')}>
-        Story Matters Entertainment
+      <Link to="/" className="logo" onClick={handleNavClick('/')}> 
+        <img src="/images/logos/logo.jpg" alt="Story Matters Entertainment Logo" className="logo-image" />
       </Link>
       <nav className={`navbar ${isMenuActive ? 'active' : ''}`}>
         <Link to="/about-us" onClick={handleNavClick('/about-us')}>About Us</Link>

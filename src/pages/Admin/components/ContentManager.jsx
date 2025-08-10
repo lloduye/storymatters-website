@@ -33,7 +33,7 @@ const ContentManager = () => {
     title: '',
     type: 'article',
     status: 'draft',
-    content: '',
+    content: '', // Retain this key as a string
     excerpt: '',
     featuredImage: '',
     category: '',
@@ -43,7 +43,6 @@ const ContentManager = () => {
     location: '',
     editor: '',
     mainImageCredit: '',
-    content: [],
     publishedAt: null,
     seo: {
       metaTitle: '',
@@ -474,7 +473,6 @@ const ContentManager = () => {
       location: '',
       editor: '',
       mainImageCredit: '',
-      content: [],
       publishedAt: null,
       seo: {
         metaTitle: '',
