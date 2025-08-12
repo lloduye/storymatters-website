@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import About from './pages/About';
-import Programs from './pages/Programs';
+import Programs from './pages/programs';
 import GetInvolved from './pages/GetInvolved';
 import Contact from './pages/Contact';
 import Impact from './pages/Impact';
