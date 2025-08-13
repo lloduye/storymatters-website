@@ -28,27 +28,32 @@ A comprehensive CMS and website for Story Matters Entertainment, featuring story
 ## 🛠️ Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <your-repo-url>
    cd storymatters-website
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp env.example .env
    ```
-   
+
    Edit `.env` with your actual values:
+
    - `GOOGLE_SPREADSHEET_ID`: Your Google Spreadsheet ID
    - `ADMIN_TOKEN`: A secure admin token
    - Ensure `google-credentials.json` is in the root directory
 
 4. **Set up Google Sheets**
+
    - Create a Google Spreadsheet
    - Add a "Stories" sheet with appropriate columns
    - Add a "Users" sheet with appropriate columns
@@ -97,9 +102,11 @@ PORT=5000
 ## 📊 Google Sheets Setup
 
 ### Stories Sheet Columns:
+
 - Title, Excerpt, Author, Location, Publish Date, Image, Category, Read Time, Content, Tags, Featured, Created At
 
 ### Users Sheet Columns:
+
 - ID, Username, Email, Password, Full Name, Role, Status, Created At, Last Login, Permissions, Phone, Department, Notes
 
 ## 🚀 Deployment
