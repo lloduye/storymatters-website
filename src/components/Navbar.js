@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes, faUser, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isLoggedIn, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -19,6 +22,25 @@ const Navbar = () => {
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    // Close mobile menu if open
+    setIsOpen(false);
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+    // Close mobile menu if open
+    setIsOpen(false);
+  };
+
+  const handleAdminAccess = () => {
+    navigate('/admin/dashboard');
+    // Close mobile menu if open
+    setIsOpen(false);
   };
 
   return (
@@ -128,6 +150,7 @@ const Navbar = () => {
                 isActive('/contact') ? 'w-auto' : 'w-0 group-hover:w-auto'
               }`}></span>
             </Link>
+            
             <Link 
               to="/donate" 
               className={`bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition-all duration-300 ${
@@ -137,6 +160,36 @@ const Navbar = () => {
             >
               Donate
             </Link>
+            
+            {/* Authentication Buttons - Far Right */}
+            <div className="ml-8">
+              {isLoggedIn ? (
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={handleAdminAccess}
+                    className="px-4 py-2 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    Admin Panel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-medium hover:bg-red-700 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleLogin}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                >
+                  <FontAwesomeIcon icon={faUser} className="mr-2" />
+                  Login
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="lg:hidden">
@@ -216,9 +269,38 @@ const Navbar = () => {
               >
                 Contact
               </Link>
+              
+              {/* Mobile Authentication Buttons */}
+              {isLoggedIn ? (
+                <>
+                  <button
+                    onClick={handleAdminAccess}
+                    className="block w-full text-left px-4 py-3 text-base font-medium bg-green-600 text-white hover:bg-green-700 transition-all duration-200"
+                  >
+                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                    Admin Panel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-3 text-base font-medium bg-red-600 text-white hover:bg-red-700 transition-all duration-200"
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogin}
+                  className="block w-full text-left px-4 py-3 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200"
+                >
+                  <FontAwesomeIcon icon={faUser} className="mr-2" />
+                  Login
+                </button>
+              )}
+              
               <Link 
                 to="/donate" 
-                className={`block px-4 py-3 text-base font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200`}
+                className={`block px-4 py-3 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200`}
                 onClick={closeMenu}
               >
                 Donate
