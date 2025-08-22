@@ -19,12 +19,10 @@ import 'react-quill/dist/quill.snow.css';
 import Select from 'react-select';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
 
 const StoryEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
