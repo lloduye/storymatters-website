@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -15,7 +15,15 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [lastActivity, setLastActivity] = useState(Date.now());
+  // Remove unused lastActivity state variable
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userData');
+    setIsLoggedIn(false);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     // Check authentication status on mount
@@ -70,7 +78,6 @@ export const AuthProvider = ({ children }) => {
     let warningTimer;
 
     const resetInactivityTimer = () => {
-      setLastActivity(Date.now());
       if (inactivityTimer) {
         clearTimeout(inactivityTimer);
       }
@@ -156,17 +163,8 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const logout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userData');
-    setIsLoggedIn(false);
-    setUser(null);
-    setLastActivity(Date.now());
-  };
-
   const resetActivity = () => {
-    setLastActivity(Date.now());
+    // Function to manually reset activity - placeholder for future use
   };
 
   const value = {
