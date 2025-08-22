@@ -139,20 +139,19 @@ const EditorStoryEditor = () => {
           // Upload to server
       try {
         console.log('EditorStoryEditor: Starting image upload...');
-        const adminToken = localStorage.getItem('adminToken');
+        // Editors should use userToken, not adminToken
         const userToken = localStorage.getItem('userToken');
-        const token = adminToken || userToken;
-        console.log('EditorStoryEditor: Token being used:', token);
+        console.log('EditorStoryEditor: Token being used:', userToken);
         
         const formData = new FormData();
         formData.append('image', file);
       
-      const response = await axios.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+        const response = await axios.post('/api/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${userToken}`
+          }
+        });
 
       console.log('EditorStoryEditor: Image upload response:', response.data);
       setUploadedImageUrl(response.data.imageUrl);
@@ -196,18 +195,18 @@ const EditorStoryEditor = () => {
       };
 
       console.log('EditorStoryEditor: Story data being prepared:', storyData);
-      console.log('EditorStoryEditor: Token being used:', localStorage.getItem('adminToken'));
+      console.log('EditorStoryEditor: Token being used:', localStorage.getItem('userToken'));
 
       console.log('Submitting story:', { isEditing, storyId, id, storyData });
 
       if (isEditing && storyId) {
         console.log('EditorStoryEditor: Updating existing story with ID:', storyId);
-        console.log('EditorStoryEditor: Token being used:', localStorage.getItem('adminToken'));
+        console.log('EditorStoryEditor: Token being used:', localStorage.getItem('userToken'));
         console.log('EditorStoryEditor: Story data being sent:', storyData);
         
         const response = await axios.put(`/api/stories/${storyId}`, storyData, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('userToken')}`
           }
         });
         
@@ -220,12 +219,12 @@ const EditorStoryEditor = () => {
         }
       } else {
         console.log('EditorStoryEditor: Creating new story');
-        console.log('EditorStoryEditor: Token being used:', localStorage.getItem('adminToken'));
+        console.log('EditorStoryEditor: Token being used:', localStorage.getItem('userToken'));
         console.log('EditorStoryEditor: Story data being sent:', storyData);
         
         const response = await axios.post('/api/stories', storyData, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('userToken')}`
           }
         });
         

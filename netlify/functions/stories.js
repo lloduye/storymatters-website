@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 // Neon database connection
 const pool = new Pool({
@@ -7,6 +8,30 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
+
+// Helper function to verify user token
+async function verifyUserToken(token) {
+  try {
+    if (!token) return null;
+    
+    // Extract user ID from token (format: token_123_1234567890)
+    const tokenParts = token.split('_');
+    if (tokenParts.length !== 3) return null;
+    
+    const userId = tokenParts[1];
+    
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users WHERE id = $1 AND status = $2', [userId, 'active']);
+    client.release();
+    
+    if (result.rows.length === 0) return null;
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return null;
+  }
+}
 
 // Helper function to get all stories from Neon
 async function getAllStories() {
@@ -258,6 +283,27 @@ exports.handler = async (event, context) => {
 
     // POST /api/stories - Create new story
     if (httpMethod === 'POST' && path === '/api/stories') {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split(' ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
       const storyData = JSON.parse(body);
       
       // Validate required fields
@@ -273,6 +319,11 @@ exports.handler = async (event, context) => {
         };
       }
       
+      // Ensure the author matches the logged-in user (for editors) or allow admin to set any author
+      if (user.role !== 'admin' && storyData.author !== user.full_name) {
+        storyData.author = user.full_name; // Editors can only create stories under their own name
+      }
+      
       await addStoryToSheet(storyData);
       return {
         statusCode: 201,
@@ -283,8 +334,41 @@ exports.handler = async (event, context) => {
 
     // PUT /api/stories/:id - Update story
     if (httpMethod === 'PUT' && path.match(/^\/api\/stories\/\d+$/)) {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split('Bearer ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
       const storyId = path.split('/').pop();
       const storyData = JSON.parse(body);
+      
+      // For editors, ensure they can only edit their own stories
+      if (user.role !== 'admin') {
+        const existingStory = await getStoryById(storyId);
+        if (!existingStory || existingStory.author !== user.full_name) {
+          return {
+            statusCode: 403,
+            headers,
+            body: JSON.stringify({ error: 'You can only edit your own stories' })
+          };
+        }
+      }
       
       await updateStoryInSheet(storyId, storyData);
       return {
@@ -296,7 +380,40 @@ exports.handler = async (event, context) => {
 
     // DELETE /api/stories/:id - Delete story
     if (httpMethod === 'DELETE' && path.match(/^\/api\/stories\/\d+$/)) {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split('Bearer ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
       const storyId = path.split('/').pop();
+      
+      // For editors, ensure they can only delete their own stories
+      if (user.role !== 'admin') {
+        const existingStory = await getStoryById(storyId);
+        if (!existingStory || existingStory.author !== user.full_name) {
+          return {
+            statusCode: 403,
+            headers,
+            body: JSON.stringify({ error: 'You can only delete your own stories' })
+          };
+        }
+      }
       
       await deleteStoryFromSheet(storyId);
       return {
@@ -308,6 +425,27 @@ exports.handler = async (event, context) => {
 
     // PATCH /api/stories/:id/status - Update story status
     if (httpMethod === 'PATCH' && path.match(/^\/api\/stories\/\d+\/status$/)) {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split('Bearer ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
       const storyId = path.split('/')[3];
       const { status } = JSON.parse(body);
       
@@ -317,6 +455,18 @@ exports.handler = async (event, context) => {
           headers,
           body: JSON.stringify({ error: 'Invalid status. Must be "draft" or "published"' })
         };
+      }
+      
+      // For editors, ensure they can only update their own stories
+      if (user.role !== 'admin') {
+        const existingStory = await getStoryById(storyId);
+        if (!existingStory || existingStory.author !== user.full_name) {
+          return {
+            statusCode: 403,
+            headers,
+            body: JSON.stringify({ error: 'You can only update your own stories' })
+          };
+        }
       }
       
       const updatedStory = await toggleStoryStatus(storyId, status);
@@ -329,6 +479,36 @@ exports.handler = async (event, context) => {
 
     // PATCH /api/stories/:id/featured - Toggle featured status
     if (httpMethod === 'PATCH' && path.match(/^\/api\/stories\/\d+\/featured$/)) {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split('Bearer ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
+      // Only admins can toggle featured status
+      if (user.role !== 'admin') {
+        return {
+          statusCode: 403,
+          headers,
+          body: JSON.stringify({ error: 'Only admins can toggle featured status' })
+        };
+      }
+      
       const storyId = path.split('/')[3];
       const { featured } = JSON.parse(body);
       
