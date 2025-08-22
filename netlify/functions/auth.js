@@ -10,12 +10,12 @@ const pool = new Pool({
 });
 
 // Helper function to authenticate user
-async function authenticateUser(email, password) {
+async function authenticateUser(username, password) {
   try {
     const client = await pool.connect();
     const result = await client.query(
-      'SELECT * FROM users WHERE email = $1 AND status = $2',
-      [email, 'active']
+      'SELECT * FROM users WHERE username = $1 AND status = $2',
+      [username, 'active']
     );
     client.release();
     
@@ -39,11 +39,11 @@ async function authenticateUser(email, password) {
   }
 }
 
-// Helper function to get user by email
-async function getUserByEmail(email) {
+// Helper function to get user by username
+async function getUserByUsername(username) {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
     client.release();
     
     if (result.rows.length === 0) {
@@ -54,7 +54,7 @@ async function getUserByEmail(email) {
     const { password_hash, ...userWithoutPassword } = result.rows[0];
     return userWithoutPassword;
   } catch (error) {
-    console.error('Error getting user by email:', error);
+    console.error('Error getting user by username:', error);
     throw error;
   }
 }
@@ -84,22 +84,22 @@ exports.handler = async (event, context) => {
 
     // POST /api/auth/login - User login
     if (httpMethod === 'POST' && path === '/api/auth/login') {
-      const { email, password } = JSON.parse(body);
+      const { username, password } = JSON.parse(body);
       
       // Validate required fields
-      if (!email || !password) {
+      if (!username || !password) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({ 
             error: 'Missing required fields', 
-            required: ['email', 'password'],
-            received: Object.keys({ email, password })
+            required: ['username', 'password'],
+            received: Object.keys({ username, password })
           })
         };
       }
       
-      const user = await authenticateUser(email, password);
+      const user = await authenticateUser(username, password);
       
       if (!user) {
         return {
@@ -128,25 +128,25 @@ exports.handler = async (event, context) => {
       const userData = JSON.parse(body);
       
       // Validate required fields
-      if (!userData.email || !userData.password || !userData.fullName) {
+      if (!userData.username || !userData.password || !userData.fullName) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({ 
             error: 'Missing required fields', 
-            required: ['email', 'password', 'fullName'],
+            required: ['username', 'password', 'fullName'],
             received: Object.keys(userData)
           })
         };
       }
       
       // Check if user already exists
-      const existingUser = await getUserByEmail(userData.email);
+      const existingUser = await getUserByUsername(userData.username);
       if (existingUser) {
         return {
           statusCode: 409,
           headers,
-          body: JSON.stringify({ error: 'User with this email already exists' })
+          body: JSON.stringify({ error: 'User with this username already exists' })
         };
       }
       

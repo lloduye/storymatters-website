@@ -8,7 +8,7 @@ import axios from 'axios';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +36,9 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Try admin login first
-      if (credentials.email === 'admin' && credentials.password === 'admin123') {
+      // Try admin login first (this will now be handled by database)
+      if (credentials.username === 'admin' && credentials.password === 'admin123') {
+        // This is now a fallback - admin should be in database
         login('admin123');
         toast.success('Admin login successful! Welcome to the admin panel.');
         navigate('/admin/dashboard');
@@ -111,22 +112,22 @@ const Login = () => {
         <div className="bg-white rounded-xl shadow-2xl p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FontAwesomeIcon icon={faUser} className="text-gray-400" />
                 </div>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="username"
+                  name="username"
+                  type="text"
                   required
-                  value={credentials.email}
+                  value={credentials.username}
                   onChange={handleInputChange}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your email"
+                  placeholder="Enter your username"
                 />
               </div>
             </div>
