@@ -4,7 +4,7 @@
   "description": "Netlify Functions for Story Matters Website",
   "main": "index.js",
   "dependencies": {
-    "googleapis": "^128.0.0",
+    "pg": "^8.11.3",
     "bcryptjs": "^3.0.2"
   },
   "devDependencies": {},
