@@ -21,16 +21,22 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRealTimeUserData } from '../../services/userService';
 
 const EditorDashboard = () => {
   useScrollToTop();
   
   const { user } = useAuth();
+  const adminToken = localStorage.getItem('adminToken');
+  
+  // Use real-time user data hook for live updates
+  const { userData: realTimeUser, isLoading: realTimeLoading, error: realTimeError } = useRealTimeUserData(adminToken, 2000); // Update every 2 seconds
+  
   const [stories, setStories] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
 
-  // Get user data - use AuthContext if available, fallback to localStorage
-  const currentUser = user || (() => {
+  // Get user data - prioritize real-time data, then AuthContext, then localStorage
+  const currentUser = realTimeUser || user || (() => {
     const userData = localStorage.getItem('userData');
     if (userData) {
       try {
@@ -299,6 +305,24 @@ const EditorDashboard = () => {
                               <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
                               Connected
                             </span>
+                            {/* Real-time data status */}
+                            {realTimeLoading && (
+                              <span className="flex items-center">
+                                <div className="animate-spin rounded-full h-2 w-2 border-b-2 border-blue-200 mr-1"></div>
+                                Syncing...
+                              </span>
+                            )}
+                            {realTimeError && (
+                              <span className="flex items-center text-red-200">
+                                ⚠️ {realTimeError.substring(0, 20)}...
+                              </span>
+                            )}
+                            {!realTimeLoading && !realTimeError && (
+                              <span className="flex items-center">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full mr-1"></div>
+                                Live Data
+                              </span>
+                            )}
                             <button
                               onClick={handleRefresh}
                               className="flex items-center px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition-all duration-200 text-xs"

@@ -127,6 +127,30 @@ async function deleteUserFromNeon(userId) {
   }
 }
 
+// Helper function to verify user token
+async function verifyUserToken(token) {
+  try {
+    if (!token) return null;
+    
+    // Extract user ID from token (format: token_123_1234567890)
+    const tokenParts = token.split('_');
+    if (tokenParts.length !== 3) return null;
+    
+    const userId = tokenParts[1];
+    
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users WHERE id = $1 AND status = $2', [userId, 'active']);
+    client.release();
+    
+    if (result.rows.length === 0) return null;
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return null;
+  }
+}
+
 // Helper function to get user by ID
 async function getUserById(userId) {
   try {
@@ -162,6 +186,39 @@ exports.handler = async (event, context) => {
     const { httpMethod, path, body } = event;
     
     console.log('Users function called:', { httpMethod, path });
+
+    // GET /api/users/me - Get current user by token
+    if (httpMethod === 'GET' && path === '/api/users/me') {
+      // Check authorization header
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Authorization token required' })
+        };
+      }
+      
+      const token = authHeader.split(' ')[1];
+      const user = await verifyUserToken(token);
+      
+      if (!user) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid or expired token' })
+        };
+      }
+      
+      // Remove password from user object
+      const { password_hash, ...userWithoutPassword } = user;
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(userWithoutPassword)
+      };
+    }
 
     // GET /api/users - Get all users
     if (httpMethod === 'GET' && path === '/api/users') {

@@ -28,10 +28,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminDashboard = () => {
   useScrollToTop();
   
+  const { refreshUserData } = useAuth();
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -239,9 +241,17 @@ const AdminDashboard = () => {
                 Connected
               </span>
               <button
-                onClick={fetchDashboardData}
+                onClick={async () => {
+                  try {
+                    await refreshUserData();
+                    toast.success('User data refreshed!');
+                  } catch (error) {
+                    toast.error('Failed to refresh user data');
+                  }
+                  fetchDashboardData();
+                }}
                 className="flex items-center px-2 py-1 bg-white bg-opacity-20 rounded text-xs hover:bg-opacity-30 transition-all duration-200"
-                title="Refresh Dashboard"
+                title="Refresh Dashboard & User Data"
               >
                 <FontAwesomeIcon icon={faArrowUp} className="mr-1" />
                 Refresh

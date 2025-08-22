@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../utils/useScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,9 +19,31 @@ const EditorCreateStory = () => {
   useScrollToTop();
   
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Check permissions on component mount
+  useEffect(() => {
+    const checkUserPermissions = async () => {
+      try {
+        const canCreateStory = await checkPermission('create_story');
+        setHasPermission(canCreateStory);
+        
+        if (!canCreateStory) {
+          toast.error('You do not have permission to create stories.');
+          navigate('/editor/dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking permissions:', error);
+        toast.error('Error checking permissions. Please try again.');
+        navigate('/editor/dashboard');
+      }
+    };
+
+    checkUserPermissions();
+  }, [checkPermission, navigate]);
   const [formData, setFormData] = useState({
     title: '',
     excerpt: '',
@@ -55,6 +77,12 @@ const EditorCreateStory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!hasPermission) {
+      toast.error('You do not have permission to create stories.');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -93,6 +121,11 @@ const EditorCreateStory = () => {
   };
 
   const handleSaveDraft = async () => {
+    if (!hasPermission) {
+      toast.error('You do not have permission to save drafts.');
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const formDataToSend = new FormData();
@@ -136,6 +169,20 @@ const EditorCreateStory = () => {
       imagePreview: null
     }));
   };
+
+  // Don't render the form if user doesn't have permission
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Checking Permissions...</h1>
+            <p className="text-gray-600">Please wait while we verify your access.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

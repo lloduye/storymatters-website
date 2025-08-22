@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { userService } from '../services/userService';
 
 const AuthContext = createContext();
 
@@ -17,6 +18,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   // Remove unused lastActivity state variable
 
+  // Function to refresh user data from database in real-time
+  const refreshUserData = useCallback(async () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return null;
+
+    try {
+      const freshUserData = await userService.refreshUserSession(token);
+      if (freshUserData) {
+        setUser(freshUserData);
+        return freshUserData;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      return null;
+    }
+  }, []);
+
+  // Function to check if user has specific permission
+  const checkPermission = useCallback(async (requiredPermission) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return false;
+
+    try {
+      return await userService.checkUserPermission(token, requiredPermission);
+    } catch (error) {
+      console.error('Error checking permission:', error);
+      return false;
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('isLoggedIn');
@@ -26,47 +58,50 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Check authentication status on mount
-    const checkAuthStatus = () => {
+    // Check authentication status on mount with real-time database fetch
+    const checkAuthStatus = async () => {
       const token = localStorage.getItem('adminToken');
       const loginStatus = localStorage.getItem('isLoggedIn');
-      const userData = localStorage.getItem('userData');
       
       console.log('AuthContext.checkAuthStatus:', { 
         token: !!token, 
-        loginStatus, 
-        userData: !!userData,
-        userDataContent: userData ? JSON.parse(userData) : null
+        loginStatus
       });
       
       const isAuthenticated = !!(token && loginStatus === 'true');
       console.log('Setting isLoggedIn to:', isAuthenticated);
       setIsLoggedIn(isAuthenticated);
       
-      if (userData) {
+      if (isAuthenticated && token) {
         try {
-          const parsedUser = JSON.parse(userData);
-          console.log('Setting user data:', parsedUser);
-          setUser(parsedUser);
+          // Fetch fresh user data from database
+          const freshUserData = await userService.getCurrentUser(token);
+          console.log('Fresh user data from database:', freshUserData);
+          setUser(freshUserData);
+          
+          // Update localStorage with fresh data
+          localStorage.setItem('userData', JSON.stringify(freshUserData));
         } catch (error) {
-          console.error('Error parsing user data:', error);
-          setUser(null);
+          console.error('Error fetching fresh user data:', error);
+          // If we can't fetch fresh data, user might be invalid
+          logout();
+          return;
         }
       } else {
-        console.log('No user data in localStorage');
+        console.log('No valid authentication');
         setUser(null);
       }
       
       setIsLoading(false);
       console.log('AuthContext initialization complete. Final state:', {
         isLoggedIn: isAuthenticated,
-        user: userData ? JSON.parse(userData) : null,
+        user: isAuthenticated ? 'Fresh data loaded' : null,
         isLoading: false
       });
     };
 
     checkAuthStatus();
-  }, []);
+  }, [logout]);
 
   // Auto-logout after 5 minutes of inactivity
   useEffect(() => {
@@ -128,7 +163,22 @@ export const AuthProvider = ({ children }) => {
         document.removeEventListener(event, handleUserActivity, true);
       });
     };
-  }, [isLoggedIn, logout]);
+  }, [isLoggedIn, logout, refreshUserData, checkPermission]);
+
+  // Real-time user data refresh every second
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const refreshInterval = setInterval(async () => {
+      await refreshUserData();
+    }, 1000); // Refresh every second
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [isLoggedIn, refreshUserData, logout]);
 
   const login = (token, userData = null) => {
     console.log('AuthContext.login called with:', { token, userData });
@@ -173,7 +223,9 @@ export const AuthProvider = ({ children }) => {
     user,
     login,
     logout,
-    resetActivity
+    resetActivity,
+    refreshUserData,
+    checkPermission
   };
 
   return (
