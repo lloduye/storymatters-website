@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDollarSign, 
   faSearch, 
-  faFilter, 
   faDownload, 
   faEye, 
   faCheckCircle, 
@@ -15,7 +14,6 @@ import {
   faCalendarAlt,
   faCreditCard,
   faHandHoldingHeart,
-  faExclamationTriangle,
   faArrowUp,
   faArrowDown,
   faPlus
@@ -32,7 +30,7 @@ const DonationsManagement = () => {
   const [showModal, setShowModal] = useState(false);
 
   // Mock data for donations
-  const mockDonations = [
+  const mockDonations = useMemo(() => [
     {
       id: 1,
       donorName: 'John Doe',
@@ -108,7 +106,7 @@ const DonationsManagement = () => {
       notes: 'Student supporter',
       address: '654 Maple Dr, City, State 12345'
     }
-  ];
+  ], []);
 
   useEffect(() => {
     // Simulate API call
@@ -116,7 +114,7 @@ const DonationsManagement = () => {
       setDonations(mockDonations);
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [mockDonations]);
 
   const getStatusColor = (status) => {
     switch (status) {

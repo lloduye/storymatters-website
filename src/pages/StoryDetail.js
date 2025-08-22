@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faMapMarkerAlt, faClock, faShare, faBookmark, faComment, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -11,11 +11,7 @@ const StoryDetail = () => {
   const [error, setError] = useState(null);
   const [relatedStories, setRelatedStories] = useState([]);
 
-  useEffect(() => {
-    fetchStory();
-  }, [id, fetchStory]);
-
-  const fetchStory = async () => {
+  const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await axios.get(`http://localhost:5000/api/stories/${id}`);
@@ -32,7 +28,11 @@ const StoryDetail = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchStory();
+  }, [fetchStory]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';

@@ -15,15 +15,14 @@ import {
   faCheckCircle,
   faLightbulb,
   faRocket,
-  faUser,
-  faLock
+  faUser
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EditorDashboard = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -171,7 +170,7 @@ const EditorDashboard = () => {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, []); // Empty dependency array - only run once on mount
+  }, [fetchDashboardData]); // Include fetchDashboardData in dependency array
 
   const handleRefresh = () => {
     fetchDashboardData();

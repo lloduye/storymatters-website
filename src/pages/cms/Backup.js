@@ -3,19 +3,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDatabase, 
   faDownload, 
-  faUpload, 
   faClock,
   faCheckCircle,
   faExclamationTriangle,
-  faTrash,
   faPlay,
-  faPause
+  faPause,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 const Backup = () => {
   const [backupStatus, setBackupStatus] = useState('idle');
-  const [lastBackup, setLastBackup] = useState('2025-01-15 14:30:00');
-  const [nextBackup, setNextBackup] = useState('2025-01-16 02:00:00');
+  const [lastBackup] = useState('2025-01-15 14:30:00');
+  const [nextBackup] = useState('2025-01-16 02:00:00');
 
   const backupHistory = [
     { id: 1, date: '2025-01-15 14:30:00', type: 'Full Backup', size: '2.4 GB', status: 'completed' },
@@ -208,7 +207,7 @@ const Backup = () => {
                   <FontAwesomeIcon icon={faDownload} />
                 </button>
                 <button className="text-red-600 hover:text-red-700 p-2" title="Delete">
-                  <FontAwesomeIcon icon={faTrash} />
+                  <FontAwesomeIcon icon={faTimes} />
                 </button>
               </div>
             </div>

@@ -56,7 +56,7 @@ export const cleanPhoneNumber = (phone) => {
 // Phone input change handler with validation
 export const handlePhoneChange = (value, setFormData, fieldName = 'phone') => {
   // Check if the input contains only allowed characters
-  if (value === '' || /^[\d\s\-()+\-]*$/.test(value)) {
+  if (value === '' || /^[\d\s\-()+]*$/.test(value)) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }
 };
@@ -77,7 +77,7 @@ export const validatePhoneInput = (phone) => {
     return { 
       isValid: false, 
       message: validation.message, 
-      className: 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+      className: 'border-red-300 focus:border-red-500 focus:ring-green-500' 
     };
   }
-};
+}; 

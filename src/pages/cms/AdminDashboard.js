@@ -16,11 +16,7 @@ import {
   faGlobe,
   faCog,
   faBell,
-  faDownload,
-  faUpload,
-  faEnvelope,
-  faPhone,
-  faMapMarkerAlt,
+
   faClock,
   faCheckCircle,
   faExclamationTriangle,
@@ -47,7 +43,7 @@ const AdminDashboard = () => {
     pendingDonations: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
-  const [quickStats, setQuickStats] = useState({
+  const [quickStats] = useState({
     websiteVisitors: 1247,
     pageViews: 8923,
     bounceRate: 23.4,

@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faChartLine, faUsers, faEye, faMousePointer, faGlobe, faCalendarAlt,
-  faArrowUp, faArrowDown, faDollarSign, faNewspaper, faHeart,
-  faDesktop, faMobile, faTablet, faSearch, faFilter, faDownload, faClock
+  faUsers, faEye, faMousePointer, faArrowUp, faArrowDown, faDollarSign, faNewspaper, faHeart,
+  faDesktop, faMobile, faTablet, faDownload, faClock
 } from '@fortawesome/free-solid-svg-icons';
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState('30d');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Mock analytics data
   const analyticsData = {

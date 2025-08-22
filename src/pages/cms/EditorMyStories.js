@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -10,11 +10,9 @@ import {
   faStar,
   faPlus,
   faSearch,
-  faFilter,
   faCircle,
   faTrash,
   faPencilAlt,
-  faCalendarAlt,
   faMapMarkerAlt,
   faClock,
   faTimes
@@ -35,11 +33,7 @@ const EditorMyStories = () => {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  useEffect(() => {
-    fetchMyStories();
-  }, []);
-
-  const fetchMyStories = async () => {
+  const fetchMyStories = useCallback(async () => {
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
@@ -56,7 +50,11 @@ const EditorMyStories = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchMyStories();
+  }, [fetchMyStories]);
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';

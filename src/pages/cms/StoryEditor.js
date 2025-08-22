@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -92,7 +92,7 @@ const StoryEditor = () => {
     }
   }, [id, setValue, isEditing]);
 
-  const fetchStory = async () => {
+  const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await axios.get(`/api/stories/${id}`);
@@ -127,7 +127,7 @@ const StoryEditor = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, setValue, setContent, setImagePreview, setUploadedImageUrl, setSelectedTags]);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];

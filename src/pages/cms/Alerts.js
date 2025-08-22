@@ -4,7 +4,6 @@ import {
   faExclamationTriangle, 
   faBell, 
   faCheckCircle,
-  faTimes,
   faEye,
   faTrash,
   faCog

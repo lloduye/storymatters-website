@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faGlobe, 
   faEdit, 
   faSave, 
   faTimes, 
@@ -12,11 +11,9 @@ import {
   faUsers,
   faHandHoldingHeart,
   faEnvelope,
-  faCog,
   faImage,
   faFileAlt,
   faCheckCircle,
-  faExclamationTriangle,
   faArrowUp,
   faArrowDown
 } from '@fortawesome/free-solid-svg-icons';
@@ -30,7 +27,7 @@ const ContentManagement = () => {
   const [previewPage, setPreviewPage] = useState(null);
 
   // Mock data for website pages
-  const mockPages = [
+  const mockPages = useMemo(() => [
     {
       id: 1,
       title: 'Home',
@@ -145,7 +142,7 @@ const ContentManagement = () => {
       lastModified: '2024-01-18T16:45:00Z',
       views: 321
     }
-  ];
+  ], []);
 
   useEffect(() => {
     // Simulate API call
@@ -153,7 +150,7 @@ const ContentManagement = () => {
       setPages(mockPages);
       setIsLoading(false);
     }, 1000);
-  }, []);
+  }, [mockPages]);
 
   const getStatusColor = (status) => {
     switch (status) {

@@ -1,33 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faShieldAlt, 
   faServer, 
   faDatabase, 
-  faGlobe,
   faExclamationTriangle,
   faCheckCircle,
-  faClock,
   faSync
 } from '@fortawesome/free-solid-svg-icons';
 
 const SystemHealth = () => {
-  const [systemStatus, setSystemStatus] = useState({
-    server: 'healthy',
-    database: 'healthy',
-    website: 'healthy',
-    api: 'healthy'
-  });
-
-  const [metrics, setMetrics] = useState({
-    uptime: '99.9%',
-    responseTime: '245ms',
-    cpuUsage: '23%',
-    memoryUsage: '67%',
-    diskUsage: '45%',
-    activeConnections: 127
-  });
-
   const [lastChecked, setLastChecked] = useState(new Date());
 
   const checkSystemHealth = () => {
@@ -36,23 +18,7 @@ const SystemHealth = () => {
     console.log('Checking system health...');
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'healthy': return 'text-green-600 bg-green-100';
-      case 'warning': return 'text-yellow-600 bg-yellow-100';
-      case 'critical': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'healthy': return faCheckCircle;
-      case 'warning': return faExclamationTriangle;
-      case 'critical': return faExclamationTriangle;
-      default: return faClock;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -109,7 +75,7 @@ const SystemHealth = () => {
               <p className="text-2xl font-bold text-green-600">Active</p>
             </div>
             <div className="p-2 bg-green-100 rounded-lg">
-              <FontAwesomeIcon icon={faGlobe} className="text-lg text-green-600" />
+              <FontAwesomeIcon icon={faShieldAlt} className="text-lg text-green-600" />
             </div>
           </div>
         </div>
@@ -135,7 +101,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Uptime</span>
-              <span className="text-sm font-bold text-green-600">{metrics.uptime}</span>
+              <span className="text-sm font-bold text-green-600">99.9%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-green-600 h-2 rounded-full" style={{ width: '99.9%' }}></div>
@@ -145,7 +111,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Response Time</span>
-              <span className="text-sm font-bold text-blue-600">{metrics.responseTime}</span>
+              <span className="text-sm font-bold text-blue-600">245ms</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
@@ -155,7 +121,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">CPU Usage</span>
-              <span className="text-sm font-bold text-orange-600">{metrics.cpuUsage}</span>
+              <span className="text-sm font-bold text-orange-600">23%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-orange-600 h-2 rounded-full" style={{ width: '23%' }}></div>
@@ -165,7 +131,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Memory Usage</span>
-              <span className="text-sm font-bold text-purple-600">{metrics.memoryUsage}</span>
+              <span className="text-sm font-bold text-purple-600">67%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-purple-600 h-2 rounded-full" style={{ width: '67%' }}></div>
@@ -175,7 +141,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Disk Usage</span>
-              <span className="text-sm font-bold text-indigo-600">{metrics.diskUsage}</span>
+              <span className="text-sm font-bold text-indigo-600">45%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-indigo-600 h-2 rounded-full" style={{ width: '45%' }}></div>
@@ -185,7 +151,7 @@ const SystemHealth = () => {
           <div className="p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Active Connections</span>
-              <span className="text-sm font-bold text-teal-600">{metrics.activeConnections}</span>
+              <span className="text-sm font-bold text-teal-600">127</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div className="bg-teal-600 h-2 rounded-full" style={{ width: '60%' }}></div>

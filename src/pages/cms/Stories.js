@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faNewspaper, faPlus, faSearch, faFilter, faEdit, faTrash, faEye, faEyeSlash,
+  faNewspaper, faPlus, faSearch, faEdit, faTrash, faEye, faEyeSlash,
   faStar, faCalendarAlt, faUser, faTag, faCheckCircle,
-  faClock, faTimes, faDownload, faUpload, faTimes as faClose,
+  faClock, faTimes, faDownload, faTimes as faClose,
   faChevronDown, faChevronUp
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';

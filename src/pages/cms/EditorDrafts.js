@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -8,14 +8,11 @@ import {
   faToggleOn,
   faPlus,
   faSearch,
-  faFilter,
   faTrash,
   faPencilAlt,
-  faCalendarAlt,
   faMapMarkerAlt,
   faClock,
   faTimes,
-  faSave,
   faCheckCircle,
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
@@ -35,11 +32,7 @@ const EditorDrafts = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
 
-  useEffect(() => {
-    fetchDrafts();
-  }, []);
-
-  const fetchDrafts = async () => {
+  const fetchDrafts = useCallback(async () => {
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
@@ -58,7 +51,11 @@ const EditorDrafts = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchDrafts();
+  }, [fetchDrafts]);
 
   const handlePublishDraft = async (draftId) => {
     try {

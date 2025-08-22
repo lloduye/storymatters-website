@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, 
-  faPlus, 
   faEdit, 
   faTrash, 
   faEye, 
   faSearch, 
-  faFilter,
   faUserPlus,
   faUserEdit,
   faUserCheck,
@@ -24,7 +22,6 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { 
   validatePhoneInput, 
-  handlePhoneChange, 
   cleanPhoneNumber 
 } from '../../utils/phoneValidation';
 import {
@@ -46,7 +43,7 @@ const Users = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [phoneValidation, setPhoneValidation] = useState({ isValid: true, message: '', className: '' });
+
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, strength: 'Very Weak', color: 'text-red-600', bgColor: 'bg-red-100', feedback: [], isValid: false });
   const [passwordMatch, setPasswordMatch] = useState({ isValid: false, message: '' });
@@ -65,14 +62,6 @@ const Users = () => {
     notes: ''
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, statusFilter, roleFilter]);
-
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
@@ -87,7 +76,7 @@ const Users = () => {
     }
   };
 
-  const filterUsers = () => {
+  const filterUsers = useCallback(() => {
     let filtered = users;
 
     // Search filter
@@ -110,7 +99,15 @@ const Users = () => {
     }
 
     setFilteredUsers(filtered);
-  };
+  }, [users, searchTerm, statusFilter, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    filterUsers();
+  }, [users, searchTerm, statusFilter, roleFilter, filterUsers]);
 
   // Password validation handlers
   const handlePasswordChange = (password) => {
