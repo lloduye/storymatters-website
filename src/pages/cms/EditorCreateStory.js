@@ -1,4 +1,4 @@
-import React$1 from 'react';
+import React, { useState } from 'react';
 import { useScrollToTop } from '../../utils/useScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
