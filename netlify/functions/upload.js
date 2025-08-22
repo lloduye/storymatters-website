@@ -1,13 +1,12 @@
-const { google } = require('googleapis');
+const { Pool } = require('pg');
 
-// Google Sheets API setup
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY),
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+// Neon database connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
-
-const sheets = google.sheets({ version: 'v4', auth });
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 
 // Main function handler
 exports.handler = async (event, context) => {
@@ -32,34 +31,48 @@ exports.handler = async (event, context) => {
     
     console.log('Upload function called:', { httpMethod, path });
 
-    // POST /api/upload - Image upload
+    // POST /api/upload - Handle file upload
     if (httpMethod === 'POST' && path === '/api/upload') {
-      // For now, we'll return a placeholder response
-      // In a real implementation, you'd handle file uploads
-      // Netlify Functions can handle multipart form data
+      // For now, we'll simulate file upload since Netlify Functions have limitations
+      // In production, you'd want to use a service like Cloudinary, AWS S3, or similar
       
-      console.log('Image upload request received');
+      const uploadData = JSON.parse(body);
       
-      // Generate a unique filename
-      const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substring(2, 15);
-      const filename = `image-${timestamp}-${randomId}.jpg`;
+      if (!uploadData.fileName || !uploadData.fileType) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Missing required fields', 
+            required: ['fileName', 'fileType'],
+            received: Object.keys(uploadData)
+          })
+        };
+      }
       
-      // For now, we'll simulate a successful upload
-      // In production, you'd want to:
-      // 1. Parse the multipart form data
-      // 2. Upload to a cloud storage service (like Cloudinary, AWS S3)
-      // 3. Store the URL in your database
+      // Generate a mock file URL (in production, this would be the actual uploaded file URL)
+      const fileUrl = `https://example.com/uploads/${Date.now()}_${uploadData.fileName}`;
       
-      const imageUrl = `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Uploaded+Image`;
+      // Store file info in database if needed
+      const client = await pool.connect();
+      await client.query(`
+        INSERT INTO file_uploads (file_name, file_type, file_url, uploaded_at)
+        VALUES ($1, $2, $3, $4)
+      `, [
+        uploadData.fileName,
+        uploadData.fileType,
+        fileUrl,
+        new Date()
+      ]);
+      client.release();
       
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
-          success: true,
-          imageUrl: imageUrl,
-          filename: filename
+          message: 'File uploaded successfully',
+          fileUrl,
+          fileName: uploadData.fileName
         })
       };
     }

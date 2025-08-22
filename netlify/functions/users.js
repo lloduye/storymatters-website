@@ -1,181 +1,141 @@
-const { google } = require('googleapis');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-// Google Sheets API setup for users
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY),
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+// Neon database connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-const sheets = google.sheets({ version: 'v4', auth });
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
-const USERS_RANGE = 'Users!A:M';
-
-// Helper function to get all users from Google Sheets
+// Helper function to get all users from Neon
 async function getAllUsers() {
   try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-    });
-
-    const rows = response.data.values;
-    if (!rows || rows.length === 0) {
-      return [];
-    }
-
-    const headers = rows[0];
-    const users = rows.slice(1).map((row, index) => {
-      const user = {};
-      headers.forEach((header, i) => {
-        user[header] = row[i] || '';
-      });
-      return user;
-    });
-
-    return users;
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users ORDER BY created_at DESC');
+    client.release();
+    return result.rows;
   } catch (error) {
-    console.error('Error fetching users from Google Sheets:', error);
+    console.error('Error fetching users from Neon:', error);
     throw error;
   }
 }
 
-// Helper function to add a new user to Google Sheets
-async function addUserToSheet(userData) {
+// Helper function to add a new user to Neon
+async function addUserToNeon(userData) {
   try {
     // Hash the password
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     
-    const values = [
-      [
-        `user_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`, // ID
-        userData.username || '',
-        userData.email || '',
-        hashedPassword,
-        userData.fullName || '',
-        userData.role || 'editor',
-        userData.status || 'active',
-        new Date().toISOString(), // Created At
-        '', // Last Login
-        userData.permissions || '',
-        userData.phone || '',
-        userData.department || '',
-        userData.notes || ''
-      ]
-    ];
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      resource: { values }
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error adding user to Google Sheets:', error);
-    throw error;
-  }
-}
-
-// Helper function to update a user in Google Sheets
-async function updateUserInSheet(userId, userData) {
-  try {
-    // Find the user row
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-    });
-
-    const rows = response.data.values;
-    let rowNumber = -1;
-
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i][0] === userId) {
-        rowNumber = i + 1;
-        break;
-      }
-    }
-
-    if (rowNumber === -1) {
-      throw new Error('User not found');
-    }
-
-    // Prepare update data
-    const updateData = [
+    const client = await pool.connect();
+    const result = await client.query(`
+      INSERT INTO users (username, full_name, email, password_hash, role, status, phone)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `, [
       userData.username || '',
-      userData.email || '',
-      userData.password ? await bcrypt.hash(userData.password, 10) : rows[rowNumber - 1][3], // Keep existing password if not provided
       userData.fullName || '',
+      userData.email || '',
+      hashedPassword,
       userData.role || 'editor',
       userData.status || 'active',
-      rows[rowNumber - 1][6], // Keep existing Created At
-      rows[rowNumber - 1][7], // Keep existing Last Login
-      userData.permissions || '',
-      userData.phone || '',
-      userData.department || '',
-      userData.notes || ''
-    ];
-
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `Users!B${rowNumber}:M${rowNumber}`,
-      valueInputOption: 'RAW',
-      resource: { values: [updateData] }
-    });
-
-    return true;
+      userData.phone || null
+    ]);
+    
+    client.release();
+    return result.rows[0];
   } catch (error) {
-    console.error('Error updating user in Google Sheets:', error);
+    console.error('Error adding user to Neon:', error);
     throw error;
   }
 }
 
-// Helper function to delete a user from Google Sheets
-async function deleteUserFromSheet(userId) {
+// Helper function to update a user in Neon
+async function updateUserInNeon(userId, userData) {
   try {
-    // Find the user row
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-    });
-
-    const rows = response.data.values;
-    let rowNumber = -1;
-
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i][0] === userId) {
-        rowNumber = i + 1;
-        break;
-      }
+    const client = await pool.connect();
+    
+    let query = 'UPDATE users SET ';
+    const values = [];
+    let paramCount = 1;
+    
+    if (userData.username) {
+      query += `username = $${paramCount++}, `;
+      values.push(userData.username);
     }
-
-    if (rowNumber === -1) {
+    if (userData.fullName) {
+      query += `full_name = $${paramCount++}, `;
+      values.push(userData.fullName);
+    }
+    if (userData.email) {
+      query += `email = $${paramCount++}, `;
+      values.push(userData.email);
+    }
+    if (userData.password) {
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      query += `password_hash = $${paramCount++}, `;
+      values.push(hashedPassword);
+    }
+    if (userData.role) {
+      query += `role = $${paramCount++}, `;
+      values.push(userData.role);
+    }
+    if (userData.status) {
+      query += `status = $${paramCount++}, `;
+      values.push(userData.status);
+    }
+    if (userData.phone !== undefined) {
+      query += `phone = $${paramCount++}, `;
+      values.push(userData.phone);
+    }
+    
+    // Remove trailing comma and space
+    query = query.slice(0, -2);
+    query += `, updated_at = $${paramCount++} WHERE id = $${paramCount++}`;
+    values.push(new Date(), userId);
+    
+    const result = await client.query(query, values);
+    client.release();
+    
+    if (result.rowCount === 0) {
       throw new Error('User not found');
     }
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error updating user in Neon:', error);
+    throw error;
+  }
+}
 
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      resource: {
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId: 1, // Assuming Users is the second sheet
-                dimension: 'ROWS',
-                startIndex: rowNumber - 1,
-                endIndex: rowNumber
-              }
-            }
-          }
-        ]
-      }
-    });
-
+// Helper function to delete a user from Neon
+async function deleteUserFromNeon(userId) {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('DELETE FROM users WHERE id = $1', [userId]);
+    client.release();
+    
+    if (result.rowCount === 0) {
+      throw new Error('User not found');
+    }
+    
     return true;
   } catch (error) {
-    console.error('Error deleting user from Google Sheets:', error);
+    console.error('Error deleting user from Neon:', error);
+    throw error;
+  }
+}
+
+// Helper function to get user by ID
+async function getUserById(userId) {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+    client.release();
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error fetching user by ID from Neon:', error);
     throw error;
   }
 }
@@ -209,7 +169,7 @@ exports.handler = async (event, context) => {
       
       // Remove passwords from response
       const usersWithoutPasswords = users.map(user => {
-        const { Password, ...userWithoutPassword } = user;
+        const { password_hash, ...userWithoutPassword } = user;
         return userWithoutPassword;
       });
 
@@ -217,6 +177,29 @@ exports.handler = async (event, context) => {
         statusCode: 200,
         headers,
         body: JSON.stringify(usersWithoutPasswords)
+      };
+    }
+
+    // GET /api/users/:id - Get specific user
+    if (httpMethod === 'GET' && path.match(/^\/api\/users\/\d+$/)) {
+      const userId = path.split('/').pop();
+      const user = await getUserById(userId);
+      
+      if (!user) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'User not found' })
+        };
+      }
+      
+      // Remove password from response
+      const { password_hash, ...userWithoutPassword } = user;
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(userWithoutPassword)
       };
     }
 
@@ -237,32 +220,32 @@ exports.handler = async (event, context) => {
         };
       }
       
-      await addUserToSheet(userData);
+      const newUser = await addUserToNeon(userData);
       return {
         statusCode: 201,
         headers,
-        body: JSON.stringify({ message: 'User created successfully' })
+        body: JSON.stringify({ message: 'User created successfully', user: newUser })
       };
     }
 
     // PUT /api/users/:id - Update user
-    if (httpMethod === 'PUT' && path.match(/^\/api\/users\/[^\/]+$/)) {
+    if (httpMethod === 'PUT' && path.match(/^\/api\/users\/\d+$/)) {
       const userId = path.split('/').pop();
       const userData = JSON.parse(body);
       
-      await updateUserInSheet(userId, userData);
+      const updatedUser = await updateUserInNeon(userId, userData);
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ message: 'User updated successfully' })
+        body: JSON.stringify({ message: 'User updated successfully', user: updatedUser })
       };
     }
 
     // DELETE /api/users/:id - Delete user
-    if (httpMethod === 'DELETE' && path.match(/^\/api\/users\/[^\/]+$/)) {
+    if (httpMethod === 'DELETE' && path.match(/^\/api\/users\/\d+$/)) {
       const userId = path.split('/').pop();
       
-      await deleteUserFromSheet(userId);
+      await deleteUserFromNeon(userId);
       return {
         statusCode: 200,
         headers,
@@ -271,7 +254,7 @@ exports.handler = async (event, context) => {
     }
 
     // PATCH /api/users/:id/status - Update user status
-    if (httpMethod === 'PATCH' && path.match(/^\/api\/users\/[^\/]+\/status$/)) {
+    if (httpMethod === 'PATCH' && path.match(/^\/api\/users\/\d+\/status$/)) {
       const userId = path.split('/')[3];
       const { status } = JSON.parse(body);
       
@@ -283,11 +266,11 @@ exports.handler = async (event, context) => {
         };
       }
       
-      await updateUserInSheet(userId, { status });
+      const updatedUser = await updateUserInNeon(userId, { status });
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ message: 'User status updated successfully', status })
+        body: JSON.stringify({ message: 'User status updated successfully', status, user: updatedUser })
       };
     }
 

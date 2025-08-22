@@ -1,36 +1,22 @@
 # Story Matters Website
 
-A comprehensive CMS and website for Story Matters Entertainment, featuring story management, user authentication, and Google Sheets integration.
+A modern, responsive website for Story Matters Entertainment with a comprehensive content management system.
 
-## 🚀 Features
+## ✨ Features
 
-- **Story Management**: Create, edit, and manage stories with rich text editor
-- **User Management**: Role-based access control (Admin, Manager, Editor)
-- **Google Sheets Integration**: Store data in Google Sheets as a database
-- **Image Management**: Upload and manage story images
-- **Responsive Design**: Modern UI built with React and Tailwind CSS
-- **Authentication**: Secure login system with role-based dashboards
+- **Modern React Frontend** with responsive design
+- **Content Management System** for stories and articles
+- **User Management** with role-based access control
+- **Neon PostgreSQL Database** for fast, reliable data storage
+- **Netlify Functions** for serverless backend operations
+- **Real-time Updates** and live content management
 
-## 🔒 Security Features
-
-- Password hashing with bcrypt
-- Role-based access control
-- Environment variable protection
-- Secure file upload handling
-
-## 📋 Prerequisites
-
-- Node.js (v14 or higher)
-- Google Cloud Platform account
-- Google Sheets API enabled
-- Service account credentials
-
-## 🛠️ Installation
+## 🚀 Quick Start
 
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/lloduye/storymatters-website.git
    cd storymatters-website
    ```
 
@@ -38,6 +24,7 @@ A comprehensive CMS and website for Story Matters Entertainment, featuring story
 
    ```bash
    npm install
+   cd netlify/functions && npm install
    ```
 
 3. **Set up environment variables**
@@ -48,16 +35,15 @@ A comprehensive CMS and website for Story Matters Entertainment, featuring story
 
    Edit `.env` with your actual values:
 
-   - `GOOGLE_SPREADSHEET_ID`: Your Google Spreadsheet ID
+   - `DATABASE_URL`: Your Neon PostgreSQL connection string
    - `ADMIN_TOKEN`: A secure admin token
-   - Ensure `google-credentials.json` is in the root directory
 
-4. **Set up Google Sheets**
+4. **Set up Neon Database**
 
-   - Create a Google Spreadsheet
-   - Add a "Stories" sheet with appropriate columns
-   - Add a "Users" sheet with appropriate columns
-   - Share with your service account email
+   - Create a Neon account at [neon.tech](https://neon.tech)
+   - Create a new project and database
+   - Copy your connection string to `DATABASE_URL`
+   - The database tables will be created automatically
 
 5. **Start the development server**
    ```bash
@@ -73,8 +59,8 @@ storymatters-website/
 │   ├── pages/             # Page components
 │   ├── contexts/          # React contexts
 │   └── App.js             # Main app component
-├── server/                 # Node.js backend
-│   └── index.js           # Express server
+├── netlify/                # Netlify Functions (backend)
+│   └── functions/         # Serverless functions
 ├── public/                 # Static assets
 ├── .env                    # Environment variables (not committed)
 ├── env.example            # Environment template
@@ -86,35 +72,34 @@ storymatters-website/
 Create a `.env` file based on `env.example`:
 
 ```env
-GOOGLE_SERVICE_ACCOUNT_KEY=./google-credentials.json
-GOOGLE_SPREADSHEET_ID=your-actual-spreadsheet-id
+DATABASE_URL=postgresql://username:password@host:port/database?sslmode=require
 ADMIN_TOKEN=your-secure-admin-token
 PORT=5000
 ```
 
 ## 🚨 Security Notes
 
-- **Never commit** `.env` or `google-credentials.json` files
+- **Never commit** `.env` file
 - Change the default `ADMIN_TOKEN` in production
 - Use strong, unique passwords for all user accounts
 - Regularly rotate API keys and tokens
 
-## 📊 Google Sheets Setup
+## 📊 Database Schema
 
-### Stories Sheet Columns:
+### Stories Table:
 
-- Title, Excerpt, Author, Location, Publish Date, Image, Category, Read Time, Content, Tags, Featured, Created At
+- id, title, excerpt, author, location, publish_date, image, category, read_time, content, tags, featured, status, view_count, created_at, updated_at
 
-### Users Sheet Columns:
+### Users Table:
 
-- ID, Username, Email, Password, Full Name, Role, Status, Created At, Last Login, Permissions, Phone, Department, Notes
+- id, username, full_name, email, password_hash, role, status, phone, created_at, updated_at
 
 ## 🚀 Deployment
 
-1. Set up production environment variables
+1. Set up production environment variables in Netlify
 2. Build the frontend: `npm run build`
-3. Deploy to your preferred hosting service
-4. Ensure Google Sheets API access is configured
+3. Deploy to Netlify (automatic with GitHub integration)
+4. Ensure Neon database connection is configured
 
 ## 🤝 Contributing
 

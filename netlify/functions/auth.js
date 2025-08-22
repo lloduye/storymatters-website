@@ -1,84 +1,60 @@
-const { google } = require('googleapis');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-// Google Sheets API setup for users
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY),
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+// Neon database connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-const sheets = google.sheets({ version: 'v4', auth });
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
-const USERS_RANGE = 'Users!A:M';
-
-// Helper function to get all users from Google Sheets
-async function getAllUsers() {
+// Helper function to authenticate user
+async function authenticateUser(email, password) {
   try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-    });
-
-    const rows = response.data.values;
-    if (!rows || rows.length === 0) {
-      return [];
+    const client = await pool.connect();
+    const result = await client.query(
+      'SELECT * FROM users WHERE email = $1 AND status = $2',
+      [email, 'active']
+    );
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return null;
     }
-
-    const headers = rows[0];
-    const users = rows.slice(1).map((row, index) => {
-      const user = {};
-      headers.forEach((header, i) => {
-        user[header] = row[i] || '';
-      });
-      return user;
-    });
-
-    return users;
+    
+    const user = result.rows[0];
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isValidPassword) {
+      return null;
+    }
+    
+    // Remove password from user object
+    const { password_hash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   } catch (error) {
-    console.error('Error fetching users from Google Sheets:', error);
+    console.error('Error authenticating user:', error);
     throw error;
   }
 }
 
-// Helper function to verify password
-async function verifyPassword(password, hashedPassword) {
-  return await bcrypt.compare(password, hashedPassword);
-}
-
-// Helper function to update user's last login
-async function updateUserLastLogin(userId) {
+// Helper function to get user by email
+async function getUserByEmail(email) {
   try {
-    // Find the user row
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: USERS_RANGE,
-    });
-
-    const rows = response.data.values;
-    let rowNumber = -1;
-
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i][0] === userId) {
-        rowNumber = i + 1;
-        break;
-      }
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return null;
     }
-
-    if (rowNumber === -1) {
-      throw new Error('User not found');
-    }
-
-    // Update only the lastLogin field (column I)
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `Users!I${rowNumber}`,
-      valueInputOption: 'RAW',
-      resource: { values: [[new Date().toISOString()]] }
-    });
-
-    return true;
+    
+    // Remove password from user object
+    const { password_hash, ...userWithoutPassword } = result.rows[0];
+    return userWithoutPassword;
   } catch (error) {
-    console.error('Error updating user last login:', error);
+    console.error('Error getting user by email:', error);
     throw error;
   }
 }
@@ -106,102 +82,103 @@ exports.handler = async (event, context) => {
     
     console.log('Auth function called:', { httpMethod, path });
 
-    // POST /api/users/login - User login
-    if (httpMethod === 'POST' && path === '/api/users/login') {
-      const { username, password } = JSON.parse(body);
+    // POST /api/auth/login - User login
+    if (httpMethod === 'POST' && path === '/api/auth/login') {
+      const { email, password } = JSON.parse(body);
       
-      if (!username || !password) {
+      // Validate required fields
+      if (!email || !password) {
         return {
           statusCode: 400,
           headers,
-          body: JSON.stringify({ error: 'Username and password are required' })
-        };
-      }
-
-      try {
-        // Get all users
-        const users = await getAllUsers();
-        console.log('Users sheet response:', {
-          rowCount: users.length + 1,
-          firstRow: Object.keys(users[0] || {}),
-          dataRows: users.length
-        });
-
-        // Find user by username
-        const user = users.find(u => u.Username === username);
-        
-        if (!user) {
-          console.log('User not found for username:', username);
-          return {
-            statusCode: 401,
-            headers,
-            body: JSON.stringify({ error: 'Invalid credentials' })
-          };
-        }
-
-        console.log('User found:', {
-          id: user.ID,
-          username: user.Username,
-          email: user.Email,
-          role: user.Role,
-          status: user.Status
-        });
-
-        // Check if user is active
-        if (user.Status !== 'active') {
-          return {
-            statusCode: 401,
-            headers,
-            body: JSON.stringify({ error: 'Account is not active' })
-          };
-        }
-
-        // Verify password
-        console.log('Verifying password...');
-        const isValidPassword = await verifyPassword(password, user.Password);
-        
-        if (!isValidPassword) {
-          console.log('Password verification failed');
-          return {
-            statusCode: 401,
-            headers,
-            body: JSON.stringify({ error: 'Invalid credentials' })
-          };
-        }
-
-        console.log('Password verified successfully');
-
-        // Update last login
-        console.log('Updating last login in sheet...');
-        await updateUserLastLogin(user.ID);
-
-        // Generate token
-        const token = `token_${Date.now()}_${user.ID}`;
-        
-        // Remove password from user data
-        const { Password, ...userWithoutPassword } = user;
-
-        console.log('Login successful for user:', user.Username, 'Role:', user.Role);
-        console.log('Generated token for user:', token);
-
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            message: 'Login successful',
-            user: userWithoutPassword,
-            token: token
+          body: JSON.stringify({ 
+            error: 'Missing required fields', 
+            required: ['email', 'password'],
+            received: Object.keys({ email, password })
           })
         };
-
-      } catch (error) {
-        console.error('Login error:', error);
+      }
+      
+      const user = await authenticateUser(email, password);
+      
+      if (!user) {
         return {
-          statusCode: 500,
+          statusCode: 401,
           headers,
-          body: JSON.stringify({ error: 'Login failed', details: error.message })
+          body: JSON.stringify({ error: 'Invalid credentials' })
         };
       }
+      
+      // Generate a simple token (in production, use JWT)
+      const token = `token_${user.id}_${Date.now()}`;
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: 'Login successful',
+          user,
+          token
+        })
+      };
+    }
+
+    // POST /api/auth/register - User registration
+    if (httpMethod === 'POST' && path === '/api/auth/register') {
+      const userData = JSON.parse(body);
+      
+      // Validate required fields
+      if (!userData.email || !userData.password || !userData.fullName) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Missing required fields', 
+            required: ['email', 'password', 'fullName'],
+            received: Object.keys(userData)
+          })
+        };
+      }
+      
+      // Check if user already exists
+      const existingUser = await getUserByEmail(userData.email);
+      if (existingUser) {
+        return {
+          statusCode: 409,
+          headers,
+          body: JSON.stringify({ error: 'User with this email already exists' })
+        };
+      }
+      
+      // Hash password and create user
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      const client = await pool.connect();
+      const result = await client.query(`
+        INSERT INTO users (username, full_name, email, password_hash, role, status)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [
+        userData.username || userData.email.split('@')[0],
+        userData.fullName,
+        userData.email,
+        hashedPassword,
+        userData.role || 'editor',
+        'active'
+      ]);
+      client.release();
+      
+      const newUser = result.rows[0];
+      const { password_hash, ...userWithoutPassword } = newUser;
+      
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify({
+          message: 'User registered successfully',
+          user: userWithoutPassword
+        })
+      };
     }
 
     // If no matching route, return 404
