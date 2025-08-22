@@ -62,8 +62,11 @@ const EditorDrafts = () => {
   }, [isLoading, user]); // Include user dependency to fix ESLint warning
 
   useEffect(() => {
-    fetchDrafts();
-  }, [fetchDrafts]); // Include fetchDrafts dependency to fix ESLint warning
+    // Only fetch if we have a user and not already loading
+    if (user && !isLoading) {
+      fetchDrafts();
+    }
+  }, [user]); // Only depend on user changes, not the function itself
 
   const handlePublishDraft = async (draftId) => {
     try {

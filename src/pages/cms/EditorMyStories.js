@@ -61,8 +61,11 @@ const EditorMyStories = () => {
   }, [isLoading, user]); // Include user dependency to fix ESLint warning
 
   useEffect(() => {
-    fetchMyStories();
-  }, [fetchMyStories]); // Include fetchMyStories dependency to fix ESLint warning
+    // Only fetch if we have a user and not already loading
+    if (user && !isLoading) {
+      fetchMyStories();
+    }
+  }, [user]); // Only depend on user changes, not the function itself
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
