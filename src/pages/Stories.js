@@ -38,13 +38,28 @@ const Stories = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
     
-    // If the image path starts with /uploads/, it's from the CMS, so prepend the backend URL
-    if (imagePath.startsWith('/uploads/')) {
-      return imagePath.startsWith('http') ? imagePath : `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Story+Image`;
+    // If the image path is already a full URL, use it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
     }
     
-    // Otherwise, it's a local image, so use as is
-    return imagePath;
+    // If the image path starts with /uploads/, it's from the CMS
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    
+    // If it's a local image in the Images folder, prepend the path
+    if (imagePath.includes('Images/') || imagePath.includes('2025-')) {
+      return `/${imagePath}`;
+    }
+    
+    // For placeholder images or other cases
+    if (imagePath.includes('placeholder')) {
+      return imagePath;
+    }
+    
+    // Default fallback
+    return '/Images/2025-01-06-community-dialogues.jpg';
   };
 
   if (isLoading) {

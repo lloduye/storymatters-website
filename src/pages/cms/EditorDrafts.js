@@ -123,6 +123,33 @@ const EditorDrafts = () => {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
+    
+    // If the image path is already a full URL, use it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // If the image path starts with /uploads/, it's from the CMS
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    
+    // If it's a local image in the Images folder, prepend the path
+    if (imagePath.includes('Images/') || imagePath.includes('2025-')) {
+      return `/${imagePath}`;
+    }
+    
+    // For placeholder images or other cases
+    if (imagePath.includes('placeholder')) {
+      return imagePath;
+    }
+    
+    // Default fallback
+    return '/Images/2025-01-06-community-dialogues.jpg';
+  };
+
   const filteredDrafts = drafts.filter(draft => {
     const matchesSearch = draft.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          draft.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -433,7 +460,7 @@ const EditorDrafts = () => {
               {selectedDraft.image && (
                 <div>
                   <img 
-                    src={selectedDraft.image} 
+                    src={getImageUrl(selectedDraft.image)} 
                     alt={selectedDraft.title || 'Draft'}
                     className="w-full h-64 object-cover rounded-lg"
                   />

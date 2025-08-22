@@ -137,6 +137,33 @@ const EditorMyStories = () => {
     return featured ? 'text-yellow-500' : 'text-gray-400';
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
+    
+    // If the image path is already a full URL, use it as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // If the image path starts with /uploads/, it's from the CMS
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    
+    // If it's a local image in the Images folder, prepend the path
+    if (imagePath.includes('Images/') || imagePath.includes('2025-')) {
+      return `/${imagePath}`;
+    }
+    
+    // For placeholder images or other cases
+    if (imagePath.includes('placeholder')) {
+      return imagePath;
+    }
+    
+    // Default fallback
+    return '/Images/2025-01-06-community-dialogues.jpg';
+  };
+
   const filteredStories = stories.filter(story => {
     const matchesSearch = story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          story.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -431,7 +458,7 @@ const EditorMyStories = () => {
               {selectedStory.image && (
                 <div>
                   <img 
-                    src={selectedStory.image} 
+                    src={getImageUrl(selectedStory.image)} 
                     alt={selectedStory.title}
                     className="w-full h-64 object-cover rounded-lg"
                   />
