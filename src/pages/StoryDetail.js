@@ -13,7 +13,7 @@ const StoryDetail = () => {
 
   useEffect(() => {
     fetchStory();
-  }, [id]);
+  }, [id, fetchStory]);
 
   const fetchStory = async () => {
     try {

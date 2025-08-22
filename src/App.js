@@ -33,7 +33,7 @@ import AdminLayout from './components/cms/AdminLayout';
 import EditorLayout from './components/cms/EditorLayout';
 import Analytics from './pages/cms/Analytics';
 import Users from './pages/cms/Users';
-import Settings from './pages/cms/Settings';
+
 import StoriesCMS from './pages/cms/Stories';
 import Reports from './pages/cms/Reports';
 import SystemHealth from './pages/cms/SystemHealth';

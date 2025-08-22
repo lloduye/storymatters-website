@@ -55,11 +55,8 @@ export const cleanPhoneNumber = (phone) => {
 
 // Phone input change handler with validation
 export const handlePhoneChange = (value, setFormData, fieldName = 'phone') => {
-  // Allow common phone number characters
-  const allowedChars = /[\d\s\-\(\)\+]/;
-  
   // Check if the input contains only allowed characters
-  if (value === '' || /^[\d\s\-\(\)\+]*$/.test(value)) {
+  if (value === '' || /^[\d\s\-()+\-]*$/.test(value)) {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }
 };

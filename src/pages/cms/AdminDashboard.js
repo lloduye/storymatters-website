@@ -13,12 +13,9 @@ import {
   faChartLine,
   faUsers,
   faDollarSign,
-  faHandHoldingHeart,
   faGlobe,
   faCog,
   faBell,
-  faSearch,
-  faFilter,
   faDownload,
   faUpload,
   faEnvelope,
@@ -28,11 +25,9 @@ import {
   faCheckCircle,
   faExclamationTriangle,
   faArrowUp,
-  faArrowDown,
   faTimes,
   faRocket,
-  faLightbulb,
-  faLock
+  faLightbulb
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
