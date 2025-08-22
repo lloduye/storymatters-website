@@ -97,7 +97,8 @@ const EditorCreateStory = () => {
 
       // Add author and status - get user from context or localStorage
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      formDataToSend.append('author', currentUser.fullName || currentUser.full_name || 'Unknown Author');
+      // Always use full_name from database for author field
+      formDataToSend.append('author', currentUser.full_name || currentUser.fullName || 'Unknown Author');
       formDataToSend.append('status', 'published');
       formDataToSend.append('featured', 'false');
       formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);
@@ -139,7 +140,8 @@ const EditorCreateStory = () => {
 
       // Add author and status for draft
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      formDataToSend.append('author', currentUser.fullName || currentUser.full_name || 'Unknown Author');
+      // Always use full_name from database for author field
+      formDataToSend.append('author', currentUser.full_name || currentUser.fullName || 'Unknown Author');
       formDataToSend.append('status', 'draft');
       formDataToSend.append('featured', 'false');
       formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);

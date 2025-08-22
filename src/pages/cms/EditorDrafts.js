@@ -39,7 +39,8 @@ const EditorDrafts = () => {
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      const userName = currentUser.fullName || currentUser.full_name;
+      // Always use full_name from database for API calls
+      const userName = currentUser.full_name || currentUser.fullName;
       if (!userName) {
         toast.error('User information not found');
         setIsLoading(false);

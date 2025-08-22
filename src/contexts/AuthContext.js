@@ -194,11 +194,17 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('isLoggedIn', 'true');
     
     if (userData) {
-      const userDataString = JSON.stringify(userData);
+      // Ensure userData has both full_name (database) and fullName (frontend) for compatibility
+      const userDataWithBothNames = {
+        ...userData,
+        full_name: userData.full_name || userData.fullName, // Prioritize database field
+        fullName: userData.full_name || userData.fullName // Add frontend compatibility
+      };
+      const userDataString = JSON.stringify(userDataWithBothNames);
       localStorage.setItem('userData', userDataString);
       console.log('User data stored in localStorage:', userDataString);
-      setUser(userData);
-      console.log('User data set in AuthContext state:', userData);
+      setUser(userDataWithBothNames);
+      console.log('User data set in AuthContext state:', userDataWithBothNames);
     } else {
       console.log('No user data provided to login function');
     }

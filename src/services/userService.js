@@ -119,17 +119,22 @@ export const userService = {
     }
   },
 
-  // Refresh user session with fresh data
+    // Refresh user session with fresh data
   async refreshUserSession(token) {
     try {
       const freshUserData = await this.getCurrentUser(token);
-      
+
       // Update localStorage with fresh data
       if (freshUserData) {
-        localStorage.setItem('userData', JSON.stringify(freshUserData));
-        return freshUserData;
+        // Ensure consistent naming: always use full_name from database
+        const userDataForStorage = {
+          ...freshUserData,
+          fullName: freshUserData.full_name // Add fullName for frontend compatibility
+        };
+        localStorage.setItem('userData', JSON.stringify(userDataForStorage));
+        return userDataForStorage;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Error refreshing user session:', error);
