@@ -29,7 +29,10 @@ import {
   faExclamationTriangle,
   faArrowUp,
   faArrowDown,
-  faTimes
+  faTimes,
+  faRocket,
+  faLightbulb,
+  faLock
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -37,6 +40,7 @@ import toast from 'react-hot-toast';
 const AdminDashboard = () => {
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
   const [stats, setStats] = useState({
     totalStories: 0,
     featuredStories: 0,
@@ -58,14 +62,33 @@ const AdminDashboard = () => {
   const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
+    // Get user data from localStorage
+    const userDataFromStorage = localStorage.getItem('userData');
+    if (userDataFromStorage) {
+      try {
+        const parsed = JSON.parse(userDataFromStorage);
+        console.log('AdminDashboard: User data loaded:', parsed);
+        setUserData(parsed);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    } else {
+      console.log('AdminDashboard: No user data found in localStorage');
+    }
+    
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/stories');
+      
+      // Use the correct backend port
+      const backendUrl = '';
+      const response = await axios.get(`${backendUrl}/api/stories`);
       const storiesData = response.data;
+      
+      console.log('AdminDashboard: Stories data fetched:', storiesData);
       setStories(storiesData);
       
       // Calculate stats
@@ -93,7 +116,7 @@ const AdminDashboard = () => {
       ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +125,8 @@ const AdminDashboard = () => {
   const handleDeleteStory = async (storyId) => {
     if (window.confirm('Are you sure you want to delete this story?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/stories/${storyId}`, {
+        const backendUrl = '';
+        await axios.delete(`${backendUrl}/api/stories/${storyId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -136,57 +160,13 @@ const AdminDashboard = () => {
     if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
     
     if (imagePath.startsWith('/uploads/')) {
-      return `http://localhost:5000${imagePath}`;
+      return imagePath;
     }
     
     return imagePath;
   };
 
-  const StatCard = ({ title, value, icon, color, change, changeType }) => (
-    <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className={`p-2 rounded-md ${color}`}>
-            <FontAwesomeIcon icon={icon} className="text-white text-sm" />
-          </div>
-          <div className="ml-3">
-            <p className="text-xs font-medium text-gray-600">{title}</p>
-            <p className="text-lg font-bold text-gray-900">{value}</p>
-          </div>
-        </div>
-        {change && (
-          <div className={`flex items-center text-xs ${changeType === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-            <FontAwesomeIcon icon={changeType === 'up' ? faArrowUp : faArrowDown} className="mr-1" />
-            {change}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
-  const QuickActionCard = ({ title, description, icon, link, color, count }) => (
-    <Link
-      to={link}
-      className="block bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-all duration-200 hover:scale-105"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className={`p-3 rounded-lg ${color}`}>
-            <FontAwesomeIcon icon={icon} className="text-white text-xl" />
-          </div>
-          <div className="ml-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-600">{description}</p>
-          </div>
-        </div>
-        {count && (
-          <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-            {count}
-          </div>
-        )}
-      </div>
-    </Link>
-  );
 
   const ActivityItem = ({ activity }) => {
     const getIcon = (type) => {
@@ -215,153 +195,253 @@ const AdminDashboard = () => {
       }
     };
 
-    return (
-      <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200">
-        <div className={`p-2 rounded-lg ${getColor(activity.type)}`}>
-          <FontAwesomeIcon icon={getIcon(activity.type)} className="text-sm" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-900">{activity.message}</p>
-          <p className="text-xs text-gray-500">{activity.time}</p>
-        </div>
-        <span className={`text-xs font-medium ${getStatusColor(activity.status)}`}>
-          {activity.status}
-        </span>
-      </div>
-    );
+         return (
+       <div className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors duration-200">
+         <div className={`p-1.5 rounded-lg ${getColor(activity.type)}`}>
+           <FontAwesomeIcon icon={getIcon(activity.type)} className="text-xs" />
+         </div>
+         <div className="flex-1">
+           <p className="text-xs text-gray-900">{activity.message}</p>
+           <p className="text-xs text-gray-500">{activity.time}</p>
+         </div>
+         <span className={`text-xs font-medium ${getStatusColor(activity.status)}`}>
+           {activity.status}
+         </span>
+       </div>
+     );
   };
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Message */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <p className="text-gray-600 text-lg">Welcome back! Here's what's happening with Story Matters today.</p>
+    <div className="space-y-6">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 rounded-lg p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">
+              Welcome back, {userData?.fullName || 'Administrator'}! 👋
+            </h1>
+            <p className="text-blue-100 text-sm">
+              Here's what's happening with Story Matters today.
+            </p>
+            <div className="flex items-center space-x-4 mt-2 text-blue-100 text-xs">
+              <span className="flex items-center">
+                <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </span>
+              <span className="flex items-center">
+                <FontAwesomeIcon icon={faClock} className="mr-1" />
+                {new Date().toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </span>
+              <span className="flex items-center">
+                <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                Connected
+              </span>
+              <button
+                onClick={fetchDashboardData}
+                className="flex items-center px-2 py-1 bg-white bg-opacity-20 rounded text-xs hover:bg-opacity-30 transition-all duration-200"
+                title="Refresh Dashboard"
+              >
+                <FontAwesomeIcon icon={faArrowUp} className="mr-1" />
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <FontAwesomeIcon icon={faCog} className="text-3xl text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
-             {/* Main Stats Grid */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Donations"
-          value={`$${stats.totalDonations.toLocaleString()}`}
-          icon={faDollarSign}
-          color="bg-green-500"
-          change="+12.5%"
-          changeType="up"
-        />
-        <StatCard
-          title="Monthly Donations"
-          value={`$${stats.monthlyDonations.toLocaleString()}`}
-          icon={faHandHoldingHeart}
-          color="bg-blue-500"
-          change="+8.2%"
-          changeType="up"
-        />
-        <StatCard
-          title="Total Stories"
-          value={stats.totalStories}
-          icon={faNewspaper}
-          color="bg-purple-500"
-          change="+3"
-          changeType="up"
-        />
-        <StatCard
-          title="Website Visitors"
-          value={quickStats.websiteVisitors.toLocaleString()}
-          icon={faGlobe}
-          color="bg-orange-500"
-          change="+15.3%"
-          changeType="up"
-        />
-      </div>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Total Donations</p>
+              <p className="text-2xl font-bold text-green-600">${stats.totalDonations.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">
+                +12.5% from last month
+              </p>
+            </div>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <FontAwesomeIcon icon={faDollarSign} className="text-lg text-green-600" />
+            </div>
+          </div>
+        </div>
 
-             {/* Secondary Stats */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Donors"
-          value={stats.totalDonors}
-          icon={faUsers}
-          color="bg-indigo-500"
-        />
-        <StatCard
-          title="Featured Stories"
-          value={stats.featuredStories}
-          icon={faStar}
-          color="bg-yellow-500"
-        />
-        <StatCard
-          title="Page Views"
-          value={quickStats.pageViews.toLocaleString()}
-          icon={faEye}
-          color="bg-teal-500"
-        />
-        <StatCard
-          title="Pending Donations"
-          value={stats.pendingDonations}
-          icon={faClock}
-          color="bg-red-500"
-        />
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Total Stories</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.totalStories}</p>
+              <p className="text-xs text-gray-500">
+                {stats.featuredStories} featured
+              </p>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FontAwesomeIcon icon={faNewspaper} className="text-lg text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Website Visitors</p>
+              <p className="text-2xl font-bold text-purple-600">{quickStats.websiteVisitors.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">
+                +15.3% from last week
+              </p>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <FontAwesomeIcon icon={faGlobe} className="text-lg text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-600">Total Donors</p>
+              <p className="text-2xl font-bold text-indigo-600">{stats.totalDonors}</p>
+              <p className="text-xs text-gray-500">
+                {stats.pendingDonations} pending
+              </p>
+            </div>
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <FontAwesomeIcon icon={faUsers} className="text-lg text-indigo-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <QuickActionCard
-            title="Create Story"
-            description="Add a new story to your collection"
-            icon={faPlus}
-            link="/admin/stories/new"
-            color="bg-blue-500"
-          />
-          <QuickActionCard
-            title="Manage Donations"
-            description="View and process donations"
-            icon={faDollarSign}
-            link="/admin/donations"
-            color="bg-green-500"
-            count={stats.pendingDonations}
-          />
-          <QuickActionCard
-            title="Website Content"
-            description="Update website pages and content"
-            icon={faGlobe}
-            link="/admin/content"
-            color="bg-purple-500"
-          />
-          <QuickActionCard
-            title="Analytics"
-            description="View detailed analytics and reports"
-            icon={faChartLine}
-            link="/admin/analytics"
-            color="bg-orange-500"
-          />
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+            <FontAwesomeIcon icon={faRocket} className="text-blue-600 mr-2" />
+            Quick Actions
+          </h2>
+          <Link 
+            to="/admin/stories" 
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+          >
+            View All
+            <FontAwesomeIcon icon={faArrowUp} className="ml-1" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Link
+            to="/admin/stories/new"
+            className="group p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-start space-x-2">
+              <div className="p-2 rounded-lg bg-blue-500 group-hover:scale-105 transition-transform duration-200">
+                <FontAwesomeIcon icon={faPlus} className="text-white text-sm" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 text-sm">
+                  Create Story
+                </h3>
+                <p className="text-xs text-gray-600">Add a new story to your collection</p>
+              </div>
+            </div>
+          </Link>
+          
+          <Link
+            to="/admin/donations"
+            className="group p-3 border border-gray-200 rounded-lg hover:border-green-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-start space-x-2">
+              <div className="p-2 rounded-lg bg-green-500 group-hover:scale-105 transition-transform duration-200">
+                <FontAwesomeIcon icon={faDollarSign} className="text-white text-sm" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors duration-200 text-sm">
+                  Manage Donations
+                </h3>
+                <p className="text-xs text-gray-600">View and process donations</p>
+                {stats.pendingDonations > 0 && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full mt-1">
+                    {stats.pendingDonations} pending
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
+          
+          <Link
+            to="/admin/content"
+            className="group p-3 border border-gray-200 rounded-lg hover:border-purple-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-start space-x-2">
+              <div className="p-2 rounded-lg bg-purple-500 group-hover:scale-105 transition-transform duration-200">
+                <FontAwesomeIcon icon={faGlobe} className="text-white text-sm" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors duration-200 text-sm">
+                  Website Content
+                </h3>
+                <p className="text-xs text-gray-600">Update website pages and content</p>
+              </div>
+            </div>
+          </Link>
+          
+          <Link
+            to="/admin/analytics"
+            className="group p-3 border border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-md transition-all duration-200"
+          >
+            <div className="flex items-start space-x-2">
+              <div className="p-2 rounded-lg bg-orange-500 group-hover:scale-105 transition-transform duration-200">
+                <FontAwesomeIcon icon={faChartLine} className="text-white text-sm" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-200 text-sm">
+                  Analytics
+                </h3>
+                <p className="text-xs text-gray-600">View detailed analytics and reports</p>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Stories */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Stories</h2>
-                <Link
-                  to="/admin/stories"
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  View All →
-                </Link>
-              </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <FontAwesomeIcon icon={faNewspaper} className="text-blue-600 mr-2" />
+                Recent Stories
+              </h2>
+              <Link 
+                to="/admin/stories" 
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+              >
+                View All
+                <FontAwesomeIcon icon={faArrowUp} className="ml-1" />
+              </Link>
             </div>
             
             {isLoading ? (
-              <div className="p-8 text-center">
+              <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="text-gray-600 mt-2">Loading stories...</p>
               </div>
             ) : stories.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="text-center py-8">
                 <FontAwesomeIcon icon={faNewspaper} className="text-gray-400 text-4xl mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No stories yet</h3>
                 <p className="text-gray-600 mb-4">Get started by creating your first story</p>
@@ -374,162 +454,205 @@ const AdminDashboard = () => {
                 </Link>
               </div>
             ) : (
-              <div className="divide-y divide-gray-200">
-                {stories.slice(0, 5).map((story) => (
-                  <div key={story.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <img
-                          className="h-12 w-12 rounded-lg object-cover"
-                          src={getImageUrl(story.image)}
-                          alt={story.title}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {story.title}
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            {story.featured === 'true' && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                <FontAwesomeIcon icon={faStar} className="mr-1" />
-                                Featured
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-500 truncate">{story.excerpt}</p>
-                        <div className="flex items-center space-x-3 text-sm text-gray-600">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                            {formatDate(story.publishDate)}
-                          </span>
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                            {story.category}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handlePreviewStory(story)}
-                          className="text-blue-600 hover:text-blue-900 p-2"
-                          title="Preview"
-                        >
-                          <FontAwesomeIcon icon={faEye} />
-                        </button>
-                        <Link
-                          to={`/admin/stories/edit/${story.id}`}
-                          className="text-green-600 hover:text-green-900 p-2"
-                          title="Edit"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteStory(story.id)}
-                          className="text-red-600 hover:text-red-900 p-2"
-                          title="Delete"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                                                          <div className="space-y-3">
+                 {stories.slice(0, 5).map((story) => (
+                   <div key={story.id} className="flex items-center space-x-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                       <img
+                         className="h-8 w-8 rounded-lg object-cover"
+                         src={getImageUrl(story.image)}
+                         alt={story.title}
+                       />
+                     </div>
+                     <div className="flex-1">
+                       <h3 className="font-medium text-gray-900 text-sm">{story.title}</h3>
+                       <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                         <span className="flex items-center">
+                           <FontAwesomeIcon icon={faUser} className="mr-1" />
+                           {story.author || 'Unknown Author'}
+                         </span>
+                         <span className="flex items-center">
+                           <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
+                           {formatDate(story.publishDate)}
+                         </span>
+                         {story.featured === 'true' && (
+                           <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                             <FontAwesomeIcon icon={faStar} className="mr-1" />
+                             Featured
+                           </span>
+                         )}
+                       </div>
+                       <p className="text-xs text-gray-500 truncate mt-1">{story.excerpt}</p>
+                       <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
+                         <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
+                           {story.category || 'Uncategorized'}
+                           </span>
+                         <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded-full">
+                           {story.status || 'Draft'}
+                         </span>
+                       </div>
+                     </div>
+                     <div className="flex items-center space-x-1">
+                       <button
+                         onClick={() => handlePreviewStory(story)}
+                         className="text-blue-600 hover:text-blue-900 p-1.5"
+                         title="Preview"
+                       >
+                         <FontAwesomeIcon icon={faEye} className="text-sm" />
+                       </button>
+                       <Link
+                         to={`/admin/stories/edit/${story.id}`}
+                         className="text-green-600 hover:text-green-900 p-1.5"
+                         title="Edit"
+                       >
+                         <FontAwesomeIcon icon={faEdit} className="text-sm" />
+                       </Link>
+                       <button
+                         onClick={() => handleDeleteStory(story.id)}
+                         className="text-red-600 hover:text-red-900 p-1.5"
+                         title="Delete"
+                       >
+                         <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                       </button>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             )}
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <FontAwesomeIcon icon={faClock} className="text-blue-600 mr-2" />
+              Recent Activity
+            </h2>
+            <Link
+              to="/admin/activity"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+            >
+              View All
+              <FontAwesomeIcon icon={faArrowUp} className="ml-1" />
+            </Link>
           </div>
-          <div className="p-4">
-            <div className="space-y-2">
-              {recentActivity.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
-              ))}
+          <div className="space-y-3">
+            {recentActivity.map((activity) => (
+              <ActivityItem key={activity.id} activity={activity} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+            {/* Additional Management Sections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center mb-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 text-lg" />
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to="/admin/activity"
-                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                View All Activity →
-              </Link>
+            <h3 className="ml-2 text-base font-semibold text-gray-900">Pending Actions</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+              <span className="text-xs text-gray-700">Donations to process</span>
+              <span className="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded-full">{stats.pendingDonations}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg">
+              <span className="text-xs text-gray-700">Stories to review</span>
+              <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">3</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+              <span className="text-xs text-gray-700">Messages to reply</span>
+              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">7</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center mb-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 text-lg" />
+            </div>
+            <h3 className="ml-2 text-base font-semibold text-gray-900">Website Health</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+              <span className="text-xs text-gray-700">Uptime</span>
+              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">99.9%</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+              <span className="text-xs text-gray-700">Response time</span>
+              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">245ms</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+              <span className="text-xs text-gray-700">SSL Status</span>
+              <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+          <div className="flex items-center mb-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FontAwesomeIcon icon={faChartLine} className="text-blue-600 text-lg" />
+            </div>
+            <h3 className="ml-2 text-base font-semibold text-gray-900">Performance</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+              <span className="text-xs text-gray-700">Bounce rate</span>
+              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">{quickStats.bounceRate}%</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+              <span className="text-xs text-gray-700">Avg session</span>
+              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">{quickStats.avgSessionDuration}</span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+              <span className="text-xs text-gray-700">Conversion rate</span>
+              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">2.4%</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Additional Management Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center mb-4">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600" />
-            </div>
-            <h3 className="ml-3 text-lg font-semibold text-gray-900">Pending Actions</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Donations to process</span>
-              <span className="text-sm font-medium text-red-600">{stats.pendingDonations}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Stories to review</span>
-              <span className="text-sm font-medium text-yellow-600">3</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Messages to reply</span>
-              <span className="text-sm font-medium text-blue-600">7</span>
-            </div>
-          </div>
+      {/* Tips Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+            <FontAwesomeIcon icon={faLightbulb} className="text-yellow-600 mr-2" />
+            Admin Tips
+          </h2>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center mb-4">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />
-            </div>
-            <h3 className="ml-3 text-lg font-semibold text-gray-900">Website Health</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Uptime</span>
-              <span className="text-sm font-medium text-green-600">99.9%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Response time</span>
-              <span className="text-sm font-medium text-green-600">245ms</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">SSL Status</span>
-              <span className="text-sm font-medium text-green-600">Active</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-2">
+              <FontAwesomeIcon icon={faDollarSign} className="text-blue-600 mt-1" />
+              <div>
+                <h3 className="font-medium text-blue-900 text-sm">Donation Management</h3>
+                <p className="text-xs text-blue-700">Process donations promptly to maintain donor trust</p>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex items-center mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FontAwesomeIcon icon={faChartLine} className="text-blue-600" />
+          
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start space-x-2">
+              <FontAwesomeIcon icon={faNewspaper} className="text-green-600 mt-1" />
+              <div>
+                <h3 className="font-medium text-green-900 text-sm">Content Quality</h3>
+                <p className="text-xs text-green-700">Review stories before publishing for quality control</p>
+              </div>
             </div>
-            <h3 className="ml-3 text-lg font-semibold text-gray-900">Performance</h3>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Bounce rate</span>
-              <span className="text-sm font-medium text-blue-600">{quickStats.bounceRate}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Avg session</span>
-              <span className="text-sm font-medium text-blue-600">{quickStats.avgSessionDuration}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Conversion rate</span>
-              <span className="text-sm font-medium text-blue-600">2.4%</span>
+          
+          <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="flex items-start space-x-2">
+              <FontAwesomeIcon icon={faUsers} className="text-purple-600 mt-1" />
+              <div>
+                <h3 className="font-medium text-purple-900 text-sm">User Management</h3>
+                <p className="text-xs text-purple-700">Regularly review user permissions and access</p>
+              </div>
             </div>
           </div>
         </div>
@@ -555,7 +678,7 @@ const AdminDashboard = () => {
               {/* Story Image */}
               <div className="mb-6">
                 <img
-                  src={previewStory.image ? `http://localhost:5000${previewStory.image}` : '/Images/2025-01-06-community-dialogues.jpg'}
+                  src={previewStory.image ? previewStory.image : '/Images/2025-01-06-community-dialogues.jpg'}
                   alt={previewStory.title}
                   className="w-full h-64 object-cover rounded-lg"
                 />

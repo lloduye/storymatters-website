@@ -22,6 +22,17 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { 
+  validatePhoneInput, 
+  handlePhoneChange, 
+  cleanPhoneNumber 
+} from '../../utils/phoneValidation';
+import {
+  validatePasswordStrength,
+  validatePasswordConfirmation,
+  getPasswordStrengthBarWidth,
+  getPasswordStrengthBarColor
+} from '../../utils/passwordValidation';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -35,6 +46,10 @@ const Users = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneValidation, setPhoneValidation] = useState({ isValid: true, message: '', className: '' });
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, strength: 'Very Weak', color: 'text-red-600', bgColor: 'bg-red-100', feedback: [], isValid: false });
+  const [passwordMatch, setPasswordMatch] = useState({ isValid: false, message: '' });
 
   // Form state for create/edit
   const [formData, setFormData] = useState({
@@ -61,7 +76,7 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/users');
+      const response = await axios.get('/api/users');
       console.log('Fetched users data:', response.data);
       setUsers(response.data);
     } catch (error) {
@@ -97,12 +112,57 @@ const Users = () => {
     setFilteredUsers(filtered);
   };
 
+  // Password validation handlers
+  const handlePasswordChange = (password) => {
+    setFormData({ ...formData, password });
+    const strength = validatePasswordStrength(password);
+    setPasswordStrength(strength);
+    
+    // Check password confirmation match
+    if (passwordConfirmation) {
+      const match = validatePasswordConfirmation(password, passwordConfirmation);
+      setPasswordMatch(match);
+    }
+  };
+
+  const handlePasswordConfirmationChange = (confirmPassword) => {
+    setPasswordConfirmation(confirmPassword);
+    const match = validatePasswordConfirmation(formData.password, confirmPassword);
+    setPasswordMatch(match);
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number before submission
+    const phoneValidation = validatePhoneInput(formData.phone);
+    if (!phoneValidation.isValid) {
+      toast.error(phoneValidation.message);
+      return;
+    }
+    
+    // Validate password strength
+    if (!passwordStrength.isValid) {
+      toast.error('Password is too weak. Please meet the minimum requirements.');
+      return;
+    }
+    
+    // Validate password confirmation
+    if (!passwordMatch.isValid) {
+      toast.error(passwordMatch.message);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
-      await axios.post('http://localhost:5000/api/users', formData);
+      // Clean phone number before sending to API
+      const userData = {
+        ...formData,
+        phone: cleanPhoneNumber(formData.phone)
+      };
+      
+              await axios.post('/api/users', userData);
       toast.success('User created successfully!');
       setShowCreateModal(false);
       resetForm();
@@ -117,10 +177,24 @@ const Users = () => {
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();
+    
+    // Validate phone number before submission
+    const phoneValidation = validatePhoneInput(formData.phone);
+    if (!phoneValidation.isValid) {
+      toast.error(phoneValidation.message);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
-      await axios.put(`http://localhost:5000/api/users/${selectedUser.id}`, formData);
+      // Clean phone number before sending to API
+      const userData = {
+        ...formData,
+        phone: cleanPhoneNumber(formData.phone)
+      };
+      
+              await axios.put(`/api/users/${selectedUser.id}`, userData);
       toast.success('User updated successfully!');
       setShowEditModal(false);
       resetForm();
@@ -136,7 +210,7 @@ const Users = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${userId}`);
+        await axios.delete(`/api/users/${userId}`);
         toast.success('User deleted successfully!');
         fetchUsers();
       } catch (error) {
@@ -149,7 +223,7 @@ const Users = () => {
   const handleStatusToggle = async (userId, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
-      await axios.patch(`http://localhost:5000/api/users/${userId}/status`, { status: newStatus });
+              await axios.patch(`/api/users/${userId}/status`, { status: newStatus });
       toast.success(`User status updated to ${newStatus}`);
       fetchUsers();
     } catch (error) {
@@ -171,6 +245,9 @@ const Users = () => {
       permissions: '',
       notes: ''
     });
+    setPasswordConfirmation('');
+    setPasswordStrength({ score: 0, strength: 'Very Weak', color: 'text-red-600', bgColor: 'bg-red-100', feedback: [], isValid: false });
+    setPasswordMatch({ isValid: false, message: '' });
   };
 
   const openCreateModal = () => {
@@ -498,17 +575,66 @@ const Users = () => {
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter password"
-                    />
-                  </div>
+                                     <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                     <input
+                       type="password"
+                       required
+                       value={formData.password}
+                       onChange={(e) => handlePasswordChange(e.target.value)}
+                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Enter password"
+                     />
+                     
+                     {/* Password Strength Indicator */}
+                     {formData.password && (
+                       <div className="mt-2">
+                         <div className="flex items-center justify-between text-sm mb-1">
+                           <span className={passwordStrength.color}>Strength: {passwordStrength.strength}</span>
+                           <span className="text-gray-500">{passwordStrength.score}/5</span>
+                         </div>
+                         <div className="w-full bg-gray-200 rounded-full h-2">
+                           <div 
+                             className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthBarColor(passwordStrength.score)}`}
+                             style={{ width: getPasswordStrengthBarWidth(passwordStrength.score) }}
+                           ></div>
+                         </div>
+                         {passwordStrength.feedback.length > 0 && (
+                           <div className="mt-2 text-xs text-gray-600">
+                             <p className="font-medium mb-1">Requirements:</p>
+                             <ul className="list-disc list-inside space-y-1">
+                               {passwordStrength.feedback.map((item, index) => (
+                                 <li key={index}>{item}</li>
+                               ))}
+                             </ul>
+                           </div>
+                         )}
+                       </div>
+                     )}
+                   </div>
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
+                     <input
+                       type="password"
+                       required
+                       value={passwordConfirmation}
+                       onChange={(e) => handlePasswordConfirmationChange(e.target.value)}
+                       className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                         passwordConfirmation 
+                           ? (passwordMatch.isValid 
+                               ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
+                               : 'border-red-300 focus:border-red-500 focus:ring-red-500')
+                           : 'border-gray-300 focus:border-blue-500'
+                       }`}
+                       placeholder="Confirm password"
+                     />
+                     {passwordConfirmation && (
+                       <div className={`mt-1 text-sm ${passwordMatch.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                         {passwordMatch.message}
+                       </div>
+                     )}
+                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>

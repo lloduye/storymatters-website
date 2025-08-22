@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({
@@ -13,14 +14,28 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { isLoggedIn, login } = useAuth();
+  const { login } = useAuth();
 
-  useEffect(() => {
-    // Check if already logged in
-    if (isLoggedIn) {
-      navigate('/admin/dashboard');
-    }
-  }, [isLoggedIn, navigate]);
+  // Remove the useEffect that was causing conflicts
+  // useEffect(() => {
+  //   // Only redirect if user is already logged in and we have their data
+  //   const userData = localStorage.getItem('userData');
+  //   const token = localStorage.getItem('adminToken');
+  //   
+  //   if (isLoggedIn && userData && token) {
+  //     try {
+  //       const user = JSON.parse(userData);
+  //       if (user.role === 'editor') {
+  //         navigate('/editor/dashboard');
+  //       } else {
+  //         navigate('/admin/dashboard');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error parsing user data:', error);
+  //       // Don't redirect, let the user stay on login page
+  //     }
+  //   }
+  // }, [isLoggedIn, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,16 +50,66 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      // Simple authentication - in production, this should be a proper API call
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
-        login('admin123');
+      const response = await axios.post('/api/users/login', credentials);
+
+      if (response.data.user) {
+        console.log('Login response user data:', response.data.user);
+        console.log('Full login response:', response.data);
+        
+        // Store user data and token from backend response
+        const token = response.data.token;
+        console.log('Received token from backend:', token);
+        
+        if (!token) {
+          toast.error('Login failed: No token received from server');
+          return;
+        }
+        
+        // Store token directly in localStorage first
+        localStorage.setItem('adminToken', token);
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+        
+        // Then call login function
+        login(token, response.data.user);
         toast.success('Login successful!');
-        navigate('/admin/dashboard');
+        
+        // Wait for AuthContext to fully update before navigation
+        setTimeout(() => {
+          // Double-check the stored user data
+          const storedUserData = localStorage.getItem('userData');
+          const storedToken = localStorage.getItem('adminToken');
+          const storedLoginStatus = localStorage.getItem('isLoggedIn');
+          
+          console.log('Login timeout - checking stored data:', {
+            userData: storedUserData,
+            token: storedToken,
+            loginStatus: storedLoginStatus
+          });
+          
+          if (storedUserData) {
+            const user = JSON.parse(storedUserData);
+            console.log('Stored user data before navigation:', user);
+            
+            // Navigate based on user role
+            if (user.role === 'editor') {
+              console.log('User is editor, navigating to editor dashboard');
+              navigate('/editor/dashboard');
+            } else {
+              console.log('User is admin, navigating to admin dashboard');
+              navigate('/admin/dashboard');
+            }
+          } else {
+            console.error('No user data found in localStorage');
+            toast.error('Login error: User data not found');
+          }
+        }, 200); // Increased delay to ensure state is fully updated
       } else {
         toast.error('Invalid credentials. Please try again.');
       }
     } catch (error) {
-      toast.error('Login failed. Please try again.');
+      console.error('Login error:', error);
+      toast.error(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

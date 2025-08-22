@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTachometerAlt, 
   faNewspaper, 
   faDollarSign, 
-  faGlobe, 
   faChartLine, 
   faUsers, 
-  faCog, 
   faSignOutAlt,
   faBars,
   faTimes,
   faChevronDown,
-  faEnvelope
+  faEnvelope,
+  faFileAlt,
+  faShieldAlt,
+  faDatabase,
+  faClipboardList,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,14 +27,66 @@ const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  // Get user role from localStorage with proper error handling
+  const [userRole, setUserRole] = useState('admin');
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const getUserRole = () => {
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const parsed = JSON.parse(userData);
+          console.log('AdminLayout: User data loaded:', parsed);
+          setUserRole(parsed.role || 'admin');
+          setUserData(parsed);
+        } else {
+          console.log('AdminLayout: No user data found, defaulting to admin');
+          setUserRole('admin');
+          setUserData(null);
+        }
+      } catch (error) {
+        console.error('AdminLayout: Error parsing user data:', error);
+        setUserRole('admin');
+        setUserData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getUserRole();
+
+    // Listen for storage changes (when user logs in/out)
+    const handleStorageChange = (e) => {
+      if (e.key === 'userData') {
+        getUserRole();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Show loading state while determining user role
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
-
-  // Get user role from localStorage
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  const userRole = userData.role || 'admin';
 
   // Role-based navigation
   const getNavigation = () => {
@@ -40,10 +95,13 @@ const AdminLayout = ({ children }) => {
         { name: 'Dashboard', href: '/admin/dashboard', icon: faTachometerAlt },
         { name: 'Stories', href: '/admin/stories', icon: faNewspaper },
         { name: 'Donations', href: '/admin/donations', icon: faDollarSign },
-        { name: 'Content', href: '/admin/content', icon: faGlobe },
         { name: 'Analytics', href: '/admin/analytics', icon: faChartLine },
         { name: 'Users', href: '/admin/users', icon: faUsers },
-        { name: 'Settings', href: '/admin/settings', icon: faCog },
+        { name: 'Reports', href: '/admin/reports', icon: faFileAlt },
+        { name: 'System Health', href: '/admin/system-health', icon: faShieldAlt },
+        { name: 'Backup', href: '/admin/backup', icon: faDatabase },
+        { name: 'Audit Logs', href: '/admin/audit-logs', icon: faClipboardList },
+        { name: 'Alerts', href: '/admin/alerts', icon: faExclamationTriangle },
       ];
     } else if (userRole === 'manager') {
       return [
@@ -51,11 +109,7 @@ const AdminLayout = ({ children }) => {
         { name: 'Stories', href: '/admin/stories', icon: faNewspaper },
         { name: 'Donations', href: '/admin/donations', icon: faDollarSign },
         { name: 'Analytics', href: '/admin/analytics', icon: faChartLine },
-      ];
-    } else if (userRole === 'editor') {
-      return [
-        { name: 'Dashboard', href: '/editor/dashboard', icon: faTachometerAlt },
-        { name: 'Stories', href: '/admin/stories', icon: faNewspaper },
+        { name: 'Reports', href: '/admin/reports', icon: faFileAlt },
       ];
     }
     return [];
@@ -64,7 +118,7 @@ const AdminLayout = ({ children }) => {
   const navigation = getNavigation();
 
   const isActive = (href) => {
-    if (href === '/admin/dashboard' || href === '/manager/dashboard' || href === '/editor/dashboard') {
+    if (href === '/admin/dashboard' || href === '/manager/dashboard') {
       return location.pathname === href;
     }
     return location.pathname.startsWith(href);
@@ -78,14 +132,14 @@ const AdminLayout = ({ children }) => {
            <div className="flex justify-between items-center h-20">
              {/* Logo and Brand */}
              <div className="flex items-center">
-               <Link to={userRole === 'admin' ? '/admin/dashboard' : userRole === 'manager' ? '/manager/dashboard' : '/editor/dashboard'} className="flex items-center hover:opacity-80 transition-opacity duration-200">
+               <Link to={userRole === 'admin' ? '/admin/dashboard' : '/manager/dashboard'} className="flex items-center hover:opacity-80 transition-opacity duration-200">
                  <img 
                    src="/logo.jpg" 
                    alt="Story Matters Entertainment" 
                    className="h-14 w-auto"
                  />
                  <span className="ml-4 text-xl font-semibold text-gray-900">
-                   {userRole === 'admin' ? 'Admin Panel' : userRole === 'manager' ? 'Manager Panel' : 'Editor Panel'}
+                   {userRole === 'admin' ? 'Admin Panel' : 'Manager Panel'}
                  </span>
                </Link>
              </div>
@@ -131,9 +185,13 @@ const AdminLayout = ({ children }) => {
                    className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300"
                  >
                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                     <span className="text-white font-semibold text-xs">A</span>
+                     <span className="text-white font-semibold text-xs">
+                       {userData?.fullName ? userData.fullName.charAt(0).toUpperCase() : 'A'}
+                     </span>
                    </div>
-                   <span className="hidden sm:block text-sm font-medium">Admin</span>
+                   <span className="hidden sm:block text-sm font-medium">
+                     {userData?.fullName || 'Admin'}
+                   </span>
                    <FontAwesomeIcon icon={faChevronDown} className="text-xs text-gray-400" />
                  </button>
 
@@ -141,8 +199,12 @@ const AdminLayout = ({ children }) => {
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">Admin User</p>
-                      <p className="text-xs text-gray-500">admin@storymatters.org</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {userData?.fullName || 'Admin User'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {userData?.email || 'admin@storymatters.org'}
+                      </p>
                     </div>
                     <button
                       onClick={handleLogout}

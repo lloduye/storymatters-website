@@ -1,398 +1,522 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faNewspaper, 
-  faChartLine, 
   faEye,
   faEdit,
-  faToggleOn,
-  faToggleOff,
-  faStar,
   faPlus,
-  faSearch,
-  faFilter,
-  faCircle
+  faClock,
+  faStar,
+  faCalendarAlt,
+  faBookOpen,
+  faDraftingCompass,
+  faArrowRight,
+  faCheckCircle,
+  faLightbulb,
+  faRocket,
+  faUser,
+  faLock
 } from '@fortawesome/free-solid-svg-icons';
-
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EditorDashboard = () => {
+  const { user, isLoading: authLoading } = useAuth();
   const [stories, setStories] = useState([]);
-  const [filteredStories, setFilteredStories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedStory, setSelectedStory] = useState(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [actionLoading, setActionLoading] = useState({});
 
-  useEffect(() => {
-    fetchStories();
+  // Get user data - use AuthContext if available, fallback to localStorage
+  const currentUser = user || (() => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      try {
+        return JSON.parse(userData);
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+        return null;
+      }
+    }
+    return null;
+  })();
+
+  const fetchStoriesForUser = useCallback(async (userFullName) => {
+    console.log('fetchStoriesForUser: Starting for user:', userFullName);
+    console.log('fetchStoriesForUser: Current token:', localStorage.getItem('adminToken'));
+    
+    try {
+      // First try to get user-specific stories
+      console.log('fetchStoriesForUser: Trying user-specific endpoint...');
+      const response = await axios.get(`/api/stories/user/${userFullName}`);
+      setStories(response.data || []);
+      console.log('fetchStoriesForUser: User stories loaded successfully:', response.data);
+    } catch (userStoriesError) {
+      console.log('fetchStoriesForUser: Failed to load user stories, trying all stories:', userStoriesError);
+      console.log('fetchStoriesForUser: Error details:', userStoriesError.response?.status, userStoriesError.response?.data);
+      
+      // Fallback to all stories if user-specific fetch fails
+      try {
+        console.log('fetchStoriesForUser: Trying fallback to all stories...');
+        const allStoriesResponse = await axios.get('/api/stories');
+        console.log('fetchStoriesForUser: Looking for stories by author:', userFullName);
+        console.log('fetchStoriesForUser: Available authors in stories:', allStoriesResponse.data.map(story => story.author));
+        const userStories = allStoriesResponse.data.filter(story => story.author === userFullName);
+        console.log('fetchStoriesForUser: All stories from API:', allStoriesResponse.data);
+        console.log('fetchStoriesForUser: User stories after filtering:', userStories);
+        console.log('fetchStoriesForUser: Sample story structure:', userStories[0]);
+        setStories(userStories || []);
+      } catch (allStoriesError) {
+        console.error('fetchStoriesForUser: Failed to load all stories:', allStoriesError);
+        console.log('fetchStoriesForUser: All stories error details:', allStoriesError.response?.status, allStoriesError.response?.data);
+        setStories([]);
+      }
+    }
+    console.log('fetchStoriesForUser: Completed');
   }, []);
 
-  useEffect(() => {
-    filterStories();
-  }, [stories, searchTerm, statusFilter]);
-
-  const fetchStories = async () => {
+  const fetchDashboardData = useCallback(async () => {
+    console.log('fetchDashboardData: Starting...');
+    
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/stories');
-      setStories(response.data);
+      console.log('fetchDashboardData: isLoading set to true');
+      
+      // Get user data - either from context or localStorage
+      let userToFetch = currentUser;
+      if (!userToFetch || !userToFetch.fullName) {
+        console.log('fetchDashboardData: User data not available from AuthContext, trying localStorage');
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          try {
+            userToFetch = JSON.parse(userData);
+            console.log('fetchDashboardData: Using user data from localStorage:', userToFetch);
+          } catch (error) {
+            console.error('fetchDashboardData: Error parsing user data from localStorage:', error);
+            setStories([]);
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // If we have user data, fetch stories; otherwise set empty array
+      if (userToFetch && userToFetch.fullName) {
+        console.log('fetchDashboardData: Fetching stories for user:', userToFetch.fullName);
+        await fetchStoriesForUser(userToFetch.fullName);
+      } else {
+        console.log('fetchDashboardData: No user data available, setting empty stories');
+        setStories([]);
+      }
+      
+      setLastUpdated(new Date());
+      console.log('fetchDashboardData: Completed successfully');
     } catch (error) {
-      console.error('Error fetching stories:', error);
-      toast.error('Failed to load stories');
+      console.error('fetchDashboardData: Error occurred:', error);
+      setStories([]);
+      toast.error('Failed to load dashboard data');
     } finally {
+      console.log('fetchDashboardData: Finally block executing, setting isLoading to false');
       setIsLoading(false);
     }
-  };
+  }, [currentUser, fetchStoriesForUser]);
 
-  const filterStories = () => {
-    let filtered = stories;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(story =>
-        story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        story.content.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(story => story.status === statusFilter);
-    }
-
-    setFilteredStories(filtered);
-  };
-
-  const handleToggleStatus = async (storyId, currentStatus) => {
-    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-    try {
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}/status`, { status: newStatus });
-      toast.success(`Story status updated to ${newStatus}`);
-      fetchStories();
-    } catch (error) {
-      console.error('Error updating story status:', error);
-      toast.error('Failed to update story status');
-    }
-  };
-
-  const handleToggleFeatured = async (storyId, currentFeatured) => {
-    try {
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}/featured`, { featured: !currentFeatured });
-      toast.success(`Story featured status updated`);
-      fetchStories();
-    } catch (error) {
-      console.error('Error updating story featured status:', error);
-      toast.error('Failed to update story featured status');
-    }
-  };
-
-  const handlePreviewStory = (story) => {
-    setSelectedStory(story);
-    setShowPreviewModal(true);
-  };
-
-  const closePreviewModal = () => {
-    setShowPreviewModal(false);
-    setSelectedStory(null);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getFeaturedColor = (featured) => {
-    return featured ? 'text-yellow-500' : 'text-gray-400';
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  const publishedStories = stories.filter(story => story.status === 'published');
-  const draftStories = stories.filter(story => story.status === 'draft');
-  const featuredStories = stories.filter(story => story.featured);
-  const totalViews = stories.reduce((sum, story) => sum + (story.viewCount || 0), 0);
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Editor Dashboard</h1>
-          <p className="text-gray-600 mt-2">Focus on stories and content creation</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-500">Role: Editor</span>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FontAwesomeIcon icon={faNewspaper} className="text-blue-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Stories</p>
-              <p className="text-2xl font-semibold text-gray-900">{stories.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <FontAwesomeIcon icon={faEye} className="text-green-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Published</p>
-              <p className="text-2xl font-semibold text-gray-900">{publishedStories.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <FontAwesomeIcon icon={faEdit} className="text-yellow-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Drafts</p>
-              <p className="text-2xl font-semibold text-gray-900">{draftStories.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FontAwesomeIcon icon={faChartLine} className="text-purple-600 text-xl" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Views</p>
-              <p className="text-2xl font-semibold text-gray-900">{totalViews}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Stories</label>
-            <div className="relative">
-              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by title, author, or content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status Filter</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Statuses</option>
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Stories Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Stories Management</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Story</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStories.map((story) => (
-                <tr key={story.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <FontAwesomeIcon icon={faNewspaper} className="text-white text-sm" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{story.title}</div>
-                        <div className="text-sm text-gray-500">by {story.author}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(story.status)}`}>
-                      {story.status}
-                    </span>
-                  </td>
-                                     <td className="px-6 py-4 whitespace-nowrap">
-                     <FontAwesomeIcon 
-                       icon={story.featured ? faStar : faCircle} 
-                       className={`text-lg ${getFeaturedColor(story.featured)}`}
-                     />
-                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {story.viewCount || 0}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {story.createdAt ? format(new Date(story.createdAt), 'MMM dd, yyyy') : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handlePreviewStory(story)}
-                        className="text-blue-600 hover:text-blue-900 p-1"
-                        title="Preview Story"
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(story.id, story.status)}
-                        className={`p-1 ${story.status === 'published' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}`}
-                        title={story.status === 'published' ? 'Set to Draft' : 'Publish Story'}
-                      >
-                        <FontAwesomeIcon icon={story.status === 'published' ? faToggleOff : faToggleOn} />
-                      </button>
-                      <button
-                        onClick={() => handleToggleFeatured(story.id, story.featured)}
-                        className={`p-1 ${story.featured ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-600 hover:text-gray-900'}`}
-                        title={story.featured ? 'Remove from Featured' : 'Mark as Featured'}
-                      >
-                        <FontAwesomeIcon icon={faStar} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Story Analytics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Story Performance</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Published Stories</span>
-              <span className="text-sm font-medium text-gray-900">{publishedStories.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Draft Stories</span>
-              <span className="text-sm font-medium text-gray-900">{draftStories.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Featured Stories</span>
-              <span className="text-sm font-medium text-gray-900">{featuredStories.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Total Views</span>
-              <span className="text-sm font-medium text-gray-900">{totalViews}</span>
-            </div>
-          </div>
-        </div>
+  useEffect(() => {
+    console.log('EditorDashboard useEffect triggered - Starting background data fetch');
+    
+    // Start loading data in background without blocking UI
+    const loadDataInBackground = async () => {
+      try {
+        // Check authentication
+        const token = localStorage.getItem('adminToken');
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
         
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              Create New Story
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm text-green-600 hover:bg-green-50 rounded-md transition-colors duration-200">
-              <FontAwesomeIcon icon={faEdit} className="mr-2" />
-              Edit Stories
-            </button>
-            <button className="w-full text-left px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-md transition-colors duration-200">
-              <FontAwesomeIcon icon={faChartLine} className="mr-2" />
-              View Analytics
-            </button>
-          </div>
-        </div>
-      </div>
+        if (!token || isLoggedIn !== 'true') {
+          console.log('User not authenticated, redirecting to login');
+          setTimeout(() => {
+            const userData = localStorage.getItem('userData');
+            if (userData) {
+              try {
+                const user = JSON.parse(userData);
+                if (user.role === 'editor') {
+                  console.log('Editor user, staying on editor dashboard');
+                  return;
+                }
+              } catch (error) {
+                console.error('Error parsing user data:', error);
+              }
+            }
+            window.location.href = '/admin';
+          }, 1000);
+          return;
+        }
+        
+        // Load data in background
+        console.log('Starting background data fetch...');
+        await fetchDashboardData();
+        console.log('Background data fetch completed');
+      } catch (error) {
+        console.error('Background data fetch failed:', error);
+      }
+    };
+    
+    // Start background loading immediately
+    loadDataInBackground();
+    
+    // Set up auto-refresh
+    const interval = setInterval(() => {
+      loadDataInBackground();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []); // Empty dependency array - only run once on mount
 
-      {/* Preview Modal */}
-      {showPreviewModal && selectedStory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Story Preview</h2>
-              <button
-                onClick={closePreviewModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <FontAwesomeIcon icon={faEdit} className="text-xl" />
-              </button>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{selectedStory.title}</h3>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <span>By {selectedStory.author}</span>
-                  <span>•</span>
-                  <span>{selectedStory.location || 'No location'}</span>
-                  <span>•</span>
-                  <span>{selectedStory.createdAt ? format(new Date(selectedStory.createdAt), 'MMM dd, yyyy') : 'No date'}</span>
-                </div>
-              </div>
-              
-              {selectedStory.image && (
-                <div>
-                  <img 
-                    src={`http://localhost:5000/uploads/${selectedStory.image}`} 
-                    alt={selectedStory.title}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              
-              <div className="prose max-w-none">
-                <div dangerouslySetInnerHTML={{ __html: selectedStory.content }} />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-6">
-              <button
-                onClick={closePreviewModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  const handleRefresh = () => {
+    fetchDashboardData();
+  };
+
+  const handleStatusToggle = async (storyId, currentStatus) => {
+    try {
+      console.log('handleStatusToggle: Starting status toggle for story:', storyId, 'Current status:', currentStatus);
+      console.log('handleStatusToggle: Token being used:', localStorage.getItem('adminToken'));
+      
+      setActionLoading(prev => ({ ...prev, [`status_${storyId}`]: true }));
+      const newStatus = currentStatus === 'published' ? 'draft' : 'published';
+      
+      const response = await axios.patch(`/api/stories/${storyId}/status`, 
+        { status: newStatus },
+        { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` } }
+      );
+      
+      console.log('handleStatusToggle: API response:', response.data);
+      toast.success(`Story ${newStatus === 'published' ? 'published' : 'moved to drafts'} successfully!`);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('handleStatusToggle: Error updating story status:', error);
+      console.error('handleStatusToggle: Error response:', error.response?.data);
+      console.error('handleStatusToggle: Error status:', error.response?.status);
+      toast.error(`Failed to update story status: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`status_${storyId}`]: false }));
+    }
+  };
+
+  // Handle stories that might not have status field - default to 'draft' if missing
+  console.log('Dashboard: Stories array:', stories);
+  console.log('Dashboard: Stories with status field:', stories.filter(story => story.status));
+  
+  const publishedStories = stories.filter(story => story.status === 'published' || story.status === 'true');
+  const draftStories = stories.filter(story => 
+    !story.status || story.status === 'draft' || story.status === 'false'
+  );
+  const totalViews = stories.reduce((sum, story) => sum + (parseInt(story.viewCount) || 0), 0);
+  
+  console.log('Dashboard: Published stories count:', publishedStories.length);
+  console.log('Dashboard: Draft stories count:', draftStories.length);
+  console.log('Dashboard: Total views:', totalViews);
+
+  const quickActions = [
+    {
+      title: 'Create New Story',
+      description: 'Start writing your next impactful story',
+      icon: faPlus,
+      color: 'bg-blue-500',
+      href: '/editor/stories/new'
+    },
+    {
+      title: 'Manage Drafts',
+      description: 'Continue working on your drafts',
+      icon: faDraftingCompass,
+      color: 'bg-yellow-500',
+      href: '/editor/drafts'
+    },
+    {
+      title: 'Content Library',
+      description: 'Access templates and resources',
+      icon: faBookOpen,
+      color: 'bg-green-500',
+      href: '/editor/library'
+    },
+    {
+      title: 'My Stories',
+      description: 'View and manage all your stories',
+      icon: faNewspaper,
+      color: 'bg-purple-500',
+      href: '/editor/stories'
+    }
+  ];
+
+  const tips = [
+    'Use compelling headlines to grab reader attention',
+    'Include high-quality images to enhance your stories',
+    'Write with your audience in mind',
+    'Proofread before publishing',
+    'Use tags to improve discoverability'
+  ];
+
+  // FORCE DASHBOARD TO ALWAYS RENDER - NO MORE LOADING SCREENS
+  // Skip all loading checks and always show the dashboard content
+
+                  return (
+                  <div className="space-y-6">
+
+
+                          {/* Welcome Header */}
+                    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-lg p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h1 className="text-2xl font-bold mb-1">
+                            Welcome back, {currentUser?.fullName || 'Editor'}! 👋
+                          </h1>
+                          <p className="text-blue-100 text-sm">
+                            Ready to create amazing stories that make a difference?
+                          </p>
+                          <div className="flex items-center space-x-4 mt-2 text-blue-100 text-xs">
+                            <span className="flex items-center">
+                              <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
+                              {new Date().toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
+                            </span>
+                            <span className="flex items-center">
+                              <FontAwesomeIcon icon={faClock} className="mr-1" />
+                              {new Date().toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-4 mt-2 text-blue-200 text-xs">
+                            <span className="flex items-center">
+                              <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                              Connected
+                            </span>
+                            <button
+                              onClick={handleRefresh}
+                              className="flex items-center px-2 py-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30 transition-all duration-200 text-xs"
+                              title="Refresh Dashboard"
+                            >
+                              <FontAwesomeIcon icon={faArrowRight} className="mr-1" />
+                              Refresh
+                            </button>
+                          </div>
+                        </div>
+                        <div className="hidden lg:block">
+                          <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <FontAwesomeIcon icon={faRocket} className="text-3xl text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                          {/* Stats Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-gray-600">Total Stories</p>
+                            <p className="text-2xl font-bold text-gray-900">{stories.length}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {stories.length > 0 ? `${((publishedStories.length / stories.length) * 100).toFixed(0)}% published` : 'No stories yet'}
+                            </p>
+                          </div>
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <FontAwesomeIcon icon={faNewspaper} className="text-lg text-blue-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-gray-600">Published</p>
+                            <p className="text-2xl font-bold text-green-600">{publishedStories.length}</p>
+                            <p className="text-xs text-gray-500 mt-1">Live stories</p>
+                          </div>
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <FontAwesomeIcon icon={faCheckCircle} className="text-lg text-green-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-gray-600">Drafts</p>
+                            <p className="text-2xl font-bold text-yellow-600">{draftStories.length}</p>
+                            <p className="text-xs text-gray-500 mt-1">In progress</p>
+                          </div>
+                          <div className="p-2 bg-yellow-100 rounded-lg">
+                            <FontAwesomeIcon icon={faDraftingCompass} className="text-lg text-yellow-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-gray-600">Total Views</p>
+                            <p className="text-2xl font-bold text-purple-600">{totalViews.toLocaleString()}</p>
+                            <p className="text-xs text-gray-500 mt-1">Engagement</p>
+                          </div>
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <FontAwesomeIcon icon={faEye} className="text-lg text-purple-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                          {/* Quick Actions */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FontAwesomeIcon icon={faRocket} className="text-blue-600 mr-2" />
+                        Quick Actions
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {quickActions.map((action, index) => (
+                          <Link
+                            key={index}
+                            to={action.href}
+                            className="group p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex items-start space-x-2">
+                              <div className={`p-2 rounded-lg ${action.color} group-hover:scale-105 transition-transform duration-200`}>
+                                <FontAwesomeIcon icon={action.icon} className="text-white text-sm" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-sm text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                                  {action.title}
+                                </h3>
+                                <p className="text-xs text-gray-600 mt-1">{action.description}</p>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                          {/* Recent Stories */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FontAwesomeIcon icon={faNewspaper} className="text-blue-600 mr-2" />
+                        Recent Stories
+                      </h2>
+                      {stories.length === 0 ? (
+                        <div className="text-center py-6">
+                          <FontAwesomeIcon icon={faNewspaper} className="text-gray-400 text-3xl mb-3" />
+                          <h3 className="text-base font-medium text-gray-900 mb-2">No stories yet</h3>
+                          <p className="text-sm text-gray-600 mb-3">Get started by creating your first story</p>
+                          <Link
+                            to="/editor/stories/new"
+                            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
+                          >
+                            <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                            Create Story
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {stories.slice(0, 5).map((story) => (
+                            <div key={story.id} className="flex items-center space-x-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faNewspaper} className="text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-medium text-sm text-gray-900">{story.title}</h3>
+                                <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                                  <span className="flex items-center">
+                                    <FontAwesomeIcon icon={faUser} className="mr-1" />
+                                    {story.author || 'Unknown Author'}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
+                                    {story.publishDate ? new Date(story.publishDate).toLocaleDateString() : 'No date'}
+                                  </span>
+                                  {story.featured === 'true' && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                      <FontAwesomeIcon icon={faStar} className="mr-1" />
+                                      Featured
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 truncate mt-1">{story.excerpt}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Link
+                                  to={`/editor/stories/edit/${story.id}`}
+                                  className="text-blue-600 hover:text-blue-900 p-1.5"
+                                  title="Edit"
+                                >
+                                  <FontAwesomeIcon icon={faEdit} className="text-xs" />
+                                </Link>
+                                <button
+                                  onClick={() => handleStatusToggle(story.id, story.status)}
+                                  className={`p-1.5 rounded ${
+                                    story.status === 'published' 
+                                      ? 'text-green-600 hover:text-green-900' 
+                                      : 'text-yellow-600 hover:text-yellow-900'
+                                  }`}
+                                  title={story.status === 'published' ? 'Move to Drafts' : 'Publish'}
+                                  disabled={actionLoading[`status_${story.id}`]}
+                                >
+                                  <FontAwesomeIcon 
+                                    icon={story.status === 'published' ? faDraftingCompass : faCheckCircle} 
+                                    className="text-xs" 
+                                  />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                          {/* Tips Section */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FontAwesomeIcon icon={faLightbulb} className="text-yellow-600 mr-2" />
+                        Writing Tips
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {tips.map((tip, index) => (
+                          <div key={index} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-start space-x-2">
+                              <FontAwesomeIcon icon={faLightbulb} className="text-blue-600 mt-1" />
+                              <p className="text-xs text-blue-900">{tip}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                          {/* Call to Action */}
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-6 text-center text-white">
+                      <h2 className="text-2xl font-bold mb-3">Ready to Make an Impact?</h2>
+                      <p className="text-indigo-100 text-sm mb-4">
+                        Your stories have the power to inspire change and connect communities
+                      </p>
+                      <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3">
+                        <Link
+                          to="/editor/stories/new"
+                          className="px-6 py-2 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200 flex items-center text-sm"
+                        >
+                          <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                          Start Writing
+                        </Link>
+                        <Link
+                          to="/editor/library"
+                          className="px-6 py-2 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition-colors duration-200 flex items-center text-sm"
+                        >
+                          <FontAwesomeIcon icon={faBookOpen} className="mr-2" />
+                          Explore Resources
+                        </Link>
+                      </div>
+                    </div>
     </div>
   );
 };

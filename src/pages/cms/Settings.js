@@ -6,10 +6,15 @@ import {
   faUpload, faCheck, faTimes, faEdit, faEye, faEyeSlash
 } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
+import { 
+  validatePhoneInput, 
+  handlePhoneChange 
+} from '../../utils/phoneValidation';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [isLoading, setIsLoading] = useState(false);
+  const [phoneValidation, setPhoneValidation] = useState({ isValid: true, message: '', className: '' });
 
   // Mock settings data
   const [settings, setSettings] = useState({
@@ -123,9 +128,22 @@ const Settings = () => {
           <input
             type="tel"
             value={settings.general.phoneNumber}
-            onChange={(e) => handleSettingChange('general', 'phoneNumber', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              const value = e.target.value;
+              handlePhoneChange(value, (newValue) => handleSettingChange('general', 'phoneNumber', newValue), 'phoneNumber');
+              const validation = validatePhoneInput(value);
+              setPhoneValidation(validation);
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              phoneValidation.className || 'border-gray-300 focus:border-blue-500'
+            }`}
+            placeholder="Enter phone number"
           />
+          {settings.general.phoneNumber && phoneValidation.message && (
+            <div className={`mt-1 text-sm ${phoneValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+              {phoneValidation.message}
+            </div>
+          )}
         </div>
       </div>
       <div>

@@ -19,10 +19,12 @@ import 'react-quill/dist/quill.snow.css';
 import Select from 'react-select';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StoryEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
@@ -30,6 +32,24 @@ const StoryEditor = () => {
   const [content, setContent] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [storyId, setStoryId] = useState(null);
+  
+  // Determine navigation paths based on user role
+  const getNavigationPaths = () => {
+    const userRole = user?.role || localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')).role : 'editor';
+    if (userRole === 'editor') {
+      return {
+        backToStories: '/editor/stories',
+        close: '/editor/dashboard'
+      };
+    } else {
+      return {
+        backToStories: '/admin/stories',
+        close: '/admin/dashboard'
+      };
+    }
+  };
+  
+  const navigationPaths = getNavigationPaths();
 
   const {
     register,
@@ -75,7 +95,7 @@ const StoryEditor = () => {
   const fetchStory = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/stories/${id}`);
+      const response = await axios.get(`/api/stories/${id}`);
       const story = response.data;
       
       // Store the actual story ID
@@ -135,7 +155,7 @@ const StoryEditor = () => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await axios.post('http://localhost:5000/api/upload', formData, {
+      const response = await axios.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -182,7 +202,7 @@ const StoryEditor = () => {
 
       if (isEditing && storyId) {
         console.log('Updating existing story with ID:', storyId);
-        await axios.put(`http://localhost:5000/api/stories/${storyId}`, storyData, {
+        await axios.put(`/api/stories/${storyId}`, storyData, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -195,7 +215,7 @@ const StoryEditor = () => {
         }
       } else {
         console.log('Creating new story');
-        await axios.post('http://localhost:5000/api/stories', storyData, {
+        await axios.post('/api/stories', storyData, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -259,22 +279,22 @@ const StoryEditor = () => {
         <div className="flex items-center space-x-3">
           {/* Left side - Back to Stories */}
           <button
-            onClick={() => navigate('/admin/stories')}
+            onClick={() => navigate(navigationPaths.backToStories)}
             className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center"
           >
             <FontAwesomeIcon icon={faTimes} className="mr-2" />
             Back to Stories
           </button>
           
-                     {/* Right side - Close and Action buttons */}
-           <div className="flex items-center space-x-2 ml-auto">
-             <button
-               onClick={() => navigate('/admin/stories')}
-               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center"
-             >
-               <FontAwesomeIcon icon={faTimes} className="mr-2" />
-               Close
-             </button>
+          {/* Right side - Close and Action buttons */}
+          <div className="flex items-center space-x-2 ml-auto">
+            <button
+              onClick={() => navigate(navigationPaths.close)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center"
+            >
+              <FontAwesomeIcon icon={faTimes} className="mr-2" />
+              Close
+            </button>
              
              {/* Save as Draft Button */}
              <button

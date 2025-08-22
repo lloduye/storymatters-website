@@ -55,6 +55,14 @@ const sheets = google.sheets({ version: 'v4', auth });
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const STORIES_RANGE = 'Stories!A:Z';
 
+// Check if required environment variables are set
+if (!SPREADSHEET_ID) {
+  console.error('❌ GOOGLE_SPREADSHEET_ID environment variable is not set!');
+  console.error('Please check your .env file or environment configuration.');
+} else {
+  console.log('✅ Google Sheets ID configured:', SPREADSHEET_ID);
+}
+
 // Password utility functions
 const hashPassword = async (password) => {
   const saltRounds = 10;
@@ -98,22 +106,43 @@ async function getAllStories() {
 // Helper function to add a new story to Google Sheets
 async function addStoryToSheet(storyData) {
   try {
+    console.log('Adding story to sheet with data:', storyData);
+    console.log('Individual fields:');
+    console.log('- title:', storyData.title);
+    console.log('- excerpt:', storyData.excerpt);
+    console.log('- author:', storyData.author);
+    console.log('- location:', storyData.location);
+    console.log('- publishDate:', storyData.publishDate);
+    console.log('- image:', storyData.image);
+    console.log('- category:', storyData.category);
+    console.log('- readTime:', storyData.readTime);
+    console.log('- content:', storyData.content);
+    console.log('- tags:', storyData.tags);
+    console.log('- featured:', storyData.featured);
+    console.log('- status:', storyData.status);
+    console.log('- viewCount:', storyData.viewCount);
+    
     const values = [
       [
-        storyData.title,
-        storyData.excerpt,
-        storyData.author,
-        storyData.location,
-        storyData.publishDate,
-        storyData.image,
-        storyData.category,
-        storyData.readTime,
-        storyData.content,
-        storyData.tags ? storyData.tags.join(', ') : '',
+        storyData.title || '',
+        storyData.excerpt || '',
+        storyData.author || '',
+        storyData.location || '',
+        storyData.publishDate || new Date().toISOString().split('T')[0],
+        storyData.image || '',
+        storyData.category || '',
+        storyData.readTime || '5 min', // Default read time
+        storyData.content || '',
+        storyData.tags || '',
         storyData.featured ? 'true' : 'false',
+        storyData.status || 'draft',
+        storyData.viewCount || '0',
+        new Date().toISOString(),
         new Date().toISOString()
       ]
     ];
+    
+    console.log('Values to insert:', values);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -144,8 +173,11 @@ async function updateStoryInSheet(storyId, storyData) {
         storyData.category,
         storyData.readTime,
         storyData.content,
-        storyData.tags ? storyData.tags.join(', ') : '',
+        storyData.tags || '',
         storyData.featured ? 'true' : 'false',
+        storyData.status || 'draft',
+        storyData.viewCount || '0',
+        storyData.createdAt || new Date().toISOString(),
         new Date().toISOString()
       ]
     ];
@@ -160,7 +192,7 @@ async function updateStoryInSheet(storyId, storyData) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `Stories!A${rowNumber}:L${rowNumber}`,
+      range: `Stories!A${rowNumber}:O${rowNumber}`,
       valueInputOption: 'RAW',
       resource: { values }
     });
@@ -369,6 +401,17 @@ app.get('/api/stories', async (req, res) => {
   }
 });
 
+// Get stories by user
+app.get('/api/stories/user/:username', async (req, res) => {
+  try {
+    const stories = await getAllStories();
+    const userStories = stories.filter(story => story.author === req.params.username);
+    res.json(userStories);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user stories' });
+  }
+});
+
 // Get a single story by ID
 app.get('/api/stories/:id', async (req, res) => {
   try {
@@ -389,22 +432,55 @@ app.get('/api/stories/:id', async (req, res) => {
 const authenticateAdmin = (req, res, next) => {
   const { authorization } = req.headers;
   
-  // Simple token check - in production, use proper JWT authentication
-  if (authorization === `Bearer ${process.env.ADMIN_TOKEN || 'admin123'}`) {
+  if (!authorization) {
+    return res.status(401).json({ error: 'No authorization header provided' });
+  }
+  
+  // Extract token from "Bearer token" format
+  const token = authorization.replace('Bearer ', '');
+  
+  // Simple token check - accept both admin and editor tokens
+  // In production, use proper JWT authentication with user roles
+  if (token === (process.env.ADMIN_TOKEN || 'admin123') || token.startsWith('token_')) {
     next();
   } else {
+    console.log('Authentication failed for token:', token);
     res.status(401).json({ error: 'Unauthorized' });
   }
 };
 
 // Protected routes
-app.post('/api/stories', authenticateAdmin, async (req, res) => {
+app.post('/api/stories', authenticateAdmin, upload.single('image'), async (req, res) => {
   try {
     const storyData = req.body;
+    
+    // Handle image upload if present
+    if (req.file) {
+      storyData.image = req.file.filename;
+    } else {
+      storyData.image = '';
+    }
+    
+    console.log('Creating story with data:', storyData);
+    console.log('Story data keys:', Object.keys(storyData));
+    console.log('Story data values:', Object.values(storyData));
+    
+    // Validate required fields
+    if (!storyData.title || !storyData.content || !storyData.author) {
+      return res.status(400).json({ 
+        error: 'Missing required fields', 
+        required: ['title', 'content', 'author'],
+        received: Object.keys(storyData)
+      });
+    }
+    
     await addStoryToSheet(storyData);
     res.status(201).json({ message: 'Story created successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create story' });
+    console.error('Error creating story:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to create story', details: error.message });
   }
 });
 
@@ -446,9 +522,113 @@ app.post('/api/upload', authenticateAdmin, upload.single('image'), (req, res) =>
   }
 });
 
-// Simple test route for users (without Google Sheets)
-app.get('/api/users-test', (req, res) => {
-  res.json({ message: 'Users test route is working', users: [] });
+// Story Status Management
+app.patch('/api/stories/:id/status', authenticateAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const storyId = req.params.id;
+    
+    if (!['draft', 'published'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be "draft" or "published"' });
+    }
+    
+    // Get current story data
+    const stories = await getAllStories();
+    const story = stories.find(s => s.id == storyId);
+    
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    
+    // Update only the status and updatedAt fields
+    const updateData = {
+      ...story,
+      status,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await updateStoryInSheet(storyId, updateData);
+    res.json({ message: 'Story status updated successfully', status });
+  } catch (error) {
+    console.error('Error updating story status:', error);
+    res.status(500).json({ error: 'Failed to update story status' });
+  }
+});
+
+// Story Featured Toggle
+app.patch('/api/stories/:id/featured', authenticateAdmin, async (req, res) => {
+  try {
+    const { featured } = req.body;
+    const storyId = req.params.id;
+    
+    if (typeof featured !== 'boolean') {
+      return res.status(400).json({ error: 'Featured must be a boolean value' });
+    }
+    
+    // Get current story data
+    const stories = await getAllStories();
+    const story = stories.find(s => s.id == storyId);
+    
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    
+    // Update only the featured and updatedAt fields
+    const updateData = {
+      ...story,
+      featured,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await updateStoryInSheet(storyId, updateData);
+    res.json({ message: 'Story featured status updated successfully', featured });
+  } catch (error) {
+    console.error('Error updating story featured status:', error);
+    res.status(500).json({ error: 'Failed to update story featured status' });
+  }
+});
+
+// Get Drafts for a specific user
+app.get('/api/stories/user/:username/drafts', async (req, res) => {
+  try {
+    const stories = await getAllStories();
+    const userDrafts = stories.filter(story => 
+      story.author === req.params.username && story.status === 'draft'
+    );
+    res.json(userDrafts);
+  } catch (error) {
+    console.error('Error fetching user drafts:', error);
+    res.status(500).json({ error: 'Failed to fetch drafts' });
+  }
+});
+
+// Increment View Count
+app.patch('/api/stories/:id/view', async (req, res) => {
+  try {
+    const storyId = req.params.id;
+    
+    // Get current story data
+    const stories = await getAllStories();
+    const story = stories.find(s => s.id == storyId);
+    
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    
+    // Increment view count
+    const currentViews = parseInt(story.viewCount || 0);
+    const updateData = {
+      ...story,
+      viewCount: (currentViews + 1).toString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    await updateStoryInSheet(storyId, updateData);
+    res.json({ message: 'View count updated successfully', viewCount: currentViews + 1 });
+  } catch (error) {
+    console.error('Error updating view count:', error);
+    res.status(500).json({ error: 'Failed to update view count' });
+  }
 });
 
 // User Management Routes
@@ -660,10 +840,49 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route is working' });
 });
 
+// Test Google Sheets connection
+app.get('/api/test-sheets', async (req, res) => {
+  try {
+    console.log('Testing Google Sheets connection...');
+    console.log('SPREADSHEET_ID_USERS:', SPREADSHEET_ID_USERS);
+    
+    // Test reading from Users sheet
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID_USERS,
+      range: 'Users!A:M',
+    });
+    
+    const rows = response.data.values;
+    console.log('Users sheet test response:', { 
+      rowCount: rows ? rows.length : 0, 
+      firstRow: rows && rows.length > 0 ? rows[0] : null 
+    });
+    
+    res.json({
+      message: 'Google Sheets connection successful',
+      spreadsheetId: SPREADSHEET_ID_USERS,
+      userCount: rows ? rows.length - 1 : 0, // Subtract header row
+      firstRow: rows && rows.length > 0 ? rows[0] : null,
+      sampleData: rows && rows.length > 1 ? rows[1] : null
+    });
+    
+  } catch (error) {
+    console.error('Google Sheets test failed:', error);
+    res.status(500).json({ 
+      message: 'Google Sheets test failed', 
+      error: error.message,
+      spreadsheetId: SPREADSHEET_ID_USERS
+    });
+  }
+});
+
 // User Login Route
 app.post('/api/users/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    
+    console.log('Login attempt for username:', username);
+    console.log('SPREADSHEET_ID_USERS:', SPREADSHEET_ID_USERS);
     
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
@@ -672,16 +891,23 @@ app.post('/api/users/login', async (req, res) => {
     // Get all users to find the one trying to log in
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID_USERS,
-      range: 'Users!A:M', // Updated to include password column
+      range: 'Users!A:M',
     });
     
     const rows = response.data.values;
+    console.log('Users sheet response:', { 
+      rowCount: rows ? rows.length : 0, 
+      firstRow: rows && rows.length > 0 ? rows[0] : null 
+    });
+    
     if (!rows || rows.length === 0) {
+      console.log('No users found in sheet');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
     // Skip header row if it exists
     const dataRows = rows[0][0] === 'ID' ? rows.slice(1) : rows;
+    console.log('Data rows (excluding header):', dataRows.length);
     
     // Find user by username or email
     const user = dataRows.find(row => 
@@ -689,21 +915,35 @@ app.post('/api/users/login', async (req, res) => {
     );
     
     if (!user) {
+      console.log('User not found:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
+    console.log('User found:', { 
+      id: user[0], 
+      username: user[1], 
+      email: user[2], 
+      role: user[5], 
+      status: user[6] 
+    });
+    
     // Check if user is active
     if (user[6] !== 'active') {
+      console.log('User account not active:', user[6]);
       return res.status(401).json({ message: 'Account is not active' });
     }
     
     // Verify password
     const hashedPassword = user[3]; // Password is now in column D
+    console.log('Verifying password...');
     const isValidPassword = await verifyPassword(password, hashedPassword);
     
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('Invalid password for user:', username);
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
+    
+    console.log('Password verified successfully');
     
     // Update last login
     const userData = {
@@ -722,19 +962,27 @@ app.post('/api/users/login', async (req, res) => {
       notes: user[12]
     };
     
+    console.log('Updating last login in sheet...');
     await updateUserInSheet(user[0], userData);
     
     // Return user data (without password)
     const { password: _, ...userWithoutPassword } = userData;
     
+    console.log('Login successful for user:', username, 'Role:', userData.role);
+    
+    // Generate a token for the user
+    const token = `token_${Date.now()}_${userData.id}`;
+    console.log('Generated token for user:', token);
+    
     res.json({
       message: 'Login successful',
-      user: userWithoutPassword
+      user: userWithoutPassword,
+      token: token
     });
     
   } catch (error) {
     console.error('Error during login:', error);
-    res.status(500).json({ message: 'Login failed' });
+    res.status(500).json({ message: 'Login failed', error: error.message });
   }
 });
 

@@ -41,8 +41,13 @@ This guide will help you set up Google Sheets as a database for the Story Matter
 1. Go to [Google Sheets](https://sheets.google.com/)
 2. Create a new spreadsheet
 3. Name it "Story Matters CMS"
-4. Rename the first sheet to "Stories"
-5. Add the following headers in row 1:
+4. Create two sheets:
+   - **Sheet 1**: Rename to "Stories"
+   - **Sheet 2**: Rename to "Users"
+
+### Stories Sheet Setup
+
+Add the following headers in row 1 of the "Stories" sheet:
 
 ```
 A1: title
@@ -56,8 +61,46 @@ H1: readTime
 I1: content
 J1: tags
 K1: featured
-L1: createdAt
+L1: status
+M1: viewCount
+N1: createdAt
+O1: updatedAt
 ```
+
+**Important Notes:**
+
+- **Column L (status)**: Use "draft" for unpublished stories, "published" for live stories
+- **Column M (viewCount)**: Number of views (can start with 0)
+- **Column N (createdAt)**: When the story was first created
+- **Column O (updatedAt)**: When the story was last modified
+
+### Users Sheet Setup
+
+Add the following headers in row 1 of the "Users" sheet:
+
+```
+A1: ID
+B1: username
+C1: email
+D1: password
+E1: fullName
+F1: role
+G1: status
+H1: createdAt
+I1: lastLogin
+J1: permissions
+K1: phone
+L1: department
+M1: notes
+```
+
+**Important Notes:**
+
+- **Column D (password)**: Must contain bcrypt-hashed passwords
+- **Column F (role)**: Use "admin" for administrators, "editor" for content editors
+- **Column G (status)**: Use "active" for active users, "inactive" for disabled users
+- **Column H (createdAt)**: When the user account was created
+- **Column I (lastLogin)**: When the user last logged in (auto-updated)
 
 ## Step 6: Share the Sheet
 
@@ -98,51 +141,50 @@ Replace `your-sheet-id-here` with the actual Sheet ID you copied.
 4. Try creating a new story
 5. Check your Google Sheet to see if the data appears
 
+## Step 10: Sample Data Structure
+
+### Stories Data
+
+Here's what your stories data should look like:
+
+| title                  | excerpt                             | author      | location       | publishDate | image       | category              | readTime   | content                           | tags                   | featured | status    | viewCount | createdAt            | updatedAt            |
+| ---------------------- | ----------------------------------- | ----------- | -------------- | ----------- | ----------- | --------------------- | ---------- | --------------------------------- | ---------------------- | -------- | --------- | --------- | -------------------- | -------------------- |
+| Community Impact Story | A story about community development | John Editor | Nairobi, Kenya | 2024-01-15  | sample1.jpg | Community Development | 5 min read | <p>This is a sample story...</p>  | Community, Development | true     | published | 150       | 2024-01-15T10:00:00Z | 2024-01-15T10:00:00Z |
+| Youth Empowerment      | Empowering young people             | Jane Editor | Mombasa, Kenya | 2024-01-20  | sample2.jpg | Youth                 | 3 min read | <p>Youth empowerment story...</p> | Youth, Empowerment     | false    | draft     | 0         | 2024-01-20T14:30:00Z | 2024-01-20T14:30:00Z |
+
+### Users Data
+
+Here's what your users data should look like:
+
+| ID  | username | email           | password (hashed)        | fullName    | role   | status | createdAt            | lastLogin            | permissions | phone         | department | notes           |
+| --- | -------- | --------------- | ------------------------ | ----------- | ------ | ------ | -------------------- | -------------------- | ----------- | ------------- | ---------- | --------------- |
+| 1   | admin    | admin@cms.com   | $2a$10$... (bcrypt hash) | Admin User  | admin  | active | 2024-01-01T00:00:00Z | 2024-01-15T10:00:00Z | all         | +254700000000 | Management | Main admin user |
+| 2   | editor1  | editor1@cms.com | $2a$10$... (bcrypt hash) | John Editor | editor | active | 2024-01-01T00:00:00Z | 2024-01-15T10:00:00Z | content     | +254700000001 | Content    | Content editor  |
+
+**Important**: The passwords in the sheet must be bcrypt-hashed. You cannot use plain text passwords.
+
 ## Troubleshooting
 
-### Common Issues
+### General Issues
 
-1. **"Google Sheets API not enabled"**
+- **Permission Denied**: Make sure the service account email has editor access to the sheet
+- **Sheet Not Found**: Verify the spreadsheet ID in your .env file
+- **Missing Columns**: Ensure all required columns are present in the first row
+- **Data Not Saving**: Check that the service account has write permissions
 
-   - Go back to Google Cloud Console and enable the API
+### Login Issues
 
-2. **"Permission denied"**
+- **"Invalid credentials" error**:
+  - Verify the Users sheet exists and has the correct headers
+  - Ensure passwords are bcrypt-hashed (not plain text)
+  - Check that user status is "active"
+  - Verify username/email matches exactly (case-sensitive)
+- **"Account is not active" error**: Set user status to "active" in the Users sheet
+- **"Login failed" error**: Check the server console for detailed error messages
+- **Users sheet not found**: Make sure you have a "Users" sheet (not just "Stories")
 
-   - Make sure you shared the sheet with the service account email
-   - Check that the service account has editor permissions
+### Testing the Setup
 
-3. **"Invalid credentials"**
-
-   - Verify the JSON file is in the correct location
-   - Check that the file path in `.env` is correct
-
-4. **"Sheet not found"**
-   - Verify the Sheet ID is correct
-   - Make sure the sheet is shared with the service account
-
-### Security Notes
-
-- Never commit the `google-credentials.json` file to version control
-- Add it to your `.gitignore` file
-- In production, use environment variables for the credentials
-- Consider using Google Cloud Secret Manager for production deployments
-
-## Sample Data
-
-You can add some sample data to test the system:
-
-| title        | excerpt                        | author   | location       | publishDate | image              | category              | readTime   | content                       | tags                   | featured | createdAt            |
-| ------------ | ------------------------------ | -------- | -------------- | ----------- | ------------------ | --------------------- | ---------- | ----------------------------- | ---------------------- | -------- | -------------------- |
-| Sample Story | This is a sample story excerpt | John Doe | Nairobi, Kenya | 2024-01-15  | /Images/sample.jpg | Community Development | 5 min read | <p>Sample content here...</p> | Community, Development | true     | 2024-01-15T10:00:00Z |
-
-## Next Steps
-
-Once the setup is complete, you can:
-
-1. Create stories through the CMS
-2. Edit existing stories
-3. Upload images
-4. Manage story categories and tags
-5. Mark stories as featured
-
-The data will automatically sync between your website and Google Sheets!
+1. Run the test endpoint: `http://localhost:5000/api/test-sheets`
+2. Check the server console for detailed logs during login attempts
+3. Verify the Users sheet structure matches the required format

@@ -1,0 +1,17 @@
+{
+  "name": "storymatters-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Story Matters Website",
+  "main": "index.js",
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "bcryptjs": "^3.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["netlify", "functions", "google-sheets"],
+  "author": "Story Matters",
+  "license": "ISC"
+}
