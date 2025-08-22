@@ -185,11 +185,6 @@ const EditorDashboard = () => {
       setActionLoading(prev => ({ ...prev, [`status_${storyId}`]: true }));
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
       
-      // Get the appropriate token
-      const adminToken = localStorage.getItem('adminToken');
-      const userToken = localStorage.getItem('userToken');
-      const token = adminToken || userToken;
-      
       const response = await axios.patch(`/api/stories/${storyId}/status`, 
         { status: newStatus },
         { headers: { 'Authorization': `Bearer ${token}` } }
