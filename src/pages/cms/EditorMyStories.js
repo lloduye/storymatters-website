@@ -37,6 +37,9 @@ const EditorMyStories = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchMyStories = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (isLoading) return;
+    
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
@@ -55,11 +58,11 @@ const EditorMyStories = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [isLoading]); // Add isLoading dependency to prevent multiple requests
 
   useEffect(() => {
     fetchMyStories();
-  }, [fetchMyStories]);
+  }, []); // Only fetch on mount, not on every user change
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';

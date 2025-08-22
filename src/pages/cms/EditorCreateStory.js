@@ -43,7 +43,7 @@ const EditorCreateStory = () => {
     };
 
     checkUserPermissions();
-  }, [checkPermission, navigate]);
+  }, []); // Only check permissions on mount, not on every checkPermission change
   const [formData, setFormData] = useState({
     title: '',
     excerpt: '',

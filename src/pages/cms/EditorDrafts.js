@@ -36,6 +36,9 @@ const EditorDrafts = () => {
   const [showPublishModal, setShowPublishModal] = useState(false);
 
   const fetchDrafts = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (isLoading) return;
+    
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
@@ -56,11 +59,11 @@ const EditorDrafts = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [isLoading]); // Add isLoading dependency to prevent multiple requests
 
   useEffect(() => {
     fetchDrafts();
-  }, [fetchDrafts]);
+  }, []); // Only fetch on mount, not on every user change
 
   const handlePublishDraft = async (draftId) => {
     try {
