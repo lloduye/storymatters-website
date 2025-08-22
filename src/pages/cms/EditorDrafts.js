@@ -63,7 +63,7 @@ const EditorDrafts = () => {
     if (user) {
       fetchDrafts();
     }
-  }, [fetchDrafts]); // Include fetchDrafts dependency
+  }, [fetchDrafts, user]); // Include both fetchDrafts and user dependencies
 
   const handlePublishDraft = async (draftId) => {
     try {

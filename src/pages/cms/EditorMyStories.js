@@ -62,7 +62,7 @@ const EditorMyStories = () => {
     if (user) {
       fetchMyStories();
     }
-  }, [fetchMyStories]); // Include fetchMyStories dependency
+  }, [fetchMyStories, user]); // Include both fetchMyStories and user dependencies
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
