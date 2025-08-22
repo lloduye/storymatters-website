@@ -43,7 +43,7 @@ const EditorCreateStory = () => {
     };
 
     checkUserPermissions();
-  }, []); // Only check permissions on mount, not on every checkPermission change
+  }, [checkPermission, navigate]); // Include dependencies to fix ESLint warning
   const [formData, setFormData] = useState({
     title: '',
     excerpt: '',

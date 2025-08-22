@@ -59,11 +59,11 @@ const EditorDrafts = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading]); // Add isLoading dependency to prevent multiple requests
+  }, [isLoading, user]); // Include user dependency to fix ESLint warning
 
   useEffect(() => {
     fetchDrafts();
-  }, []); // Only fetch on mount, not on every user change
+  }, [fetchDrafts]); // Include fetchDrafts dependency to fix ESLint warning
 
   const handlePublishDraft = async (draftId) => {
     try {

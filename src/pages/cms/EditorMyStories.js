@@ -58,11 +58,11 @@ const EditorMyStories = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading]); // Add isLoading dependency to prevent multiple requests
+  }, [isLoading, user]); // Include user dependency to fix ESLint warning
 
   useEffect(() => {
     fetchMyStories();
-  }, []); // Only fetch on mount, not on every user change
+  }, [fetchMyStories]); // Include fetchMyStories dependency to fix ESLint warning
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
