@@ -29,8 +29,8 @@ const EditorDashboard = () => {
   const { user } = useAuth();
   const adminToken = localStorage.getItem('adminToken');
   
-  // Use real-time user data hook for live updates
-  const { userData: realTimeUser, isLoading: realTimeLoading, error: realTimeError } = useRealTimeUserData(adminToken, 2000); // Update every 2 seconds
+  // Use real-time user data hook for live updates (reduced frequency to prevent flickering)
+  const { userData: realTimeUser, isLoading: realTimeLoading, error: realTimeError } = useRealTimeUserData(adminToken, 30000); // Update every 30 seconds
   
   const [stories, setStories] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
@@ -320,7 +320,7 @@ const EditorDashboard = () => {
                             {!realTimeLoading && !realTimeError && (
                               <span className="flex items-center">
                                 <div className="w-2 h-2 bg-blue-400 rounded-full mr-1"></div>
-                                Live Data
+                                Data Synced
                               </span>
                             )}
                             <button

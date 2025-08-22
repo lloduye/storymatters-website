@@ -144,7 +144,7 @@ export const userService = {
 };
 
 // Hook for real-time user data updates
-export const useRealTimeUserData = (token, updateInterval = 1000) => {
+export const useRealTimeUserData = (token, updateInterval = 30000) => {
   const [userData, setUserData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -160,7 +160,13 @@ export const useRealTimeUserData = (token, updateInterval = 1000) => {
     const fetchUserData = async () => {
       try {
         const freshData = await userService.getCurrentUser(token);
-        setUserData(freshData);
+        // Only update if data actually changed to prevent unnecessary re-renders
+        setUserData(prevData => {
+          if (JSON.stringify(prevData) !== JSON.stringify(freshData)) {
+            return freshData;
+          }
+          return prevData;
+        });
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -172,8 +178,10 @@ export const useRealTimeUserData = (token, updateInterval = 1000) => {
     // Fetch immediately
     fetchUserData();
 
-    // Set up interval for real-time updates
-    intervalId = setInterval(fetchUserData, updateInterval);
+    // Set up interval for real-time updates (only if interval is reasonable)
+    if (updateInterval >= 5000) { // Minimum 5 seconds to prevent excessive updates
+      intervalId = setInterval(fetchUserData, updateInterval);
+    }
 
     return () => {
       if (intervalId) {

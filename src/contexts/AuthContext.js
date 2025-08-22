@@ -165,13 +165,13 @@ export const AuthProvider = ({ children }) => {
     };
   }, [isLoggedIn, logout, refreshUserData, checkPermission]);
 
-  // Real-time user data refresh every second
+  // Real-time user data refresh every 30 seconds (reduced from 1 second to prevent flickering)
   useEffect(() => {
     if (!isLoggedIn) return;
 
     const refreshInterval = setInterval(async () => {
       await refreshUserData();
-    }, 1000); // Refresh every second
+    }, 30000); // Refresh every 30 seconds instead of every second
 
     return () => {
       if (refreshInterval) {
