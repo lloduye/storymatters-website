@@ -42,7 +42,10 @@ const EditorDashboard = () => {
 
   const fetchStoriesForUser = useCallback(async (userFullName) => {
     console.log('fetchStoriesForUser: Starting for user:', userFullName);
-    console.log('fetchStoriesForUser: Current token:', localStorage.getItem('adminToken'));
+    const adminToken = localStorage.getItem('adminToken');
+    const userToken = localStorage.getItem('userToken');
+    const token = adminToken || userToken;
+    console.log('fetchStoriesForUser: Current token:', token);
     
     try {
       // First try to get user-specific stories
@@ -122,11 +125,12 @@ const EditorDashboard = () => {
     // Start loading data in background without blocking UI
     const loadDataInBackground = async () => {
       try {
-        // Check authentication
-        const token = localStorage.getItem('adminToken');
+        // Check authentication - try both admin and user tokens
+        const adminToken = localStorage.getItem('adminToken');
+        const userToken = localStorage.getItem('userToken');
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         
-        if (!token || isLoggedIn !== 'true') {
+        if ((!adminToken && !userToken) || isLoggedIn !== 'true') {
           console.log('User not authenticated, redirecting to login');
           setTimeout(() => {
             const userData = localStorage.getItem('userData');
@@ -173,14 +177,22 @@ const EditorDashboard = () => {
   const handleStatusToggle = async (storyId, currentStatus) => {
     try {
       console.log('handleStatusToggle: Starting status toggle for story:', storyId, 'Current status:', currentStatus);
-      console.log('handleStatusToggle: Token being used:', localStorage.getItem('adminToken'));
+      const adminToken = localStorage.getItem('adminToken');
+      const userToken = localStorage.getItem('userToken');
+      const token = adminToken || userToken;
+      console.log('handleStatusToggle: Token being used:', token);
       
       setActionLoading(prev => ({ ...prev, [`status_${storyId}`]: true }));
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
       
+      // Get the appropriate token
+      const adminToken = localStorage.getItem('adminToken');
+      const userToken = localStorage.getItem('userToken');
+      const token = adminToken || userToken;
+      
       const response = await axios.patch(`/api/stories/${storyId}/status`, 
         { status: newStatus },
-        { headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` } }
+        { headers: { 'Authorization': `Bearer ${token}` } }
       );
       
       console.log('handleStatusToggle: API response:', response.data);

@@ -16,7 +16,7 @@ const Stories = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/stories');
+      const response = await axios.get('/api/stories');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -37,7 +37,7 @@ const Stories = () => {
     
     // If the image path starts with /uploads/, it's from the CMS, so prepend the backend URL
     if (imagePath.startsWith('/uploads/')) {
-      return `http://localhost:5000${imagePath}`;
+      return imagePath.startsWith('http') ? imagePath : `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Story+Image`;
     }
     
     // Otherwise, it's a local image, so use as is

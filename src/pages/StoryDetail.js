@@ -14,11 +14,11 @@ const StoryDetail = () => {
   const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`http://localhost:5000/api/stories/${id}`);
+      const response = await axios.get(`/api/stories/${id}`);
       setStory(response.data);
       
       // Fetch related stories (excluding current story)
-      const allStoriesResponse = await axios.get('http://localhost:5000/api/stories');
+      const allStoriesResponse = await axios.get('/api/stories');
       const allStories = allStoriesResponse.data;
       const related = allStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
       setRelatedStories(related);
@@ -45,7 +45,7 @@ const StoryDetail = () => {
     
     // If the image path starts with /uploads/, it's from the CMS, so prepend the backend URL
     if (imagePath.startsWith('/uploads/')) {
-      return `http://localhost:5000${imagePath}`;
+      return imagePath.startsWith('http') ? imagePath : `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Story+Image`;
     }
     
     // Otherwise, it's a local image, so use as is

@@ -28,7 +28,7 @@ const Stories = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/stories');
+      const response = await axios.get('/api/stories');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -41,7 +41,7 @@ const Stories = () => {
   const handleDeleteStory = async (storyId) => {
     if (window.confirm('Are you sure you want to delete this story?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/stories/${storyId}`, {
+        await axios.delete(`/api/stories/${storyId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -57,7 +57,7 @@ const Stories = () => {
 
   const handleToggleFeatured = async (storyId, currentFeatured) => {
     try {
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}`, {
+      await axios.patch(`/api/stories/${storyId}`, {
         featured: !currentFeatured
       }, {
         headers: {
@@ -75,7 +75,7 @@ const Stories = () => {
   const handleToggleStatus = async (storyId, currentStatus) => {
     try {
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}`, {
+      await axios.patch(`/api/stories/${storyId}`, {
         status: newStatus
       }, {
         headers: {
@@ -110,7 +110,7 @@ const Stories = () => {
     if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
     
     if (imagePath.startsWith('/uploads/')) {
-      return `http://localhost:5000${imagePath}`;
+      return imagePath.startsWith('http') ? imagePath : `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Story+Image`;
     }
     
     return imagePath;

@@ -46,7 +46,7 @@ const Login = () => {
 
       // If not admin, try user login
       try {
-        const userResponse = await axios.post('http://localhost:5000/api/users/login', credentials);
+        const userResponse = await axios.post('/api/auth/login', credentials);
         
         if (userResponse.data.message === 'Login successful') {
           // Store user data in localStorage

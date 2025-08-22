@@ -26,7 +26,7 @@ const ManagerDashboard = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/stories');
+      const response = await axios.get('/api/stories');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -39,7 +39,7 @@ const ManagerDashboard = () => {
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
     try {
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}/status`, { status: newStatus });
+              await axios.patch(`/api/stories/${storyId}/status`, { status: newStatus });
       toast.success(`Story status updated to ${newStatus}`);
       fetchStories();
     } catch (error) {
@@ -50,7 +50,7 @@ const ManagerDashboard = () => {
 
   const handleToggleFeatured = async (storyId, currentFeatured) => {
     try {
-      await axios.patch(`http://localhost:5000/api/stories/${storyId}/featured`, { featured: !currentFeatured });
+              await axios.patch(`/api/stories/${storyId}/featured`, { featured: !currentFeatured });
       toast.success(`Story featured status updated`);
       fetchStories();
     } catch (error) {
@@ -259,7 +259,7 @@ const ManagerDashboard = () => {
               {selectedStory.image && (
                 <div>
                   <img 
-                    src={`http://localhost:5000/uploads/${selectedStory.image}`} 
+                    src={selectedStory.image || `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Story+Image`} 
                     alt={selectedStory.title}
                     className="w-full h-64 object-cover rounded-lg"
                   />

@@ -22,8 +22,7 @@
 .env
 .env.*
 
-# Google API credentials
-google-credentials.json
+
 *-credentials.json
 *-key.json
 
