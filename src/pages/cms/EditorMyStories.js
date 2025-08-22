@@ -37,9 +37,6 @@ const EditorMyStories = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchMyStories = useCallback(async () => {
-    // Prevent multiple simultaneous requests
-    if (isLoading) return;
-    
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
@@ -58,14 +55,14 @@ const EditorMyStories = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, user]); // Include user dependency to fix ESLint warning
+  }, [user]); // Only depend on user changes
 
   useEffect(() => {
-    // Only fetch if we have a user and not already loading
-    if (user && !isLoading) {
+    // Only fetch if we have a user
+    if (user) {
       fetchMyStories();
     }
-  }, [user]); // Only depend on user changes, not the function itself
+  }, [fetchMyStories]); // Include fetchMyStories dependency
 
   const handleToggleStatus = async (storyId, currentStatus) => {
     const newStatus = currentStatus === 'published' ? 'draft' : 'published';
