@@ -136,18 +136,21 @@ const EditorStoryEditor = () => {
     reader.onload = (e) => setImagePreview(e.target.result);
     reader.readAsDataURL(file);
 
-    // Upload to server
-    try {
-      console.log('EditorStoryEditor: Starting image upload...');
-      console.log('EditorStoryEditor: Token being used:', localStorage.getItem('adminToken'));
+          // Upload to server
+      try {
+        console.log('EditorStoryEditor: Starting image upload...');
+        const adminToken = localStorage.getItem('adminToken');
+        const userToken = localStorage.getItem('userToken');
+        const token = adminToken || userToken;
+        console.log('EditorStoryEditor: Token being used:', token);
+        
+        const formData = new FormData();
+        formData.append('image', file);
       
-      const formData = new FormData();
-      formData.append('image', file);
-
       const response = await axios.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
