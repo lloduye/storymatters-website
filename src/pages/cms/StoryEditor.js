@@ -33,20 +33,13 @@ const StoryEditor = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [storyId, setStoryId] = useState(null);
   
-  // Determine navigation paths based on user role
+  // STRICT ADMIN NAVIGATION - NO CROSSING TO EDITOR PANEL
   const getNavigationPaths = () => {
-    const userRole = user?.role || localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')).role : 'editor';
-    if (userRole === 'editor') {
-      return {
-        backToStories: '/editor/stories',
-        close: '/editor/dashboard'
-      };
-    } else {
-      return {
-        backToStories: '/admin/stories',
-        close: '/admin/dashboard'
-      };
-    }
+    // This is Admin StoryEditor - always use admin paths
+    return {
+      backToStories: '/admin/stories',
+      close: '/admin/dashboard'
+    };
   };
   
   const navigationPaths = getNavigationPaths();

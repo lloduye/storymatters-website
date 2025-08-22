@@ -19,7 +19,21 @@ const Login = () => {
   useEffect(() => {
     // Check if already logged in
     if (isLoggedIn) {
-      navigate('/admin/dashboard');
+      // Get user data from localStorage to determine role
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (user.role === 'editor') {
+          navigate('/editor/dashboard');
+        } else if (user.role === 'manager') {
+          navigate('/manager/dashboard');
+        }
+      } else {
+        // If no user data, redirect to admin dashboard (fallback)
+        navigate('/admin/dashboard');
+      }
     }
   }, [isLoggedIn, navigate]);
 
@@ -36,46 +50,47 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Try admin login first (this will now be handled by database)
-      if (credentials.username === 'admin' && credentials.password === 'admin123') {
-        // This is now a fallback - admin should be in database
-        login('admin123');
-        toast.success('Admin login successful! Welcome to the admin panel.');
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      // If not admin, try user login
-      try {
-        const userResponse = await axios.post('/api/auth/login', credentials);
+      // All logins now go through the database
+      const userResponse = await axios.post('/api/auth/login', credentials);
+      
+      if (userResponse.data.message === 'Login successful') {
+        const user = userResponse.data.user;
+        const token = userResponse.data.token;
         
-        if (userResponse.data.message === 'Login successful') {
-          // Store user data in localStorage
-          localStorage.setItem('userData', JSON.stringify(userResponse.data.user));
-          localStorage.setItem('userToken', 'user_logged_in');
-          localStorage.setItem('isLoggedIn', 'true');
-          
-          toast.success('Login successful!');
-          
-                     // Redirect based on user role
-           if (userResponse.data.user.role === 'admin') {
-             navigate('/admin/dashboard');
-           } else if (userResponse.data.user.role === 'manager') {
-             navigate('/manager/dashboard');
-           } else if (userResponse.data.user.role === 'editor') {
-             navigate('/editor/dashboard');
-           } else {
-             navigate('/'); // Regular users go to home page for now
-           }
-          return;
+        // Store user data and token in localStorage
+        localStorage.setItem('userData', JSON.stringify(user));
+        localStorage.setItem('userToken', token);
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        // Also store adminToken if user is admin for compatibility
+        if (user.role === 'admin') {
+          localStorage.setItem('adminToken', token);
         }
-      } catch (userError) {
-        console.error('User login failed:', userError);
-        toast.error('Invalid credentials. Please try again.');
+        
+        toast.success(`Login successful! Welcome ${user.full_name}`);
+        
+        // Navigate based on user role - NO CROSSING BETWEEN PANELS
+        if (user.role === 'admin') {
+          login(token);
+          navigate('/admin/dashboard');
+        } else if (user.role === 'manager') {
+          login(token);
+          navigate('/manager/dashboard');
+        } else if (user.role === 'editor') {
+          login(token);
+          navigate('/editor/dashboard');
+        } else {
+          // Unknown role - go to home
+          navigate('/');
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error('Invalid credentials. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +119,7 @@ const Login = () => {
             Welcome Back
           </h2>
           <p className="text-blue-100 text-lg">
-            Sign in to access your account (Admin or User)
+            Sign in to access your account
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -18,9 +18,45 @@ import { useAuth } from '../../contexts/AuthContext';
 const EditorLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+
+  useEffect(() => {
+    // Get user role from localStorage
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        setUserRole(parsed.role);
+      } catch (error) {
+        console.error('EditorLayout: Error parsing user data:', error);
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  // STRICT ROLE VALIDATION - NO CROSSING BETWEEN PANELS
+  if (!isLoading && userRole !== 'editor') {
+    console.error('EditorLayout: Unauthorized access attempt. User role:', userRole);
+    logout();
+    navigate('/login');
+    return null;
+  }
+
+  // Show loading state while determining user role
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading editor panel...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logout();

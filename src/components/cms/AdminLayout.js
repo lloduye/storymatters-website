@@ -71,6 +71,14 @@ const AdminLayout = ({ children }) => {
     };
   }, []);
 
+  // STRICT ROLE VALIDATION - NO CROSSING BETWEEN PANELS
+  if (!isLoading && userRole !== 'admin' && userRole !== 'manager') {
+    console.error('AdminLayout: Unauthorized access attempt. User role:', userRole);
+    logout();
+    navigate('/login');
+    return null;
+  }
+
   // Show loading state while determining user role
   if (isLoading) {
     return (
