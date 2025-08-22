@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faShieldAlt, 
@@ -10,6 +11,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const SystemHealth = () => {
+  useScrollToTop();
+  
   const [lastChecked, setLastChecked] = useState(new Date());
 
   const checkSystemHealth = () => {

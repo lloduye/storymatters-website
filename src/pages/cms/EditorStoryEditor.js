@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -21,6 +22,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const EditorStoryEditor = () => {
+  useScrollToTop();
+  
   const { id } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);

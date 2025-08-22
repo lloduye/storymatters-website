@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faClipboardList, 
@@ -13,6 +14,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const AuditLogs = () => {
+  useScrollToTop();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
 

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faTheaterMasks, faVideo, faPaintBrush, faStar, faArrowRight, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useScrollToTop } from '../utils/useScrollToTop';
 
 const Programs = () => {
+  useScrollToTop();
   const [selectedProgram, setSelectedProgram] = useState(null);
 
   const programs = [

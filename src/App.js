@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
@@ -17,7 +17,6 @@ import Login from './pages/Login';
 
 
 // CMS Components
-import AdminLogin from './pages/cms/AdminLogin';
 import AdminDashboard from './pages/cms/AdminDashboard';
 import ManagerDashboard from './pages/cms/ManagerDashboard';
 import EditorDashboard from './pages/cms/EditorDashboard';
@@ -72,7 +71,7 @@ function App() {
           />
           <Routes>
             {/* CMS Routes */}
-            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin" element={<Navigate to="/login" replace />} />
             <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
             <Route path="/admin/stories/new" element={<AdminLayout><StoryEditor /></AdminLayout>} />
             <Route path="/admin/stories/edit/:id" element={<AdminLayout><StoryEditor /></AdminLayout>} />

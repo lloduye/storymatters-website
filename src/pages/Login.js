@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { useNavigate, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faUser, faEye, faEyeSlash, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
@@ -7,6 +8,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const Login = () => {
+  useScrollToTop();
+  
   const [credentials, setCredentials] = useState({
     username: '',
     password: ''
@@ -58,7 +61,17 @@ const Login = () => {
         const token = userResponse.data.token;
         
         // Store user data and token in localStorage
-        localStorage.setItem('userData', JSON.stringify(user));
+        // Convert database field names to frontend format for consistency
+        const userDataForFrontend = {
+          ...user,
+          fullName: user.full_name, // Convert full_name to fullName
+          id: user.id,
+          role: user.role,
+          email: user.email,
+          username: user.username
+        };
+        
+        localStorage.setItem('userData', JSON.stringify(userDataForFrontend));
         localStorage.setItem('userToken', token);
         localStorage.setItem('isLoggedIn', 'true');
         
@@ -71,13 +84,13 @@ const Login = () => {
         
         // Navigate based on user role - NO CROSSING BETWEEN PANELS
         if (user.role === 'admin') {
-          login(token);
+          login(token, userDataForFrontend);
           navigate('/admin/dashboard');
         } else if (user.role === 'manager') {
-          login(token);
+          login(token, userDataForFrontend);
           navigate('/manager/dashboard');
         } else if (user.role === 'editor') {
-          login(token);
+          login(token, userDataForFrontend);
           navigate('/editor/dashboard');
         } else {
           // Unknown role - go to home

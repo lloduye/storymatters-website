@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -11,6 +12,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const Stories = () => {
+  useScrollToTop();
+  
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

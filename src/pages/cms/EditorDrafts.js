@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -22,6 +23,8 @@ import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EditorDrafts = () => {
+  useScrollToTop();
+  
   const { user } = useAuth();
   const [drafts, setDrafts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,12 +39,13 @@ const EditorDrafts = () => {
     try {
       setIsLoading(true);
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      if (!currentUser.fullName) {
+      const userName = currentUser.fullName || currentUser.full_name;
+      if (!userName) {
         toast.error('User information not found');
         setIsLoading(false);
         return;
       }
-      const response = await axios.get(`/api/stories/user/${currentUser.fullName}`);
+      const response = await axios.get(`/api/stories/user/${userName}`);
       // Filter for draft stories only
       const draftStories = response.data.filter(story => story.status === 'draft');
       setDrafts(draftStories);

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBookOpen, 
@@ -18,6 +19,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const EditorContentLibrary = () => {
+  useScrollToTop();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');

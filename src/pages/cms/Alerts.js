@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faExclamationTriangle, 
@@ -10,6 +11,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const Alerts = () => {
+  useScrollToTop();
+  
   const [alerts, setAlerts] = useState([
     {
       id: 1,

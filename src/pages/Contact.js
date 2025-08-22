@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faPhone, faMapMarkerAlt, faClock } from '@fortawesome/free-solid-svg-icons';
 import { faFacebook, faTwitter, faInstagram } from '@fortawesome/free-brands-svg-icons';
 
 const Contact = () => {
+  useScrollToTop();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',

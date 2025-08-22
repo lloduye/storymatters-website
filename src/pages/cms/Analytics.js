@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faEye, faMousePointer, faArrowUp, faArrowDown, faDollarSign, faNewspaper, faHeart,
@@ -6,6 +7,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const Analytics = () => {
+  useScrollToTop();
+  
   const [timeRange, setTimeRange] = useState('30d');
 
   // Mock analytics data

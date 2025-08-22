@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, 
@@ -32,6 +33,8 @@ import {
 } from '../../utils/passwordValidation';
 
 const Users = () => {
+  useScrollToTop();
+  
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

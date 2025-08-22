@@ -23,9 +23,10 @@ import { useAuth } from '../../contexts/AuthContext';
 const AdminLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, resetActivity } = useAuth();
 
   // Get user role from localStorage with proper error handling
   const [userRole, setUserRole] = useState('admin');
@@ -70,6 +71,27 @@ const AdminLayout = ({ children }) => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+
+  // Listen for inactivity warnings
+  useEffect(() => {
+    const handleInactivityWarning = () => {
+      setShowInactivityWarning(true);
+    };
+
+    const handleActivity = () => {
+      setShowInactivityWarning(false);
+      resetActivity();
+    };
+
+    // Listen for custom events from AuthContext
+    window.addEventListener('inactivity-warning', handleInactivityWarning);
+    window.addEventListener('user-activity', handleActivity);
+
+    return () => {
+      window.removeEventListener('inactivity-warning', handleInactivityWarning);
+      window.removeEventListener('user-activity', handleActivity);
+    };
+  }, [resetActivity]);
 
   // STRICT ROLE VALIDATION - NO CROSSING BETWEEN PANELS
   if (!isLoading && userRole !== 'admin' && userRole !== 'manager') {
@@ -134,7 +156,17 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-             {/* Professional Navigation Bar - Matching Main Website */}
+      {/* Inactivity Warning Banner */}
+      {showInactivityWarning && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-yellow-900 px-4 py-3 text-center font-medium shadow-lg">
+          <div className="flex items-center justify-center space-x-2">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="animate-pulse" />
+            <span>You will be logged out in 30 seconds due to inactivity. Click anywhere to stay logged in.</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Professional Navigation Bar - Matching Main Website */}
        <nav className="bg-white shadow-lg sticky top-0 z-50">
          <div className="w-full px-4 sm:px-6 lg:px-8">
            <div className="flex justify-between items-center h-20">
@@ -193,13 +225,13 @@ const AdminLayout = ({ children }) => {
                    className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-300"
                  >
                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                     <span className="text-white font-semibold text-xs">
-                       {userData?.fullName ? userData.fullName.charAt(0).toUpperCase() : 'A'}
-                     </span>
-                   </div>
-                   <span className="hidden sm:block text-sm font-medium">
-                     {userData?.fullName || 'Admin'}
+                                        <span className="text-white font-semibold text-xs">
+                     {(userData?.fullName || userData?.full_name) ? (userData.fullName || userData.full_name).charAt(0).toUpperCase() : 'A'}
                    </span>
+                 </div>
+                 <span className="hidden sm:block text-sm font-medium">
+                   {userData?.fullName || userData?.full_name || 'Admin'}
+                 </span>
                    <FontAwesomeIcon icon={faChevronDown} className="text-xs text-gray-400" />
                  </button>
 
@@ -208,7 +240,7 @@ const AdminLayout = ({ children }) => {
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-200">
                       <p className="text-sm font-medium text-gray-900">
-                        {userData?.fullName || 'Admin User'}
+                        {userData?.fullName || userData?.full_name || 'Admin User'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {userData?.email || 'admin@storymatters.org'}

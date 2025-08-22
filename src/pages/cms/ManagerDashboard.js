@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faNewspaper, 
@@ -14,6 +15,8 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const ManagerDashboard = () => {
+  useScrollToTop();
+  
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStory, setSelectedStory] = useState(null);

@@ -1,9 +1,12 @@
 import React from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faArrowRight, faHeart, faUsers, faLightbulb, faHandshake, faStar, faGraduationCap } from '@fortawesome/free-solid-svg-icons';
 
 const Home = () => {
+  useScrollToTop();
+  
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}

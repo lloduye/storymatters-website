@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faMapMarkerAlt, faQuoteLeft } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
 const Stories = () => {
+  useScrollToTop();
+  
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);

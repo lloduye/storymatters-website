@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCog, faSave, faGlobe, faEnvelope, faBell, faShield, faPalette,
@@ -12,6 +13,8 @@ import {
 } from '../../utils/phoneValidation';
 
 const Settings = () => {
+  useScrollToTop();
+  
   const [activeTab, setActiveTab] = useState('general');
   const [isLoading, setIsLoading] = useState(false);
   const [phoneValidation, setPhoneValidation] = useState({ isValid: true, message: '', className: '' });

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -15,6 +16,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EditorCreateStory = () => {
+  useScrollToTop();
+  
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -66,7 +69,7 @@ const EditorCreateStory = () => {
 
       // Add author and status - get user from context or localStorage
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      formDataToSend.append('author', currentUser.fullName || 'Unknown Author');
+      formDataToSend.append('author', currentUser.fullName || currentUser.full_name || 'Unknown Author');
       formDataToSend.append('status', 'published');
       formDataToSend.append('featured', 'false');
       formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);
@@ -103,7 +106,7 @@ const EditorCreateStory = () => {
 
       // Add author and status for draft
       const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      formDataToSend.append('author', currentUser.fullName || 'Unknown Author');
+      formDataToSend.append('author', currentUser.fullName || currentUser.full_name || 'Unknown Author');
       formDataToSend.append('status', 'draft');
       formDataToSend.append('featured', 'false');
       formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);
@@ -387,7 +390,7 @@ const EditorCreateStory = () => {
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{formData.title || 'Story Title'}</h2>
             <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
-              <span>By {user?.fullName || 'Editor'}</span>
+              <span>By {user?.fullName || user?.full_name || 'Editor'}</span>
               {formData.location && (
                 <>
                   <span>•</span>

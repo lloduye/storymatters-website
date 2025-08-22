@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -29,6 +30,8 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
+  useScrollToTop();
+  
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -209,7 +212,7 @@ const AdminDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-1">
-              Welcome back, {userData?.fullName || 'Administrator'}! 👋
+              Welcome back, {userData?.fullName || userData?.full_name || 'Administrator'}! 👋
             </h1>
             <p className="text-blue-100 text-sm">
               Here's what's happening with Story Matters today.

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -7,6 +8,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const GetInvolved = () => {
+  useScrollToTop();
+  
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}

@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faHandshake, faUsers, faLightbulb } from '@fortawesome/free-solid-svg-icons';
 
 const Donate = () => {
+  useScrollToTop();
+  
   const [selectedAmount, setSelectedAmount] = useState('');
   const [customAmount, setCustomAmount] = useState('');
 

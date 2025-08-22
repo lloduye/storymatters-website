@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -22,6 +23,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EditorDashboard = () => {
+  useScrollToTop();
+  
   const { user } = useAuth();
   const [stories, setStories] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
@@ -145,7 +148,7 @@ const EditorDashboard = () => {
                 console.error('Error parsing user data:', error);
               }
             }
-            window.location.href = '/admin';
+            window.location.href = '/login';
           }, 1000);
           return;
         }
@@ -268,7 +271,7 @@ const EditorDashboard = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <h1 className="text-2xl font-bold mb-1">
-                            Welcome back, {currentUser?.fullName || 'Editor'}! 👋
+                            Welcome back, {currentUser?.fullName || currentUser?.full_name || 'Editor'}! 👋
                           </h1>
                           <p className="text-blue-100 text-sm">
                             Ready to create amazing stories that make a difference?

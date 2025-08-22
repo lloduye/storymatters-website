@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDatabase, 
@@ -12,6 +13,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const Backup = () => {
+  useScrollToTop();
+  
   const [backupStatus, setBackupStatus] = useState('idle');
   const [lastBackup] = useState('2025-01-15 14:30:00');
   const [nextBackup] = useState('2025-01-16 02:00:00');

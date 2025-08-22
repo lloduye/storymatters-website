@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faFileAlt, 
@@ -11,6 +12,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const Reports = () => {
+  useScrollToTop();
+  
   const [selectedReport, setSelectedReport] = useState('donations');
   const [dateRange, setDateRange] = useState('month');
 

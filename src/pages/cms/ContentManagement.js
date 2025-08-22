@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React$1 from 'react';
+import { useScrollToTop } from '../../utils/useScrollToTop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faEdit, 
@@ -20,6 +21,8 @@ import {
 import toast from 'react-hot-toast';
 
 const ContentManagement = () => {
+  useScrollToTop();
+  
   const [pages, setPages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingPage, setEditingPage] = useState(null);

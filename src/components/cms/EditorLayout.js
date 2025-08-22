@@ -11,7 +11,8 @@ import {
   faPlus,
   faNewspaper,
   faBookOpen,
-  faDraftingCompass
+  faDraftingCompass,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -20,9 +21,10 @@ const EditorLayout = ({ children }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout, user, resetActivity } = useAuth();
 
   useEffect(() => {
     // Get user role from localStorage
@@ -37,6 +39,27 @@ const EditorLayout = ({ children }) => {
     }
     setIsLoading(false);
   }, []);
+
+  // Listen for inactivity warnings
+  useEffect(() => {
+    const handleInactivityWarning = () => {
+      setShowInactivityWarning(true);
+    };
+
+    const handleActivity = () => {
+      setShowInactivityWarning(false);
+      resetActivity();
+    };
+
+    // Listen for custom events from AuthContext
+    window.addEventListener('inactivity-warning', handleInactivityWarning);
+    window.addEventListener('user-activity', handleActivity);
+
+    return () => {
+      window.removeEventListener('inactivity-warning', handleInactivityWarning);
+      window.removeEventListener('user-activity', handleActivity);
+    };
+  }, [resetActivity]);
 
   // STRICT ROLE VALIDATION - NO CROSSING BETWEEN PANELS
   if (!isLoading && userRole !== 'editor') {
@@ -78,6 +101,16 @@ const EditorLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Inactivity Warning Banner */}
+      {showInactivityWarning && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-yellow-900 px-4 py-3 text-center font-medium shadow-lg">
+          <div className="flex items-center justify-center space-x-2">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="animate-pulse" />
+            <span>You will be logged out in 30 seconds due to inactivity. Click anywhere to stay logged in.</span>
+          </div>
+        </div>
+      )}
+      
       {/* Professional Navigation Bar - Editor Specific */}
       <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -139,11 +172,11 @@ const EditorLayout = ({ children }) => {
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold text-xs">
-                      {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'E'}
+                      {(user?.fullName || user?.full_name) ? (user.fullName || user.full_name).charAt(0).toUpperCase() : 'E'}
                     </span>
                   </div>
                   <span className="hidden sm:block text-sm font-medium">
-                    {user?.fullName || 'Editor'}
+                    {user?.fullName || user?.full_name || 'Editor'}
                   </span>
                   <FontAwesomeIcon icon={faChevronDown} className="text-xs text-gray-400" />
                 </button>
@@ -152,7 +185,7 @@ const EditorLayout = ({ children }) => {
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-200">
-                      <p className="text-sm font-medium text-gray-900">{user?.fullName || 'Editor'}</p>
+                      <p className="text-sm font-medium text-gray-900">{user?.fullName || user?.full_name || 'Editor'}</p>
                       <p className="text-xs text-gray-500">{user?.email || 'Role: Editor'}</p>
                     </div>
                     <button

@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useScrollToTop } from '../utils/useScrollToTop';
 import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faMapMarkerAlt, faClock, faShare, faBookmark, faComment, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
 const StoryDetail = () => {
+  useScrollToTop();
+  
   const { id } = useParams();
   const [story, setStory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -14,6 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [lastActivity, setLastActivity] = useState(Date.now());
 
   useEffect(() => {
     // Check authentication status on mount
@@ -58,6 +60,69 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Auto-logout after 5 minutes of inactivity
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const WARNING_TIME = 4.5 * 60 * 1000; // 4.5 minutes - show warning 30 seconds before logout
+    let inactivityTimer;
+    let warningTimer;
+
+    const resetInactivityTimer = () => {
+      setLastActivity(Date.now());
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      if (warningTimer) {
+        clearTimeout(warningTimer);
+      }
+      
+      // Set warning timer (4.5 minutes)
+      warningTimer = setTimeout(() => {
+        toast.warning('You will be logged out in 30 seconds due to inactivity. Click anywhere to stay logged in.');
+        // Dispatch custom event for layout components
+        window.dispatchEvent(new CustomEvent('inactivity-warning'));
+      }, WARNING_TIME);
+      
+      // Set logout timer (5 minutes)
+      inactivityTimer = setTimeout(() => {
+        console.log('User inactive for 5 minutes, logging out...');
+        toast.error('You have been logged out due to inactivity.');
+        logout();
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    // Reset timer on user activity
+    const handleUserActivity = () => {
+      resetInactivityTimer();
+      // Dispatch custom event for layout components
+      window.dispatchEvent(new CustomEvent('user-activity'));
+    };
+
+    // Set up activity listeners
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      document.addEventListener(event, handleUserActivity, true);
+    });
+
+    // Initial timer setup
+    resetInactivityTimer();
+
+    // Cleanup
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      if (warningTimer) {
+        clearTimeout(warningTimer);
+      }
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserActivity, true);
+      });
+    };
+  }, [isLoggedIn, logout]);
+
   const login = (token, userData = null) => {
     console.log('AuthContext.login called with:', { token, userData });
     
@@ -97,6 +162,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('userData');
     setIsLoggedIn(false);
     setUser(null);
+    setLastActivity(Date.now());
+  };
+
+  const resetActivity = () => {
+    setLastActivity(Date.now());
   };
 
   const value = {
@@ -104,7 +174,8 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     user,
     login,
-    logout
+    logout,
+    resetActivity
   };
 
   return (
