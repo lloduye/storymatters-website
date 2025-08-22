@@ -24,8 +24,6 @@ import { useAuth } from '../../contexts/AuthContext';
 const EditorDashboard = () => {
   const { user } = useAuth();
   const [stories, setStories] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [actionLoading, setActionLoading] = useState({});
 
   // Get user data - use AuthContext if available, fallback to localStorage
@@ -80,8 +78,7 @@ const EditorDashboard = () => {
     console.log('fetchDashboardData: Starting...');
     
     try {
-      setIsLoading(true);
-      console.log('fetchDashboardData: isLoading set to true');
+      console.log('fetchDashboardData: Starting data fetch');
       
       // Get user data - either from context or localStorage
       let userToFetch = currentUser;
@@ -95,7 +92,6 @@ const EditorDashboard = () => {
           } catch (error) {
             console.error('fetchDashboardData: Error parsing user data from localStorage:', error);
             setStories([]);
-            setIsLoading(false);
             return;
           }
         }
@@ -110,15 +106,13 @@ const EditorDashboard = () => {
         setStories([]);
       }
       
-      setLastUpdated(new Date());
       console.log('fetchDashboardData: Completed successfully');
     } catch (error) {
       console.error('fetchDashboardData: Error occurred:', error);
       setStories([]);
       toast.error('Failed to load dashboard data');
     } finally {
-      console.log('fetchDashboardData: Finally block executing, setting isLoading to false');
-      setIsLoading(false);
+      console.log('fetchDashboardData: Finally block executing');
     }
   }, [currentUser, fetchStoriesForUser]);
 

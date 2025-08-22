@@ -82,16 +82,6 @@ const StoryEditor = () => {
 
   const tagOptions = availableTags.map(tag => ({ value: tag, label: tag }));
 
-  useEffect(() => {
-    if (isEditing && id !== 'new') {
-      fetchStory();
-    } else {
-             // Set default values for new story
-       setValue('publishDate', new Date().toISOString().split('T')[0]);
-       setValue('status', 'draft');
-    }
-  }, [id, setValue, isEditing]);
-
   const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -128,6 +118,16 @@ const StoryEditor = () => {
       setIsLoading(false);
     }
   }, [id, setValue, setContent, setImagePreview, setUploadedImageUrl, setSelectedTags]);
+
+  useEffect(() => {
+    if (isEditing && id !== 'new') {
+      fetchStory();
+    } else {
+      // Set default values for new story
+      setValue('publishDate', new Date().toISOString().split('T')[0]);
+      setValue('status', 'draft');
+    }
+  }, [id, setValue, isEditing, fetchStory]);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
