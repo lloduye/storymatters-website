@@ -56,7 +56,18 @@ const StoryEditor = () => {
   const isEditing = id !== 'new';
 
   // Custom categories and tags - users can add their own
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([
+    { value: 'Conflict Resolution & Peace Dialogues', label: 'Conflict Resolution & Peace Dialogues' },
+    { value: 'Youth Leadership & Empowerment', label: 'Youth Leadership & Empowerment' },
+    { value: 'Creative Arts & Expression', label: 'Creative Arts & Expression' },
+    { value: 'Media & Storytelling', label: 'Media & Storytelling' },
+    { value: 'Cultural Heritage & Identity', label: 'Cultural Heritage & Identity' },
+    { value: 'Youth Talent & Innovation', label: 'Youth Talent & Innovation' },
+    { value: 'Sports for Peace', label: 'Sports for Peace' },
+    { value: 'Entrepreneurship & Innovation', label: 'Entrepreneurship & Innovation' },
+    { value: 'Public Health Campaigns', label: 'Public Health Campaigns' },
+    { value: 'Youth & Disability Inclusion', label: 'Youth & Disability Inclusion' }
+  ]);
   const [newCategory, setNewCategory] = useState('');
   const [newTag, setNewTag] = useState('');
 
@@ -196,15 +207,17 @@ const StoryEditor = () => {
   };
 
   const onSubmit = async (data) => {
-    if (!content.trim()) {
-      toast.error('Please add some content to your story');
+    // Remove strict validation - allow saving with partial data
+    if (!data.title?.trim()) {
+      toast.error('Please add a title to your story');
       return;
     }
 
-    if (!uploadedImageUrl && !imagePreview) {
-      toast.error('Please upload an image for your story');
-      return;
-    }
+    // Make image optional for saving
+    // if (!uploadedImageUrl && !imagePreview) {
+    //   toast.error('Please upload an image for your story');
+    //   return;
+    // }
 
     setIsSaving(true);
 
@@ -278,11 +291,19 @@ const StoryEditor = () => {
   };
 
   const addCustomTag = () => {
-    if (newTag.trim() && !selectedTags.find(tag => tag.value === newTag.trim())) {
-      const newTagObj = { value: newTag.trim(), label: newTag.trim() };
-      setSelectedTags(prev => [...prev, newTagObj]);
+    if (newTag.trim()) {
+      // Handle comma-separated tags
+      const tags = newTag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      
+      tags.forEach(tag => {
+        if (!selectedTags.find(existingTag => existingTag.value === tag)) {
+          const newTagObj = { value: tag, label: tag };
+          setSelectedTags(prev => [...prev, newTagObj]);
+        }
+      });
+      
       setNewTag('');
-      toast.success('Custom tag added!');
+      toast.success(`${tags.length} tag(s) added!`);
     }
   };
 
@@ -628,7 +649,7 @@ const StoryEditor = () => {
                    <option value="">Select a location</option>
                    <option value="Kakuma Refugee Camp">Kakuma Refugee Camp</option>
                    <option value="Kalobeyei Settlement Camp">Kalobeyei Settlement Camp</option>
-                   <option value="Both Locations">Both Locations</option>
+                   <option value="Kakuma Refugee Camp and Kalobeyei Settlement">Kakuma Refugee Camp and Kalobeyei Settlement</option>
                    <option value="Other">Other (specify in content)</option>
                  </select>
                  {errors.location && (
@@ -706,13 +727,13 @@ const StoryEditor = () => {
                 <div className="space-y-2">
                   {/* Add custom tag */}
                   <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      placeholder="Add custom tag"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
+                                         <input
+                       type="text"
+                       value={newTag}
+                       onChange={(e) => setNewTag(e.target.value)}
+                       placeholder="Add tags (separate with commas)"
+                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                     />
                     <button
                       type="button"
                       onClick={addCustomTag}
