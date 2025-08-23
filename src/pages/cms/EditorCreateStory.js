@@ -75,6 +75,46 @@ const EditorCreateStory = () => {
     }
   };
 
+  const uploadImage = async (file) => {
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      return new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            const base64Data = reader.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+            
+            const uploadData = {
+              file: `data:${file.type};base64,${base64Data}`,
+              fileName: file.name,
+              fileType: file.type
+            };
+
+            const response = await axios.post('/api/upload', uploadData, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+              }
+            });
+
+            if (response.data.imageUrl) {
+              resolve(response.data.imageUrl);
+            } else {
+              reject(new Error('No image URL received'));
+            }
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -86,27 +126,41 @@ const EditorCreateStory = () => {
     setIsLoading(true);
 
     try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'tags') {
-          formDataToSend.append(key, formData[key].split(',').map(tag => tag.trim()).join(','));
-        } else if (key !== 'imagePreview') {
-          formDataToSend.append(key, formData[key]);
+      let imageUrl = '';
+      
+      // Upload image first if one is selected
+      if (formData.image) {
+        try {
+          imageUrl = await uploadImage(formData.image);
+          toast.success('Image uploaded successfully!');
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          toast.error('Failed to upload image. Please try again.');
+          setIsLoading(false);
+          return;
         }
-      });
+      }
 
-      // Add author and status - get user from context or localStorage
-      const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      // Always use full_name from database for author field
-      formDataToSend.append('author', currentUser.full_name || currentUser.fullName || 'Unknown Author');
-      formDataToSend.append('status', 'published');
-      formDataToSend.append('featured', 'false');
-      formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);
-      formDataToSend.append('viewCount', '0');
+      // Prepare story data (without the file object)
+      const storyData = {
+        title: formData.title,
+        excerpt: formData.excerpt,
+        location: formData.location,
+        category: formData.category,
+        readTime: formData.readTime,
+        content: formData.content,
+        tags: formData.tags,
+        image: imageUrl, // Use the uploaded image URL
+        author: (user || JSON.parse(localStorage.getItem('userData') || '{}')).full_name || 'Unknown Author',
+        status: 'published',
+        featured: false,
+        publishDate: new Date().toISOString().split('T')[0],
+        viewCount: 0
+      };
 
-      await axios.post('/api/stories', formDataToSend, {
+      await axios.post('/api/stories', storyData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
@@ -129,27 +183,41 @@ const EditorCreateStory = () => {
     
     setIsLoading(true);
     try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'tags') {
-          formDataToSend.append(key, formData[key].split(',').map(tag => tag.trim()).join(','));
-        } else if (key !== 'imagePreview') {
-          formDataToSend.append(key, formData[key]);
+      let imageUrl = '';
+      
+      // Upload image first if one is selected
+      if (formData.image) {
+        try {
+          imageUrl = await uploadImage(formData.image);
+          toast.success('Image uploaded successfully!');
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          toast.error('Failed to upload image. Please try again.');
+          setIsLoading(false);
+          return;
         }
-      });
+      }
 
-      // Add author and status for draft
-      const currentUser = user || JSON.parse(localStorage.getItem('userData') || '{}');
-      // Always use full_name from database for author field
-      formDataToSend.append('author', currentUser.full_name || currentUser.fullName || 'Unknown Author');
-      formDataToSend.append('status', 'draft');
-      formDataToSend.append('featured', 'false');
-      formDataToSend.append('publishDate', new Date().toISOString().split('T')[0]);
-      formDataToSend.append('viewCount', '0');
+      // Prepare story data (without the file object)
+      const storyData = {
+        title: formData.title,
+        excerpt: formData.excerpt,
+        location: formData.location,
+        category: formData.category,
+        readTime: formData.readTime,
+        content: formData.content,
+        tags: formData.tags,
+        image: imageUrl, // Use the uploaded image URL
+        author: (user || JSON.parse(localStorage.getItem('userData') || '{}')).full_name || 'Unknown Author',
+        status: 'draft',
+        featured: false,
+        publishDate: new Date().toISOString().split('T')[0],
+        viewCount: 0
+      };
 
-      await axios.post('/api/stories', formDataToSend, {
+      await axios.post('/api/stories', storyData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });

@@ -139,26 +139,47 @@ const EditorStoryEditor = () => {
     reader.onload = (e) => setImagePreview(e.target.result);
     reader.readAsDataURL(file);
 
-          // Upload to server
-      try {
-        console.log('EditorStoryEditor: Starting image upload...');
-        // Editors should use userToken, not adminToken
-        const userToken = localStorage.getItem('userToken');
-        console.log('EditorStoryEditor: Token being used:', userToken);
-        
-        const formData = new FormData();
-        formData.append('image', file);
+    // Upload to server
+    try {
+      console.log('EditorStoryEditor: Starting image upload...');
+      // Editors should use userToken, not adminToken
+      const userToken = localStorage.getItem('userToken');
+      console.log('EditorStoryEditor: Token being used:', userToken);
       
-        const response = await axios.post('/api/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${userToken}`
-          }
-        });
+      // Convert file to base64
+      const base64Reader = new FileReader();
+      base64Reader.onload = async (e) => {
+        try {
+          const base64Data = e.target.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+          
+          const uploadData = {
+            file: `data:${file.type};base64,${base64Data}`,
+            fileName: file.name,
+            fileType: file.type
+          };
 
-      console.log('EditorStoryEditor: Image upload response:', response.data);
-      setUploadedImageUrl(response.data.imageUrl);
-      toast.success('Image uploaded successfully');
+          const response = await axios.post('/api/upload', uploadData, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userToken}`
+            }
+          });
+
+          console.log('EditorStoryEditor: Image upload response:', response.data);
+          setUploadedImageUrl(response.data.imageUrl);
+          toast.success('Image uploaded successfully');
+        } catch (error) {
+          console.error('EditorStoryEditor: Error uploading image:', error);
+          toast.error(`Failed to upload image: ${error.response?.data?.error || error.message}`);
+          setImagePreview('');
+        }
+      };
+      base64Reader.onerror = () => {
+        toast.error('Failed to read image file');
+        setImagePreview('');
+      };
+      base64Reader.readAsDataURL(file);
+      
     } catch (error) {
       console.error('EditorStoryEditor: Error uploading image:', error);
       console.error('EditorStoryEditor: Error response:', error.response?.data);

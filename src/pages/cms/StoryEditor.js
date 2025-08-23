@@ -146,18 +146,39 @@ const StoryEditor = () => {
 
     // Upload to server
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      // Convert file to base64
+      const base64Reader = new FileReader();
+      base64Reader.onload = async (e) => {
+        try {
+          const base64Data = e.target.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+          
+          const uploadData = {
+            file: `data:${file.type};base64,${base64Data}`,
+            fileName: file.name,
+            fileType: file.type
+          };
 
-      const response = await axios.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          const response = await axios.post('/api/upload', uploadData, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            }
+          });
+
+          setUploadedImageUrl(response.data.imageUrl);
+          toast.success('Image uploaded successfully');
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          toast.error('Failed to upload image');
+          setImagePreview('');
         }
-      });
-
-      setUploadedImageUrl(response.data.imageUrl);
-      toast.success('Image uploaded successfully');
+      };
+      base64Reader.onerror = () => {
+        toast.error('Failed to read image file');
+        setImagePreview('');
+      };
+      base64Reader.readAsDataURL(file);
+      
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Failed to upload image');

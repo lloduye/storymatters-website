@@ -43,3 +43,6 @@ yarn-error.log*
 # OS generated files
 Thumbs.db
 ehthumbs.db
+
+# Local Netlify folder
+.netlify

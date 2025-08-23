@@ -1,4 +1,12 @@
 const { Pool } = require('pg');
+const cloudinary = require('cloudinary').v2;
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Neon database connection
 const pool = new Pool({
@@ -33,70 +41,80 @@ exports.handler = async (event, context) => {
 
     // POST /api/upload - Handle file upload
     if (httpMethod === 'POST' && path === '/api/upload') {
-      // For now, we'll simulate file upload since Netlify Functions have limitations
-      // In production, you'd want to use a service like Cloudinary, AWS S3, or similar
-      
-      // Parse multipart form data
-      let fileName = '';
-      let fileType = '';
-      
-      // Extract file info from the request
-      if (body) {
-        // For multipart form data, we need to parse it differently
-        // Since Netlify Functions have limitations, we'll extract basic info
-        const bodyString = body.toString();
-        
-        // Extract filename from multipart data
-        const filenameMatch = bodyString.match(/filename="([^"]+)"/);
-        if (filenameMatch) {
-          fileName = filenameMatch[1];
-        }
-        
-        // Extract content type
-        const contentTypeMatch = bodyString.match(/Content-Type: ([^\r\n]+)/);
-        if (contentTypeMatch) {
-          fileType = contentTypeMatch[1];
-        }
-        
-        // If we can't extract from multipart, use defaults
-        if (!fileName) {
-          fileName = `image_${Date.now()}.jpg`;
-        }
-        if (!fileType) {
-          fileType = 'image/jpeg';
-        }
+      // Check if body exists and is base64 encoded
+      if (!body) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'No file data provided' })
+        };
       }
-      
-      // Generate a mock file URL (in production, this would be the actual uploaded file URL)
-      const fileUrl = `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Uploaded+Image`;
-      
-      // Store file info in database if needed
+
       try {
-        const client = await pool.connect();
-        await client.query(`
-          INSERT INTO file_uploads (file_name, file_type, file_url, uploaded_at)
-          VALUES ($1, $2, $3, $4)
-        `, [
-          fileName,
-          fileType,
-          fileUrl,
-          new Date()
-        ]);
-        client.release();
-      } catch (dbError) {
-        console.log('Database storage failed, but continuing with upload:', dbError);
-        // Continue even if database storage fails
+        // Parse the request body
+        const requestData = JSON.parse(body);
+        const { file, fileName, fileType } = requestData;
+
+        if (!file || !fileName) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: 'Missing file data or filename' })
+          };
+        }
+
+        // Upload to Cloudinary
+        console.log('Uploading to Cloudinary:', { fileName, fileType });
+        
+        const uploadResult = await cloudinary.uploader.upload(file, {
+          folder: 'storymatters',
+          public_id: `story_${Date.now()}_${fileName.replace(/\.[^/.]+$/, '')}`,
+          overwrite: false,
+          resource_type: 'auto'
+        });
+
+        console.log('Cloudinary upload successful:', uploadResult);
+
+        // Store file info in database
+        try {
+          const client = await pool.connect();
+          await client.query(`
+            INSERT INTO file_uploads (file_name, file_type, file_url, uploaded_at)
+            VALUES ($1, $2, $3, $4)
+          `, [
+            fileName,
+            fileType || 'image/jpeg',
+            uploadResult.secure_url,
+            new Date()
+          ]);
+          client.release();
+        } catch (dbError) {
+          console.log('Database storage failed, but continuing with upload:', dbError);
+          // Continue even if database storage fails
+        }
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            message: 'File uploaded successfully',
+            imageUrl: uploadResult.secure_url,
+            fileName: fileName,
+            publicId: uploadResult.public_id
+          })
+        };
+
+      } catch (uploadError) {
+        console.error('Upload error:', uploadError);
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Failed to upload file',
+            details: uploadError.message 
+          })
+        };
       }
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          message: 'File uploaded successfully',
-          imageUrl: fileUrl, // Changed from fileUrl to imageUrl to match frontend expectation
-          fileName: fileName
-        })
-      };
     }
 
     // If no matching route, return 404
