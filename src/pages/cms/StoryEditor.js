@@ -58,7 +58,6 @@ const StoryEditor = () => {
   // Custom categories and tags - users can add their own
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
   const [newTag, setNewTag] = useState('');
 
   const fetchStory = useCallback(async () => {
