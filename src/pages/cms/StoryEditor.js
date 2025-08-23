@@ -17,7 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import Select from 'react-select';
+
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -265,9 +265,7 @@ const StoryEditor = () => {
     }
   };
 
-  const handleTagChange = (selectedOptions) => {
-    setSelectedTags(selectedOptions || []);
-  };
+
 
   const addCustomCategory = () => {
     if (newCategory.trim() && !categories.find(cat => cat.value === newCategory.trim())) {
