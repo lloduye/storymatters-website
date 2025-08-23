@@ -237,33 +237,36 @@ const StoryEditor = () => {
 
       console.log('Submitting story:', { isEditing, storyId, id, storyData });
 
-      if (isEditing && storyId) {
-        console.log('Updating existing story with ID:', storyId);
-        await axios.put(`/api/stories/${storyId}`, storyData, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          }
-        });
-        
-        if (data.status === 'published') {
-          toast.success('Story published successfully! It is now live on the website.');
-        } else {
-          toast.success('Story saved as draft successfully! You can publish it later.');
-        }
-      } else {
-        console.log('Creating new story');
-        await axios.post('/api/stories', storyData, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          }
-        });
-        
-        if (data.status === 'published') {
-          toast.success('Story created and published successfully! It is now live on the website.');
-        } else {
-          toast.success('Story created and saved as draft successfully! You can publish it later.');
-        }
-      }
+             if (isEditing && storyId) {
+         console.log('Updating existing story with ID:', storyId);
+         await axios.put(`/.netlify/functions/stories`, {
+           ...storyData,
+           storyId: storyId
+         }, {
+           headers: {
+             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+           }
+         });
+         
+         if (data.status === 'published') {
+           toast.success('Story published successfully! It is now live on the website.');
+         } else {
+           toast.success('Story saved as draft successfully! You can publish it later.');
+         }
+       } else {
+         console.log('Creating new story');
+         await axios.post('/.netlify/functions/stories', storyData, {
+           headers: {
+             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+           }
+         });
+         
+         if (data.status === 'published') {
+           toast.success('Story created and published successfully! It is now live on the website.');
+         } else {
+           toast.success('Story created and saved as draft successfully! You can publish it later.');
+         }
+       }
 
       // Don't navigate - stay on the same page for continued editing
     } catch (error) {
