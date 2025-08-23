@@ -19,7 +19,7 @@ const Stories = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/api/stories');
+      const response = await axios.get('/.netlify/functions/stories');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -127,8 +127,19 @@ const Stories = () => {
                 <Link 
                   key={story.id} 
                   to={`/stories/${story.id}`}
+                  onClick={async () => {
+                    // Increment view count when story is clicked
+                    try {
+                      await axios.patch('/.netlify/functions/stories', {
+                        storyId: story.id,
+                        action: 'increment_view'
+                      });
+                    } catch (error) {
+                      console.error('Error incrementing view count:', error);
+                    }
+                  }}
                   className={`block bg-white rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer ${
-                    story.featured === 'true' ? 'shadow-xl ring-2 ring-blue-500' : 'shadow-md'
+                    (story.featured === true || story.featured === 'true') ? 'shadow-xl ring-2 ring-blue-500' : 'shadow-md'
                   }`}
                 >
                   <div className="relative">
@@ -141,7 +152,7 @@ const Stories = () => {
                     <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {story.category}
                     </div>
-                    {story.featured === 'true' && (
+                    {(story.featured === true || story.featured === 'true') && (
                       <div className="absolute top-3 right-3 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                         Featured
                       </div>
@@ -152,7 +163,7 @@ const Stories = () => {
                     <div className="flex items-center space-x-3 text-xs text-gray-600 mb-3">
                       <div className="flex items-center">
                         <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
-                        {formatDate(story.publishDate)}
+                        {formatDate(story.publish_date || story.publishDate)}
                       </div>
                       <div className="flex items-center">
                         <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1" />

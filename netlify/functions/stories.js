@@ -240,49 +240,40 @@ exports.handler = async (event, context) => {
     
     console.log('Function called:', { httpMethod, path, body: body ? JSON.parse(body) : null });
 
-    // GET /api/stories - Get all stories
-    if (httpMethod === 'GET' && path === '/api/stories') {
-      const stories = await getAllStories();
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(stories)
-      };
-    }
-
-    // GET /api/stories/user/:author - Get stories by user
-    if (httpMethod === 'GET' && path.match(/^\/api\/stories\/user\/.+$/)) {
-      const author = decodeURIComponent(path.split('/user/')[1]);
-      const stories = await getStoriesByUser(author);
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(stories)
-      };
-    }
-
-    // GET /api/stories/:id - Get specific story
-    if (httpMethod === 'GET' && path.match(/^\/api\/stories\/\d+$/)) {
-      const storyId = path.split('/').pop();
-      const story = await getStoryById(storyId);
+    // GET /api/stories - Get all stories or specific story
+    if (httpMethod === 'GET' && path === '/.netlify/functions/stories') {
+      const { storyId } = event.queryStringParameters || {};
       
-      if (!story) {
+      if (storyId) {
+        // Get specific story
+        const story = await getStoryById(storyId);
+        if (!story) {
+          return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'Story not found' })
+          };
+        }
         return {
-          statusCode: 404,
+          statusCode: 200,
           headers,
-          body: JSON.stringify({ error: 'Story not found' })
+          body: JSON.stringify(story)
+        };
+      } else {
+        // Get all stories
+        const stories = await getAllStories();
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify(stories)
         };
       }
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(story)
-      };
     }
 
+
+
     // POST /api/stories - Create new story
-    if (httpMethod === 'POST' && path === '/api/stories') {
+    if (httpMethod === 'POST' && path === '/.netlify/functions/stories') {
       // Check authorization header
       const authHeader = event.headers.authorization || event.headers.Authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -332,8 +323,8 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // PUT /api/stories/:id - Update story
-    if (httpMethod === 'PUT' && path.match(/^\/api\/stories\/\d+$/)) {
+    // PUT /api/stories - Update story (with storyId in body)
+    if (httpMethod === 'PUT' && path === '/.netlify/functions/stories') {
       // Check authorization header
       const authHeader = event.headers.authorization || event.headers.Authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -355,8 +346,15 @@ exports.handler = async (event, context) => {
         };
       }
       
-      const storyId = path.split('/').pop();
-      const storyData = JSON.parse(body);
+      const { storyId, ...storyData } = JSON.parse(body);
+      
+      if (!storyId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Story ID is required' })
+        };
+      }
       
       // For editors, ensure they can only edit their own stories
       if (user.role !== 'admin') {
@@ -378,8 +376,8 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // DELETE /api/stories/:id - Delete story
-    if (httpMethod === 'DELETE' && path.match(/^\/api\/stories\/\d+$/)) {
+    // DELETE /api/stories - Delete story (with storyId in body)
+    if (httpMethod === 'DELETE' && path === '/.netlify/functions/stories') {
       // Check authorization header
       const authHeader = event.headers.authorization || event.headers.Authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -401,7 +399,15 @@ exports.handler = async (event, context) => {
         };
       }
       
-      const storyId = path.split('/').pop();
+      const { storyId } = JSON.parse(body);
+      
+      if (!storyId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Story ID is required' })
+        };
+      }
       
       // For editors, ensure they can only delete their own stories
       if (user.role !== 'admin') {
@@ -423,9 +429,29 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // PATCH /api/stories/:id/status - Update story status
-    if (httpMethod === 'PATCH' && path.match(/^\/api\/stories\/\d+\/status$/)) {
-      // Check authorization header
+    // PATCH /api/stories - Update story (featured, status, or increment view)
+    if (httpMethod === 'PATCH' && path === '/.netlify/functions/stories') {
+      const { storyId, featured, status, action } = JSON.parse(body);
+      
+      if (!storyId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Story ID is required' })
+        };
+      }
+      
+      // Handle increment view action (no auth required for view counting)
+      if (action === 'increment_view') {
+        await incrementViewCount(storyId);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ message: 'View count updated successfully' })
+        };
+      }
+      
+      // For other actions, check authorization
       const authHeader = event.headers.authorization || event.headers.Authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return {
@@ -443,17 +469,6 @@ exports.handler = async (event, context) => {
           statusCode: 401,
           headers,
           body: JSON.stringify({ error: 'Invalid or expired token' })
-        };
-      }
-      
-      const storyId = path.split('/')[3];
-      const { status } = JSON.parse(body);
-      
-      if (!['draft', 'published'].includes(status)) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Invalid status. Must be "draft" or "published"' })
         };
       }
       
@@ -469,68 +484,48 @@ exports.handler = async (event, context) => {
         }
       }
       
-      const updatedStory = await toggleStoryStatus(storyId, status);
+      let updatedStory;
+      
+      // Handle featured status update
+      if (featured !== undefined) {
+        // Only admins can toggle featured status
+        if (user.role !== 'admin') {
+          return {
+            statusCode: 403,
+            headers,
+            body: JSON.stringify({ error: 'Only admins can toggle featured status' })
+          };
+        }
+        updatedStory = await toggleFeaturedStatus(storyId, featured);
+      }
+      
+      // Handle status update
+      if (status !== undefined) {
+        if (!['draft', 'published'].includes(status)) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: 'Invalid status. Must be "draft" or "published"' })
+          };
+        }
+        updatedStory = await toggleStoryStatus(storyId, status);
+      }
+      
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ message: 'Story status updated successfully', status, story: updatedStory })
+        body: JSON.stringify({ 
+          message: 'Story updated successfully', 
+          featured, 
+          status, 
+          story: updatedStory 
+        })
       };
     }
 
-    // PATCH /api/stories/:id/featured - Toggle featured status
-    if (httpMethod === 'PATCH' && path.match(/^\/api\/stories\/\d+\/featured$/)) {
-      // Check authorization header
-      const authHeader = event.headers.authorization || event.headers.Authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({ error: 'Authorization token required' })
-        };
-      }
-      
-      const token = authHeader.split('Bearer ')[1];
-      const user = await verifyUserToken(token);
-      
-      if (!user) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({ error: 'Invalid or expired token' })
-        };
-      }
-      
-      // Only admins can toggle featured status
-      if (user.role !== 'admin') {
-        return {
-          statusCode: 403,
-          headers,
-          body: JSON.stringify({ error: 'Only admins can toggle featured status' })
-        };
-      }
-      
-      const storyId = path.split('/')[3];
-      const { featured } = JSON.parse(body);
-      
-      const updatedStory = await toggleFeaturedStatus(storyId, featured);
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ message: 'Story featured status updated successfully', featured, story: updatedStory })
-      };
-    }
 
-    // PATCH /api/stories/:id/view - Increment view count
-    if (httpMethod === 'PATCH' && path.match(/^\/api\/stories\/\d+\/view$/)) {
-      const storyId = path.split('/')[3];
-      
-      await incrementViewCount(storyId);
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ message: 'View count updated successfully' })
-      };
-    }
+
+
 
     // If no matching route, return 404
     return {

@@ -17,14 +17,24 @@ const StoryDetail = () => {
   const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/stories/${id}`);
+      const response = await axios.get(`/.netlify/functions/stories?storyId=${id}`);
       setStory(response.data);
       
       // Fetch related stories (excluding current story)
-      const allStoriesResponse = await axios.get('/api/stories');
+      const allStoriesResponse = await axios.get('/.netlify/functions/stories');
       const allStories = allStoriesResponse.data;
       const related = allStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
       setRelatedStories(related);
+      
+      // Increment view count when story is viewed
+      try {
+        await axios.patch('/.netlify/functions/stories', {
+          storyId: id,
+          action: 'increment_view'
+        });
+      } catch (error) {
+        console.error('Error incrementing view count:', error);
+      }
     } catch (error) {
       console.error('Error fetching story:', error);
       setError('Failed to load story. Please try again later.');
@@ -132,7 +142,7 @@ const StoryDetail = () => {
             </span>
             <div className="flex items-center">
               <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-              {formatDate(story.publishDate)}
+              {formatDate(story.publish_date || story.publishDate)}
             </div>
             <div className="flex items-center">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
@@ -140,6 +150,10 @@ const StoryDetail = () => {
             </div>
             <div className="text-gray-500">
               {story.readTime}
+            </div>
+            <div className="flex items-center text-gray-500">
+              <FontAwesomeIcon icon={faEye} className="mr-2" />
+              {story.view_count || 0} views
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ const Stories = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/api/stories');
+      const response = await axios.get('/.netlify/functions/stories');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -44,7 +44,8 @@ const Stories = () => {
   const handleDeleteStory = async (storyId) => {
     if (window.confirm('Are you sure you want to delete this story?')) {
       try {
-        await axios.delete(`/api/stories/${storyId}`, {
+        await axios.delete(`/.netlify/functions/stories`, {
+          data: { storyId },
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -60,7 +61,8 @@ const Stories = () => {
 
   const handleToggleFeatured = async (storyId, currentFeatured) => {
     try {
-      await axios.patch(`/api/stories/${storyId}`, {
+      await axios.patch(`/.netlify/functions/stories`, {
+        storyId,
         featured: !currentFeatured
       }, {
         headers: {
@@ -78,7 +80,8 @@ const Stories = () => {
   const handleToggleStatus = async (storyId, currentStatus) => {
     try {
       const newStatus = currentStatus === 'published' ? 'draft' : 'published';
-      await axios.patch(`/api/stories/${storyId}`, {
+      await axios.patch(`/.netlify/functions/stories`, {
+        storyId,
         status: newStatus
       }, {
         headers: {
@@ -93,9 +96,28 @@ const Stories = () => {
     }
   };
 
-  const handlePreviewStory = (story) => {
+  const handlePreviewStory = async (story) => {
     setPreviewStory(story);
     setShowPreview(true);
+    
+    // Increment view count when story is previewed
+    try {
+      await axios.patch(`/.netlify/functions/stories`, {
+        storyId: story.id,
+        action: 'increment_view'
+      });
+      
+      // Update the story's view count locally
+      setStories(prevStories => 
+        prevStories.map(s => 
+          s.id === story.id 
+            ? { ...s, view_count: (parseInt(s.view_count) || 0) + 1 }
+            : s
+        )
+      );
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+    }
   };
 
   const closePreview = () => {
@@ -153,7 +175,8 @@ const Stories = () => {
     total: stories.length,
     published: stories.filter(s => s.status === 'published').length,
     draft: stories.filter(s => s.status === 'draft').length,
-    featured: stories.filter(s => s.featured === 'true').length
+    featured: stories.filter(s => s.featured === 'true').length,
+    totalViews: stories.reduce((sum, s) => sum + (parseInt(s.view_count) || 0), 0)
   };
 
   const categories = [...new Set(stories.map(story => story.category))];
@@ -191,7 +214,7 @@ const Stories = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <StatCard
           title="Total Stories"
           value={stats.total}
@@ -215,6 +238,12 @@ const Stories = () => {
           value={stats.featured}
           icon={faStar}
           color="bg-purple-500"
+        />
+        <StatCard
+          title="Total Views"
+          value={stats.totalViews.toLocaleString()}
+          icon={faEye}
+          color="bg-indigo-500"
         />
       </div>
 
@@ -347,7 +376,11 @@ const Stories = () => {
                      </div>
                      <div className="flex items-center text-xs text-gray-500">
                        <FontAwesomeIcon icon={faCalendarAlt} className="mr-1 text-xs" />
-                       <span className="truncate">{formatDate(story.publishDate)}</span>
+                       <span className="truncate">{formatDate(story.publish_date || story.publishDate)}</span>
+                     </div>
+                     <div className="flex items-center text-xs text-gray-500">
+                       <FontAwesomeIcon icon={faEye} className="mr-1 text-xs" />
+                       <span className="truncate">{story.view_count || 0} views</span>
                      </div>
                    </div>
 
@@ -466,7 +499,11 @@ const Stories = () => {
                        </div>
                        <div className="flex items-center text-xs text-gray-500">
                          <FontAwesomeIcon icon={faCalendarAlt} className="mr-1 text-xs" />
-                         <span className="truncate">{formatDate(story.publishDate)}</span>
+                         <span className="truncate">{formatDate(story.publish_date || story.publishDate)}</span>
+                       </div>
+                       <div className="flex items-center text-xs text-gray-500">
+                         <FontAwesomeIcon icon={faEye} className="mr-1 text-xs" />
+                         <span className="truncate">{story.view_count || 0} views</span>
                        </div>
                      </div>
 

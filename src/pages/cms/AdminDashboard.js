@@ -79,22 +79,22 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Use the correct backend port
-      const backendUrl = '';
-      const response = await axios.get(`${backendUrl}/api/stories`);
+      // Use the correct API endpoint
+      const response = await axios.get('/.netlify/functions/stories');
       const storiesData = response.data;
       
       console.log('AdminDashboard: Stories data fetched:', storiesData);
       setStories(storiesData);
       
       // Calculate stats
-      const featuredCount = storiesData.filter(story => story.featured === 'true').length;
+      const featuredCount = storiesData.filter(story => story.featured === true || story.featured === 'true').length;
       const uniqueAuthors = new Set(storiesData.map(story => story.author)).size;
+      const totalViews = storiesData.reduce((sum, story) => sum + (parseInt(story.view_count) || 0), 0);
       
       setStats({
         totalStories: storiesData.length,
         featuredStories: featuredCount,
-        totalViews: storiesData.reduce((sum, story) => sum + (parseInt(story.views) || 0), 0),
+        totalViews: totalViews,
         totalAuthors: uniqueAuthors,
         totalDonations: 45600,
         monthlyDonations: 8900,
@@ -121,8 +121,8 @@ const AdminDashboard = () => {
   const handleDeleteStory = async (storyId) => {
     if (window.confirm('Are you sure you want to delete this story?')) {
       try {
-        const backendUrl = '';
-        await axios.delete(`${backendUrl}/api/stories/${storyId}`, {
+        await axios.delete('/.netlify/functions/stories', {
+          data: { storyId },
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -477,9 +477,9 @@ const AdminDashboard = () => {
                          </span>
                          <span className="flex items-center">
                            <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
-                           {formatDate(story.publishDate)}
+                           {formatDate(story.publish_date || story.publishDate)}
                          </span>
-                         {story.featured === 'true' && (
+                         {(story.featured === true || story.featured === 'true') && (
                            <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                              <FontAwesomeIcon icon={faStar} className="mr-1" />
                              Featured
@@ -490,9 +490,13 @@ const AdminDashboard = () => {
                        <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
                          <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full">
                            {story.category || 'Uncategorized'}
-                           </span>
+                         </span>
                          <span className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded-full">
                            {story.status || 'Draft'}
+                         </span>
+                         <span className="bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded-full flex items-center">
+                           <FontAwesomeIcon icon={faEye} className="mr-1" />
+                           {story.view_count || 0} views
                          </span>
                        </div>
                      </div>

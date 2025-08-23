@@ -55,45 +55,43 @@ const StoryEditor = () => {
 
   const isEditing = id !== 'new';
 
-  // Predefined categories and tags
-  const categories = [
-    { value: 'Community Peacebuilding', label: 'Community Peacebuilding' },
-    { value: 'Community Development', label: 'Community Development' },
-    { value: 'Education', label: 'Education' },
-    { value: 'Health', label: 'Health' },
-    { value: 'Environment', label: 'Environment' },
-    { value: 'Youth Empowerment', label: 'Youth Empowerment' },
-    { value: 'Gender Equality', label: 'Gender Equality' },
-    { value: 'Refugee Support', label: 'Refugee Support' }
-  ];
-
-  const availableTags = [
-    'Community Peacebuilding', 'Conflict Resolution', 'Kakuma', 'Kalobeyei', 
-    'Kenya', 'Refugee Communities', 'Environmental Conservation', 'Gender-Based Violence',
-    'Water Resources', 'Land Disputes', 'Community Media', 'Youth Development',
-    'Education', 'Health', 'Sustainability', 'Community Dialogues'
-  ];
-
-  const tagOptions = availableTags.map(tag => ({ value: tag, label: tag }));
+  // Custom categories and tags - users can add their own
+  const [categories, setCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [newTag, setNewTag] = useState('');
 
   const fetchStory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/stories/${id}`);
+      const response = await axios.get(`/.netlify/functions/stories`, {
+        params: { storyId: id }
+      });
       const story = response.data;
       
       // Store the actual story ID
       setStoryId(story.id);
       
       // Set form values
-      setValue('title', story.title);
-      setValue('excerpt', story.excerpt);
-      setValue('author', story.author);
-      setValue('location', story.location);
-             setValue('publishDate', story.publishDate);
-       setValue('category', story.category);
-       setValue('status', story.status || 'draft');
-       setValue('featured', story.featured === 'true');
+      setValue('title', story.title || '');
+      setValue('excerpt', story.excerpt || '');
+      setValue('author', story.author || '');
+      setValue('location', story.location || '');
+      
+      // Fix date handling - ensure it's properly formatted
+      if (story.publish_date) {
+        const publishDate = new Date(story.publish_date);
+        const formattedDate = publishDate.toISOString().split('T')[0];
+        setValue('publishDate', formattedDate);
+      } else if (story.publishDate) {
+        const publishDate = new Date(story.publishDate);
+        const formattedDate = publishDate.toISOString().split('T')[0];
+        setValue('publishDate', formattedDate);
+      }
+      
+      setValue('category', story.category || '');
+      setValue('status', story.status || 'draft');
+      setValue('featured', story.featured === true || story.featured === 'true');
       
       // Set content and image
       setContent(story.content || '');
@@ -104,6 +102,18 @@ const StoryEditor = () => {
       if (story.tags) {
         const tags = story.tags.split(', ').filter(tag => tag.trim());
         setSelectedTags(tags.map(tag => ({ value: tag, label: tag })));
+      } else {
+        setSelectedTags([]);
+      }
+      
+      // Increment view count when story is loaded for editing
+      try {
+        await axios.patch(`/.netlify/functions/stories`, {
+          storyId: story.id,
+          action: 'increment_view'
+        });
+      } catch (error) {
+        console.error('Error incrementing view count:', error);
       }
     } catch (error) {
       console.error('Error fetching story:', error);
@@ -258,6 +268,29 @@ const StoryEditor = () => {
 
   const handleTagChange = (selectedOptions) => {
     setSelectedTags(selectedOptions || []);
+  };
+
+  const addCustomCategory = () => {
+    if (newCategory.trim() && !categories.find(cat => cat.value === newCategory.trim())) {
+      const newCat = { value: newCategory.trim(), label: newCategory.trim() };
+      setCategories(prev => [...prev, newCat]);
+      setValue('category', newCategory.trim());
+      setNewCategory('');
+      toast.success('Custom category added!');
+    }
+  };
+
+  const addCustomTag = () => {
+    if (newTag.trim() && !selectedTags.find(tag => tag.value === newTag.trim())) {
+      const newTagObj = { value: newTag.trim(), label: newTag.trim() };
+      setSelectedTags(prev => [...prev, newTagObj]);
+      setNewTag('');
+      toast.success('Custom tag added!');
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setSelectedTags(prev => prev.filter(tag => tag.value !== tagToRemove.value));
   };
 
   if (isLoading) {
@@ -598,6 +631,8 @@ const StoryEditor = () => {
                    <option value="">Select a location</option>
                    <option value="Kakuma Refugee Camp">Kakuma Refugee Camp</option>
                    <option value="Kalobeyei Settlement Camp">Kalobeyei Settlement Camp</option>
+                   <option value="Both Locations">Both Locations</option>
+                   <option value="Other">Other (specify in content)</option>
                  </select>
                  {errors.location && (
                    <p className="text-red-600 text-sm mt-1">{errors.location.message}</p>
@@ -625,17 +660,37 @@ const StoryEditor = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category *
                 </label>
-                <select
-                  {...register('category', { required: 'Category is required' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map(category => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <select
+                    {...register('category', { required: 'Category is required' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map(category => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* Add custom category */}
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="Add custom category"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomCategory}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
                 {errors.category && (
                   <p className="text-red-600 text-sm mt-1">{errors.category.message}</p>
                 )}
@@ -651,14 +706,46 @@ const StoryEditor = () => {
                   <FontAwesomeIcon icon={faTag} className="mr-2" />
                   Tags
                 </label>
-                <Select
-                  isMulti
-                  value={selectedTags}
-                  onChange={handleTagChange}
-                  options={tagOptions}
-                  placeholder="Select tags..."
-                  className="text-sm"
-                />
+                <div className="space-y-2">
+                  {/* Add custom tag */}
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      placeholder="Add custom tag"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomTag}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {/* Selected tags display */}
+                  {selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTags.map((tag) => (
+                        <span
+                          key={tag.value}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {tag.label}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="ml-1 text-blue-600 hover:text-blue-800"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
                              {/* Featured */}
