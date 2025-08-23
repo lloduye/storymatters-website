@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS stories (
   author VARCHAR(255) NOT NULL,
   location VARCHAR(255),
   publish_date DATE,
-  image TEXT,
+  image VARCHAR(500), -- Changed from TEXT to VARCHAR(500) for Cloudinary URLs
   category VARCHAR(100),
   read_time VARCHAR(50) DEFAULT '5 min',
   content TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS file_uploads (
   id SERIAL PRIMARY KEY,
   file_name VARCHAR(255) NOT NULL,
   file_type VARCHAR(100),
-  file_url TEXT NOT NULL,
+  file_url VARCHAR(500) NOT NULL, -- Updated to VARCHAR(500) for Cloudinary URLs
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -65,3 +65,5 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 COMMENT ON TABLE stories IS 'Stories and articles published on the website';
 COMMENT ON TABLE users IS 'User accounts for the CMS system';
 COMMENT ON TABLE file_uploads IS 'Track uploaded files and their metadata';
+COMMENT ON COLUMN stories.image IS 'Cloudinary image URL for the story (max 500 characters)';
+COMMENT ON COLUMN file_uploads.file_url IS 'Cloudinary URL for the uploaded file (max 500 characters)';
