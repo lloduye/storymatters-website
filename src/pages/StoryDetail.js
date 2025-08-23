@@ -4,11 +4,13 @@ import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faMapMarkerAlt, faClock, faShare, faBookmark, faComment, faArrowLeft, faEye } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const StoryDetail = () => {
   useScrollToTop();
   
   const { id } = useParams();
+  const { user } = useAuth();
   const [story, setStory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,14 +28,16 @@ const StoryDetail = () => {
       const related = allStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
       setRelatedStories(related);
       
-      // Increment view count when story is viewed
-      try {
-        await axios.patch('/.netlify/functions/stories', {
-          storyId: id,
-          action: 'increment_view'
-        });
-      } catch (error) {
-        console.error('Error incrementing view count:', error);
+      // Only increment view count for non-admin users
+      if (!user || user.role !== 'admin') {
+        try {
+          await axios.patch('/.netlify/functions/stories', {
+            storyId: id,
+            action: 'increment_view'
+          });
+        } catch (error) {
+          console.error('Error incrementing view count:', error);
+        }
       }
     } catch (error) {
       console.error('Error fetching story:', error);
@@ -41,7 +45,7 @@ const StoryDetail = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     fetchStory();
@@ -78,6 +82,30 @@ const StoryDetail = () => {
     
     // Default fallback
     return '/Images/2025-01-06-community-dialogues.jpg';
+  };
+
+  // Helper function to parse tags properly
+  const parseTags = (tagsString) => {
+    if (!tagsString) return [];
+    
+    try {
+      // First try to parse as JSON
+      if (tagsString.startsWith('{') || tagsString.startsWith('[')) {
+        const parsed = JSON.parse(tagsString);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (typeof parsed === 'object') {
+          // If it's an object with tags property
+          return parsed.tags || Object.values(parsed) || [];
+        }
+      }
+      
+      // Fallback to comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    } catch (error) {
+      // If JSON parsing fails, treat as comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
   };
 
   if (isLoading) {
@@ -122,12 +150,12 @@ const StoryDetail = () => {
         </div>
       </div>
 
-      {/* Featured Image - Full Screen Width */}
-      <div className="w-full">
+      {/* Featured Image - Constrained to content width */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <img 
           src={getImageUrl(story.image)} 
           alt={story.title}
-          className="w-full h-64 md:h-80 object-cover"
+          className="w-full h-64 md:h-80 object-cover rounded-lg"
           style={{ objectPosition: 'center 30%' }}
         />
       </div>
@@ -180,10 +208,10 @@ const StoryDetail = () => {
         {story.tags && (
           <div className="mb-8">
             <div className="flex flex-wrap gap-2">
-              {story.tags.split(', ').map((tag, index) => (
+              {parseTags(story.tags).map((tag, index) => (
                 <span 
                   key={index}
-                  className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors duration-200"
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm hover:bg-blue-200 transition-colors duration-200"
                 >
                   {tag}
                 </span>

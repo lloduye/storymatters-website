@@ -15,7 +15,8 @@ import {
   faClock,
   faTimes,
   faCheckCircle,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faStar
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -151,6 +152,30 @@ const EditorDrafts = () => {
     
     // Default fallback
     return '/Images/2025-01-06-community-dialogues.jpg';
+  };
+
+  // Helper function to parse tags properly
+  const parseTags = (tagsString) => {
+    if (!tagsString) return [];
+    
+    try {
+      // First try to parse as JSON
+      if (tagsString.startsWith('{') || tagsString.startsWith('[')) {
+        const parsed = JSON.parse(tagsString);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (typeof parsed === 'object') {
+          // If it's an object with tags property
+          return parsed.tags || Object.values(parsed) || [];
+        }
+      }
+      
+      // Fallback to comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    } catch (error) {
+      // If JSON parsing fails, treat as comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
   };
 
   const filteredDrafts = drafts.filter(draft => {
@@ -319,6 +344,12 @@ const EditorDrafts = () => {
                 <p className="text-sm text-gray-600">
                   {draft.description || 'No description available'}
                 </p>
+                {draft.featured === 'true' && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    <FontAwesomeIcon icon={faStar} className="mr-1" />
+                    Featured
+                  </span>
+                )}
               </div>
 
               {/* Content Preview */}
@@ -349,7 +380,7 @@ const EditorDrafts = () => {
                 </div>
                 {draft.tags && (
                   <div className="flex flex-wrap gap-1">
-                    {draft.tags.split(',').slice(0, 3).map((tag, index) => (
+                    {parseTags(draft.tags).slice(0, 3).map((tag, index) => (
                       <span
                         key={index}
                         className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
@@ -357,9 +388,9 @@ const EditorDrafts = () => {
                         {tag.trim()}
                       </span>
                     ))}
-                    {draft.tags.split(',').length > 3 && (
+                    {parseTags(draft.tags).length > 3 && (
                       <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                        +{draft.tags.split(',').length - 3} more
+                        +{parseTags(draft.tags).length - 3} more
                       </span>
                     )}
                   </div>

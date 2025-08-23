@@ -691,7 +691,7 @@ const EditorStoryEditor = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="featured" className="ml-2 flex items-center text-sm text-gray-700">
-                  <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-500" />
+                  <FontAwesomeIcon icon={faStar} className="mr-2 text-blue-500" />
                   Feature this story
                 </label>
               </div>

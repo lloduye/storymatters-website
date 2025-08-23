@@ -100,24 +100,8 @@ const Stories = () => {
     setPreviewStory(story);
     setShowPreview(true);
     
-    // Increment view count when story is previewed
-    try {
-      await axios.patch(`/.netlify/functions/stories`, {
-        storyId: story.id,
-        action: 'increment_view'
-      });
-      
-      // Update the story's view count locally
-      setStories(prevStories => 
-        prevStories.map(s => 
-          s.id === story.id 
-            ? { ...s, view_count: (parseInt(s.view_count) || 0) + 1 }
-            : s
-        )
-      );
-    } catch (error) {
-      console.error('Error incrementing view count:', error);
-    }
+    // Don't increment view count for admin previews - only count actual website visitors
+    // Removed the view count increment code here
   };
 
   const closePreview = () => {
@@ -156,6 +140,30 @@ const Stories = () => {
     
     // Default fallback
     return '/Images/2025-01-06-community-dialogues.jpg';
+  };
+
+  // Helper function to parse tags properly
+  const parseTags = (tagsString) => {
+    if (!tagsString) return [];
+    
+    try {
+      // First try to parse as JSON
+      if (tagsString.startsWith('{') || tagsString.startsWith('[')) {
+        const parsed = JSON.parse(tagsString);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (typeof parsed === 'object') {
+          // If it's an object with tags property
+          return parsed.tags || Object.values(parsed) || [];
+        }
+      }
+      
+      // Fallback to comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    } catch (error) {
+      // If JSON parsing fails, treat as comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
   };
 
   const filteredStories = stories.filter(story => {
@@ -336,7 +344,7 @@ const Stories = () => {
                    />
                    {story.featured === 'true' && (
                      <div className="absolute top-1 right-1">
-                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                          <FontAwesomeIcon icon={faStar} className="mr-1 text-xs" />
                          Featured
                        </span>
@@ -381,6 +389,25 @@ const Stories = () => {
                      <div className="flex items-center text-xs text-gray-500">
                        <FontAwesomeIcon icon={faEye} className="mr-1 text-xs" />
                        <span className="truncate">{story.view_count || 0} views</span>
+                     </div>
+                   </div>
+
+                   {/* Tags */}
+                   <div className="px-4 py-3 border-b border-gray-200">
+                     <div className="flex flex-wrap gap-1">
+                       {story.tags && parseTags(story.tags).slice(0, 3).map((tag, index) => (
+                         <span
+                           key={index}
+                           className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                         >
+                           {tag}
+                         </span>
+                       ))}
+                       {story.tags && parseTags(story.tags).length > 3 && (
+                         <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                           +{parseTags(story.tags).length - 3} more
+                         </span>
+                       )}
                      </div>
                    </div>
 
@@ -459,7 +486,7 @@ const Stories = () => {
                      />
                      {story.featured === 'true' && (
                        <div className="absolute top-1 right-1">
-                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                            <FontAwesomeIcon icon={faStar} className="mr-1 text-xs" />
                            Featured
                          </span>
@@ -504,6 +531,25 @@ const Stories = () => {
                        <div className="flex items-center text-xs text-gray-500">
                          <FontAwesomeIcon icon={faEye} className="mr-1 text-xs" />
                          <span className="truncate">{story.view_count || 0} views</span>
+                       </div>
+                     </div>
+
+                     {/* Tags */}
+                     <div className="px-4 py-3 border-b border-gray-200">
+                       <div className="flex flex-wrap gap-1">
+                         {story.tags && parseTags(story.tags).slice(0, 3).map((tag, index) => (
+                           <span
+                             key={index}
+                             className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                           >
+                             {tag}
+                           </span>
+                         ))}
+                         {story.tags && parseTags(story.tags).length > 3 && (
+                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                             +{parseTags(story.tags).length - 3} more
+                           </span>
+                         )}
                        </div>
                      </div>
 

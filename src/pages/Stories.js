@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faMapMarkerAlt, faQuoteLeft } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const Stories = () => {
   useScrollToTop();
   
+  const { user } = useAuth();
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -128,14 +130,16 @@ const Stories = () => {
                   key={story.id} 
                   to={`/stories/${story.id}`}
                   onClick={async () => {
-                    // Increment view count when story is clicked
-                    try {
-                      await axios.patch('/.netlify/functions/stories', {
-                        storyId: story.id,
-                        action: 'increment_view'
-                      });
-                    } catch (error) {
-                      console.error('Error incrementing view count:', error);
+                    // Only increment view count for non-admin users
+                    if (!user || user.role !== 'admin') {
+                      try {
+                        await axios.patch('/.netlify/functions/stories', {
+                          storyId: story.id,
+                          action: 'increment_view'
+                        });
+                      } catch (error) {
+                        console.error('Error incrementing view count:', error);
+                      }
                     }
                   }}
                   className={`block bg-white rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer ${
@@ -153,7 +157,7 @@ const Stories = () => {
                       {story.category}
                     </div>
                     {(story.featured === true || story.featured === 'true') && (
-                      <div className="absolute top-3 right-3 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                         Featured
                       </div>
                     )}

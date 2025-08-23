@@ -298,7 +298,7 @@ const EditorContentLibrary = () => {
                   <span className="text-xs font-medium text-gray-500 uppercase">{item.type}</span>
                 </div>
                 {item.featured && (
-                  <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-sm" />
+                  <FontAwesomeIcon icon={faStar} className="text-blue-500 text-sm" />
                 )}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>

@@ -116,15 +116,8 @@ const StoryEditor = () => {
         setSelectedTags([]);
       }
       
-      // Increment view count when story is loaded for editing
-      try {
-        await axios.patch(`/.netlify/functions/stories`, {
-          storyId: story.id,
-          action: 'increment_view'
-        });
-      } catch (error) {
-        console.error('Error incrementing view count:', error);
-      }
+      // Don't increment view count for admin editing - only count actual website visitors
+      // Removed the view count increment code here
     } catch (error) {
       console.error('Error fetching story:', error);
       toast.error('Failed to load story');
@@ -231,7 +224,7 @@ const StoryEditor = () => {
          category: data.category,
          content: content,
          image: uploadedImageUrl || imagePreview,
-         tags: selectedTags.map(tag => tag.value),
+         tags: selectedTags.map(tag => tag.value).join(', '),
          featured: data.featured ? 'true' : 'false'
        };
 
@@ -778,7 +771,7 @@ const StoryEditor = () => {
                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                  />
                  <label htmlFor="featured" className="ml-2 flex items-center text-sm text-gray-700">
-                   <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-500" />
+                   <FontAwesomeIcon icon={faStar} className="mr-2 text-blue-500" />
                    Feature this story
                  </label>
                </div>

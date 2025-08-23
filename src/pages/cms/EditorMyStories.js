@@ -137,7 +137,7 @@ const EditorMyStories = () => {
   };
 
   const getFeaturedColor = (featured) => {
-    return featured ? 'text-yellow-500' : 'text-gray-400';
+    return featured ? 'text-blue-500' : 'text-gray-400';
   };
 
   const getImageUrl = (imagePath) => {
@@ -167,10 +167,37 @@ const EditorMyStories = () => {
     return '/Images/2025-01-06-community-dialogues.jpg';
   };
 
+  // Helper function to parse tags properly
+  const parseTags = (tagsString) => {
+    if (!tagsString) return [];
+    
+    try {
+      // First try to parse as JSON
+      if (tagsString.startsWith('{') || tagsString.startsWith('[')) {
+        const parsed = JSON.parse(tagsString);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        } else if (typeof parsed === 'object') {
+          // If it's an object with tags property
+          return parsed.tags || Object.values(parsed) || [];
+        }
+      }
+      
+      // Fallback to comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    } catch (error) {
+      // If JSON parsing fails, treat as comma-separated string
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    }
+  };
+
   const filteredStories = stories.filter(story => {
+    const storyTags = parseTags(story.tags);
+    const tagsString = storyTags.join(' ').toLowerCase();
+    
     const matchesSearch = story.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          story.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         story.tags.toLowerCase().includes(searchTerm.toLowerCase());
+                         tagsString.includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || story.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || story.category === categoryFilter;
     
