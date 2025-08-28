@@ -1,225 +1,207 @@
-# 🚀 Netlify Deployment Guide for Story Matters Website
+# Netlify Deployment Guide
 
-## **✅ What We've Accomplished**
+## Prerequisites
 
-Your website has been successfully converted to run entirely on Netlify using:
+- Netlify account
+- GitHub/GitLab repository connected to Netlify
+- Environment variables configured
 
-- **Netlify Functions** instead of a separate backend server
-- **Google Sheets API** for data storage
-- **Automatic deployment** from GitHub commits
+## Environment Variables Setup
 
-## **🔧 Files Created/Modified**
+### Required Environment Variables
 
-### **New Netlify Functions:**
+Set these in your Netlify dashboard under **Site settings > Environment variables**:
 
-- `netlify/functions/stories.js` - Handles all story operations
-- `netlify/functions/auth.js` - Handles user authentication
-- `netlify/functions/users.js` - Handles user management
-- `netlify/functions/upload.js` - Handles image uploads
-- `netlify/functions/health.js` - Health check endpoint
+#### Database Configuration
 
-### **Configuration Files:**
+```
+DATABASE_URL=postgresql://neondb_owner:npg_QANzfo0P5YlC@ep-divine-credit-aeo8sru9-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+```
 
-- `netlify.toml` - Netlify configuration
-- `netlify/functions/package.json` - Function dependencies
+#### App Configuration
 
-### **Frontend Updates:**
+```
+ADMIN_TOKEN=your_secure_admin_token_here
+```
 
-- All API calls now use relative URLs (`/api/*`) instead of `localhost:5000`
-- Updated: EditorDashboard, EditorCreateStory, EditorMyStories, EditorDrafts, EditorStoryEditor, AdminDashboard, Users, StoryEditor
+#### Cloudinary Configuration
 
-## **🌐 Step-by-Step Deployment**
+```
+CLOUDINARY_CLOUD_NAME=dvbedfiv7
+CLOUDINARY_API_KEY=651552198245358
+CLOUDINARY_API_SECRET=iQX55hdMyifxg69toEOYBsxJK9U
+```
 
-### **Step 1: Push to GitHub**
+#### PesaPal Integration
+
+```
+PESAPAL_CONSUMER_KEY=oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2
+PESAPAL_CONSUMER_SECRET=K2C+Cp4AFy2XV/ancyeyfbZYbPs=
+PESAPAL_ENVIRONMENT=demo
+```
+
+### Build Environment Variables
+
+These are automatically set by the `netlify.toml` file:
+
+```
+NODE_VERSION=18
+NPM_FLAGS=--legacy-peer-deps
+CI=false
+REACT_APP_ENV=production
+GENERATE_SOURCEMAP=false
+```
+
+## Deployment Steps
+
+### 1. Connect Repository
+
+1. Go to [Netlify Dashboard](https://app.netlify.com/)
+2. Click **"New site from Git"**
+3. Choose your Git provider (GitHub, GitLab, etc.)
+4. Select your repository: `storymatters-website`
+
+### 2. Configure Build Settings
+
+The build settings are automatically configured via `netlify.toml`:
+
+- **Build command**: `npm run build`
+- **Publish directory**: `build`
+- **Functions directory**: `netlify/functions`
+
+### 3. Set Environment Variables
+
+1. Go to **Site settings > Environment variables**
+2. Add each environment variable listed above
+3. Set the scope to **All scopes** for production deployment
+
+### 4. Deploy
+
+1. Click **"Deploy site"**
+2. Wait for the build to complete
+3. Your site will be available at the provided Netlify URL
+
+## Post-Deployment Configuration
+
+### Custom Domain (Optional)
+
+1. Go to **Domain management**
+2. Add your custom domain
+3. Configure DNS settings as instructed
+
+### SSL Certificate
+
+- Netlify automatically provides SSL certificates
+- No additional configuration needed
+
+## Function Deployment
+
+Your Netlify functions are located in `netlify/functions/` and include:
+
+- `auth.js` - Authentication functions
+- `stories.js` - Story management
+- `users.js` - User management
+- `upload.js` - File upload handling
+- `pesapal-api.js` - Payment integration
+
+## Troubleshooting
+
+### Common Issues
+
+#### Build Failures
+
+- Check Node.js version compatibility
+- Verify all environment variables are set
+- Check for missing dependencies
+
+#### Function Errors
+
+- Verify function syntax
+- Check environment variables in function scope
+- Review Netlify function logs
+
+#### Database Connection Issues
+
+- Verify `DATABASE_URL` is correct
+- Check Neon database accessibility
+- Ensure SSL mode is properly configured
+
+### Debugging
+
+1. Check **Deploy logs** for build errors
+2. Review **Function logs** for runtime errors
+3. Use **Netlify Dev** for local testing
+
+## Local Development with Netlify
+
+### Install Netlify CLI
 
 ```bash
-git add .
-git commit -m "Convert to Netlify Functions - ready for deployment"
-git push origin main
+npm install -g netlify-cli
 ```
 
-### **Step 2: Connect to Netlify**
+### Run Locally
 
-1. **Go to [netlify.com](https://netlify.com)** and sign in
-2. **Click "New site from Git"**
-3. **Choose GitHub** and authorize Netlify
-4. **Select your repository**: `storymatters-website`
-5. **Configure build settings:**
-   - **Build command**: `npm run build`
-   - **Publish directory**: `build`
-   - **Functions directory**: `netlify/functions`
-
-### **Step 3: Set Environment Variables**
-
-In your Netlify dashboard, go to **Site settings > Environment variables** and add:
-
-```env
-GOOGLE_SPREADSHEET_ID=17-0ZMmUKQFqP07Xpbp_IJpARRjLk6aqJjuKxqAf11lA
-GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"...","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"..."}
+```bash
+netlify dev
 ```
 
-**⚠️ Important:** Copy your entire service account JSON content for `GOOGLE_SERVICE_ACCOUNT_KEY`
+This will run your site locally with Netlify functions and environment variables.
 
-### **Step 4: Deploy**
+## Performance Optimization
 
-1. **Click "Deploy site"**
-2. **Wait for build to complete** (usually 2-5 minutes)
-3. **Your site will be live!** 🎉
+### Build Optimizations
 
-## **🔗 How It Works Now**
+- Source maps disabled for production
+- Static assets cached for 1 year
+- Security headers enabled
 
-### **API Endpoints:**
+### Function Optimization
 
-- **Stories**: `/.netlify/functions/stories` → `/api/stories`
-- **Authentication**: `/.netlify/functions/auth` → `/api/users/login`
-- **Users**: `/.netlify/functions/users` → `/api/users`
-- **Upload**: `/.netlify/functions/upload` → `/api/upload`
-- **Health**: `/.netlify/functions/health` → `/api/health`
+- Uses esbuild for faster bundling
+- External modules properly configured
+- Optimized for cold starts
 
-### **Automatic Deployment:**
+## Security Considerations
 
-- **Every commit to `main` branch** automatically triggers a new deployment
-- **No manual deployment needed** - it's fully automated!
-- **Preview deployments** for pull requests
+### Environment Variables
 
-## **📱 Testing Your Deployment**
+- Never commit sensitive data to Git
+- Use Netlify's environment variable system
+- Rotate secrets regularly
 
-### **1. Test Authentication:**
+### Headers
 
-- Visit your Netlify URL
-- Try logging in with your editor/admin credentials
-- Check browser console for any errors
+- XSS protection enabled
+- Content type sniffing disabled
+- Frame options restricted
 
-### **2. Test Story Operations:**
+## Monitoring and Analytics
 
-- Create a new story
-- Edit an existing story
-- Toggle story status (draft/published)
-- Delete a story
+### Netlify Analytics
 
-### **3. Test User Management (Admin):**
+- Built-in analytics available
+- Performance monitoring
+- Error tracking
 
-- View all users
-- Create new users
-- Edit user details
-- Toggle user status
+### Custom Monitoring
 
-## **🔧 Troubleshooting**
+- Function execution logs
+- Build performance metrics
+- Deployment status tracking
 
-### **Common Issues:**
+## Support Resources
 
-#### **"Function not found" Error:**
+- [Netlify Documentation](https://docs.netlify.com/)
+- [Netlify Functions Guide](https://docs.netlify.com/functions/overview/)
+- [Netlify Community](https://community.netlify.com/)
+- [Function Examples](https://functions.netlify.com/)
 
-- Check that `netlify.toml` has correct functions directory
-- Ensure all function files are in `netlify/functions/`
-- Verify function names match the file names
+## Emergency Rollback
 
-#### **"Google Sheets API Error":**
+If you need to rollback:
 
-- Verify `GOOGLE_SPREADSHEET_ID` is correct
-- Check `GOOGLE_SERVICE_ACCOUNT_KEY` is complete JSON
-- Ensure service account has access to your spreadsheet
-
-#### **"CORS Error":**
-
-- Functions already include CORS headers
-- Check browser console for specific error details
-
-#### **"Build Failed":**
-
-- Check Netlify build logs
-- Ensure all dependencies are in `package.json`
-- Verify Node.js version compatibility
-
-### **Debug Steps:**
-
-1. **Check Netlify Function Logs** in your dashboard
-2. **Test individual functions** using Netlify CLI
-3. **Verify environment variables** are set correctly
-4. **Check Google Sheets permissions** for your service account
-
-## **🚀 Advanced Features**
-
-### **Custom Domain:**
-
-1. Go to **Domain management** in Netlify
-2. **Add custom domain** (e.g., `yourdomain.com`)
-3. **Configure DNS** as instructed by Netlify
-
-### **Environment-Specific Variables:**
-
-- **Production**: Set in Netlify dashboard
-- **Development**: Use `.env.local` file locally
-
-### **Function Monitoring:**
-
-- **Netlify Analytics** for function performance
-- **Function logs** for debugging
-- **Real-time function invocations**
-
-## **📊 Performance & Scaling**
-
-### **Netlify Functions:**
-
-- **Automatic scaling** based on demand
-- **Cold start optimization** for better performance
-- **Global edge network** for fast response times
-
-### **Google Sheets:**
-
-- **Real-time data** without database setup
-- **Automatic backups** and version history
-- **Collaborative editing** capabilities
-
-## **🔄 Continuous Deployment**
-
-### **Automatic Workflow:**
-
-1. **Make changes** to your code
-2. **Commit and push** to GitHub
-3. **Netlify automatically builds** and deploys
-4. **Your changes are live** in minutes!
-
-### **Branch Deployments:**
-
-- **Main branch** → Production site
-- **Feature branches** → Preview deployments
-- **Pull requests** → Automatic preview URLs
-
-## **🎯 Next Steps**
-
-### **Immediate:**
-
-1. **Deploy to Netlify** following the steps above
-2. **Test all functionality** thoroughly
-3. **Set up custom domain** if desired
-
-### **Future Enhancements:**
-
-1. **Add image upload to Cloudinary/AWS S3**
-2. **Implement caching** for better performance
-3. **Add analytics** and monitoring
-4. **Set up staging environment**
-
-## **📞 Support**
-
-### **If You Need Help:**
-
-1. **Check Netlify documentation**: [docs.netlify.com](https://docs.netlify.com)
-2. **Review function logs** in your Netlify dashboard
-3. **Test functions locally** using Netlify CLI
-4. **Check Google Sheets API** documentation
-
----
-
-## **🎉 Congratulations!**
-
-Your Story Matters website is now:
-
-- ✅ **Fully deployed on Netlify**
-- ✅ **Using serverless functions**
-- ✅ **Connected to Google Sheets**
-- ✅ **Automatically deploying from GitHub**
-- ✅ **Scalable and maintainable**
-
-**Your website will automatically update every time you push to GitHub!** 🚀
+1. Go to **Deploys** tab
+2. Find the previous working deployment
+3. Click **"Publish deploy"**
+4. Your site will revert to the previous version
