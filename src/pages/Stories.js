@@ -211,50 +211,55 @@ const Stories = () => {
           <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white bg-opacity-5 rounded-full animate-pulse"></div>
         </div>
         
-                  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl mr-2 animate-pulse" />
-              <h1 className="text-2xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
-                Stories That Matter
-              </h1>
-              <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl ml-2 animate-pulse" />
+                          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            {/* Left Side - Title and Description */}
+            <div className="flex-1 text-left">
+              <div className="flex items-center mb-3">
+                <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl mr-2 animate-pulse" />
+                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+                  Stories That Matter
+                </h1>
+                <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl ml-2 animate-pulse" />
+              </div>
+              <p className="text-base md:text-lg max-w-lg leading-relaxed text-blue-100">
+                Discover inspiring stories of transformation, impact, and community change from around the world.
+              </p>
             </div>
-            <p className="text-base md:text-lg max-w-2xl mx-auto leading-relaxed text-blue-100 mb-4">
-              Discover inspiring stories of transformation, impact, and community change from around the world.
-            </p>
-          
-          {/* Search and Filter Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
-              <input
-                type="text"
-                placeholder="Search stories by title, author, or content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border-0 rounded-full text-lg shadow-lg focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50"
-              />
-            </div>
-            <div className="flex items-center justify-center mt-2 space-x-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center px-4 py-2 bg-white bg-opacity-20 text-white rounded-full hover:bg-opacity-30 transition-all duration-200"
-              >
-                <FontAwesomeIcon icon={faFilter} className="mr-2" />
-                Filters
-              </button>
-              {showFilters && (
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2 bg-white bg-opacity-20 text-white rounded-full border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white"
+            
+            {/* Right Side - Search and Filters */}
+            <div className="flex-shrink-0 w-full lg:w-96">
+              <div className="relative mb-3">
+                <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
+                <input
+                  type="text"
+                  placeholder="Search stories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-0 rounded-full text-base shadow-lg focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center px-3 py-2 bg-white bg-opacity-20 text-white rounded-full hover:bg-opacity-30 transition-all duration-200 text-sm"
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              )}
+                  <FontAwesomeIcon icon={faFilter} className="mr-2" />
+                  Filters
+                </button>
+                {showFilters && (
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="px-3 py-2 bg-white bg-opacity-20 text-white rounded-full border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-white text-sm"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
           </div>
         </div>
