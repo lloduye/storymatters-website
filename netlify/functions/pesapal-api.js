@@ -1,121 +1,174 @@
 const crypto = require('crypto');
 const https = require('https');
 
-// Helper function to make HTTPS requests
+// Helper function to make HTTPS requests with timeout and better error handling
 function makeHttpsRequest(url, options, postData = null) {
   return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    
-    const requestOptions = {
-      hostname: urlObj.hostname,
-      port: urlObj.port || 443,
-      path: urlObj.pathname + urlObj.search,
-      method: options.method || 'GET',
-      headers: options.headers || {}
-    };
+    try {
+      const urlObj = new URL(url);
+      
+      const requestOptions = {
+        hostname: urlObj.hostname,
+        port: urlObj.port || 443,
+        path: urlObj.pathname + urlObj.search,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        timeout: 30000 // 30 second timeout
+      };
 
-    const req = https.request(requestOptions, (res) => {
-      let data = '';
-      
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        resolve({
-          statusCode: res.statusCode,
-          headers: res.headers,
-          body: data
+      const req = https.request(requestOptions, (res) => {
+        let data = '';
+        
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+        
+        res.on('end', () => {
+          resolve({
+            statusCode: res.statusCode,
+            headers: res.headers,
+            body: data
+          });
         });
       });
-    });
 
-    req.on('error', (error) => {
-      reject(error);
-    });
+      req.on('error', (error) => {
+        reject(new Error(`HTTPS request failed: ${error.message}`));
+      });
 
-    if (postData) {
-      req.write(postData);
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('HTTPS request timed out'));
+      });
+
+      if (postData) {
+        req.write(postData);
+      }
+      
+      req.end();
+    } catch (error) {
+      reject(new Error(`Failed to create HTTPS request: ${error.message}`));
     }
-    
-    req.end();
   });
 }
 
 exports.handler = async (event, context) => {
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
+  // Set CORS headers for all responses
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
 
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
+      headers: corsHeaders,
       body: ''
     };
   }
 
+  // Only allow POST requests
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: corsHeaders,
+      body: JSON.stringify({ 
+        success: false,
+        error: 'Method not allowed',
+        message: 'Only POST requests are supported'
+      })
+    };
+  }
+
   try {
-    console.log('Received request:', {
-      method: event.httpMethod,
-      headers: event.headers,
-      body: event.body
-    });
-    
-    const body = JSON.parse(event.body);
+    // Validate request body
+    if (!event.body) {
+      throw new Error('Request body is missing');
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (parseError) {
+      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
+    }
+
+    if (!body.action || !body.donationData) {
+      throw new Error('Missing required fields: action and donationData');
+    }
+
     const { action, donationData } = body;
     
-    console.log('Parsed request data:', { action, donationData });
+    console.log('Processing request:', { action, donationData: { ...donationData, amount: donationData.amount } });
 
-    // PesaPal credentials from environment variables
-    const consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2';
-    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'K2C+Cp4AFy2XV/ancyeyfbZYbPs=';
+    // Validate PesaPal credentials
+    const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
+    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
     
-    // PesaPal endpoints (use production or demo based on environment)
-    const isProduction = process.env.PESAPAL_ENVIRONMENT === 'production';
+    if (!consumerKey || !consumerSecret) {
+      throw new Error('PesaPal credentials not configured in environment variables');
+    }
+
+    // Determine environment and base URL
+    const environment = process.env.PESAPAL_ENVIRONMENT || 'demo';
+    const isProduction = environment === 'production';
     const baseUrl = isProduction ? 'https://www.pesapal.com' : 'https://demo.pesapal.com';
     
     console.log('Environment configuration:', {
-      consumerKey: consumerKey ? 'SET' : 'NOT SET',
-      consumerSecret: consumerSecret ? 'SET' : 'NOT SET',
-      environment: process.env.PESAPAL_ENVIRONMENT || 'NOT SET',
+      environment,
       isProduction,
-      baseUrl
+      baseUrl,
+      credentialsConfigured: !!(consumerKey && consumerSecret)
     });
 
-    if (action === 'createPaymentRequest') {
-      // Generate OAuth signature for PesaPal API
-      const generateOAuthSignature = (method, url, params) => {
-        const sortedParams = Object.keys(params)
-          .sort()
-          .map(key => `${key}=${encodeURIComponent(params[key])}`)
-          .join('&');
-
-        const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-        
-        return crypto.createHmac('sha1', consumerSecret).update(signatureBaseString).digest('base64');
+    // Add a test endpoint for debugging
+    if (action === 'test') {
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          success: true,
+          message: 'PesaPal API function is working',
+          environment,
+          baseUrl,
+          timestamp: new Date().toISOString()
+        })
       };
+    }
 
-      // Generate unique order ID
-      const orderId = `STORY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Get the origin from the request headers
-      const origin = event.headers.origin || event.headers.Origin || 'https://storymatters-website.netlify.app';
-      const ipnUrl = `${origin}/.netlify/functions/pesapal-ipn`;
+    if (action === 'createPaymentRequest') {
+      try {
+        // Validate donation data
+        if (!donationData.amount || donationData.amount <= 0) {
+          throw new Error('Invalid donation amount');
+        }
+
+        // Generate OAuth signature for PesaPal API
+        const generateOAuthSignature = (method, url, params) => {
+          try {
+            const sortedParams = Object.keys(params)
+              .sort()
+              .map(key => `${key}=${encodeURIComponent(params[key])}`)
+              .join('&');
+
+            const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+            
+            return crypto.createHmac('sha1', consumerSecret).update(signatureBaseString).digest('base64');
+          } catch (signatureError) {
+            throw new Error(`OAuth signature generation failed: ${signatureError.message}`);
+          }
+        };
+
+        // Generate unique order ID
+        const orderId = `STORY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Get the origin from the request headers
+        const origin = event.headers.origin || event.headers.Origin || 'https://storymatters-website.netlify.app';
+        const ipnUrl = `${origin}/.netlify/functions/pesapal-ipn`;
+        
+        console.log('Generated order details:', { orderId, origin, ipnUrl });
 
       const paymentData = {
         oauth_consumer_key: consumerKey,
@@ -152,36 +205,58 @@ exports.handler = async (event, context) => {
       // Prepare POST data
       const postData = new URLSearchParams(paymentData).toString();
 
-      // Make the request to PesaPal using https module
-      const response = await makeHttpsRequest(`${baseUrl}/api/PostPesapalOrder`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `OAuth ${authHeader}`,
-          'Content-Length': Buffer.byteLength(postData)
+              console.log('Making request to PesaPal:', {
+          url: `${baseUrl}/api/PostPesapalOrder`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `OAuth ${authHeader}`,
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        });
+
+        // Make the request to PesaPal using https module
+        const response = await makeHttpsRequest(`${baseUrl}/api/PostPesapalOrder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `OAuth ${authHeader}`,
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        }, postData);
+
+        console.log('PesaPal response received:', {
+          statusCode: response.statusCode,
+          bodyLength: response.body ? response.body.length : 0
+        });
+
+        if (response.statusCode !== 200) {
+          throw new Error(`PesaPal API returned status ${response.statusCode}: ${response.body || 'No response body'}`);
         }
-      }, postData);
 
-      if (response.statusCode !== 200) {
-        throw new Error(`PesaPal API error: ${response.statusCode}`);
+        const result = response.body;
+        
+        if (!result) {
+          throw new Error('PesaPal API returned empty response');
+        }
+        
+        console.log('Payment request successful:', { orderId, trackingId: result });
+        
+        // PesaPal returns the order tracking ID
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            success: true,
+            orderId: orderId,
+            trackingId: result,
+            iframeUrl: `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${result}&amp;merchantReference=${orderId}`
+          })
+        };
+      } catch (paymentError) {
+        console.error('Payment request failed:', paymentError);
+        throw new Error(`Payment request failed: ${paymentError.message}`);
       }
-
-      const result = response.body;
-      
-      // PesaPal returns the order tracking ID
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          success: true,
-          orderId: orderId,
-          trackingId: result,
-          iframeUrl: `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${result}&amp;merchantReference=${orderId}`
-        })
-      };
 
     } else if (action === 'checkPaymentStatus') {
       // Handle payment status check
