@@ -38,7 +38,10 @@ const Stories = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
+    // If no image path is provided, return null to show no image
+    if (!imagePath || imagePath.trim() === '') {
+      return null;
+    }
     
     // If the image path is already a full URL, use it as is
     if (imagePath.startsWith('http')) {
@@ -60,8 +63,13 @@ const Stories = () => {
       return imagePath;
     }
     
-    // Default fallback
-    return '/Images/2025-01-06-community-dialogues.jpg';
+    // If we have some image path but it doesn't match any pattern, try to use it as is
+    if (imagePath.trim()) {
+      return imagePath;
+    }
+    
+    // Only use default image as last resort
+    return null;
   };
 
   if (isLoading) {
@@ -147,12 +155,21 @@ const Stories = () => {
                   }`}
                 >
                   <div className="relative">
-                    <img 
-                      src={getImageUrl(story.image)} 
-                      alt={story.title}
-                      className="w-full h-48 object-cover"
-                      style={{ objectPosition: 'center 30%' }}
-                    />
+                    {getImageUrl(story.image) ? (
+                      <img 
+                        src={getImageUrl(story.image)} 
+                        alt={story.title}
+                        className="w-full h-48 object-cover"
+                        style={{ objectPosition: 'center 30%' }}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                        <div className="text-center text-blue-600">
+                          <FontAwesomeIcon icon={faQuoteLeft} className="text-4xl mb-2" />
+                          <p className="text-sm font-medium">No Image</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {story.category}
                     </div>

@@ -58,7 +58,10 @@ const StoryDetail = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/Images/2025-01-06-community-dialogues.jpg';
+    // If no image path is provided, return null to show no image
+    if (!imagePath || imagePath.trim() === '') {
+      return null;
+    }
     
     // If the image path is already a full URL, use it as is
     if (imagePath.startsWith('http')) {
@@ -80,8 +83,13 @@ const StoryDetail = () => {
       return imagePath;
     }
     
-    // Default fallback
-    return '/Images/2025-01-06-community-dialogues.jpg';
+    // If we have some image path but it doesn't match any pattern, try to use it as is
+    if (imagePath.trim()) {
+      return imagePath;
+    }
+    
+    // Only use default image as last resort
+    return null;
   };
 
   // Helper function to parse tags properly
@@ -152,12 +160,21 @@ const StoryDetail = () => {
 
       {/* Featured Image - Constrained to content width */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <img 
-          src={getImageUrl(story.image)} 
-          alt={story.title}
-          className="w-full h-64 md:h-80 object-cover rounded-lg"
-          style={{ objectPosition: 'center 30%' }}
-        />
+        {getImageUrl(story.image) ? (
+          <img 
+            src={getImageUrl(story.image)} 
+            alt={story.title}
+            className="w-full h-64 md:h-80 object-cover rounded-lg"
+            style={{ objectPosition: 'center 30%' }}
+          />
+        ) : (
+          <div className="w-full h-64 md:h-80 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+            <div className="text-center text-blue-600">
+              <FontAwesomeIcon icon={faQuoteLeft} className="text-5xl mb-4" />
+              <p className="text-lg font-medium">No Image Available</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Story Content Container */}
@@ -288,12 +305,21 @@ const StoryDetail = () => {
                   className="block bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer h-full"
                 >
                   <div className="relative">
-                    <img 
-                      src={getImageUrl(otherStory.image)} 
-                      alt={otherStory.title}
-                      className="w-full h-48 object-cover"
-                      style={{ objectPosition: 'center 30%' }}
-                    />
+                    {getImageUrl(otherStory.image) ? (
+                      <img 
+                        src={getImageUrl(otherStory.image)} 
+                        alt={otherStory.title}
+                        className="w-full h-48 object-cover"
+                        style={{ objectPosition: 'center 30%' }}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                        <div className="text-center text-blue-600">
+                          <FontAwesomeIcon icon={faQuoteLeft} className="text-2xl mb-1" />
+                          <p className="text-xs font-medium">No Image</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {otherStory.category}
                     </div>
