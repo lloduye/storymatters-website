@@ -19,7 +19,7 @@ import {
   faRocket,
   faSparkles,
   faFire,
-  faTrendingUp,
+  faChartLine,
   faAward,
   faCompass,
   faMagicWandSparkles,
@@ -156,7 +156,7 @@ const Stories = () => {
       'Cultural Heritage & Identity': faCompass,
       'Youth Talent & Innovation': faLightbulb,
       'Sports for Peace': faRocket,
-      'Entrepreneurship & Innovation': faTrendingUp,
+      'Entrepreneurship & Innovation': faChartLine,
       'Public Health Campaigns': faHeart,
       'Youth & Disability Inclusion': faAward
     };
@@ -513,7 +513,7 @@ const Stories = () => {
           {/* Latest Updates */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <FontAwesomeIcon icon={faTrendingUp} className="text-purple-500 mr-2" />
+              <FontAwesomeIcon icon={faChartLine} className="text-purple-500 mr-2" />
               Latest Updates
             </h3>
             <div className="space-y-3">
