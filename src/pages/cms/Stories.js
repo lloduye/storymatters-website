@@ -32,7 +32,15 @@ const Stories = () => {
     try {
       setIsLoading(true);
       const response = await axios.get('/.netlify/functions/stories');
-      setStories(response.data);
+      
+      // Sort stories by publish date (latest first)
+      const sortedStories = response.data.sort((a, b) => {
+        const dateA = new Date(a.publish_date || a.publishDate || 0);
+        const dateB = new Date(b.publish_date || b.publishDate || 0);
+        return dateB - dateA; // Latest first
+      });
+      
+      setStories(sortedStories);
     } catch (error) {
       console.error('Error fetching stories:', error);
       toast.error('Failed to load stories');

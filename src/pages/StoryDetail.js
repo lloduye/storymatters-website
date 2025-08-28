@@ -25,7 +25,15 @@ const StoryDetail = () => {
       // Fetch related stories (excluding current story and only published ones)
       const allStoriesResponse = await axios.get('/.netlify/functions/stories?published=true');
       const allStories = allStoriesResponse.data;
-      const related = allStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
+      
+      // Sort stories by publish date (latest first) and get related stories
+      const sortedStories = allStories.sort((a, b) => {
+        const dateA = new Date(a.publish_date || a.publishDate || 0);
+        const dateB = new Date(b.publish_date || b.publishDate || 0);
+        return dateB - dateA; // Latest first
+      });
+      
+      const related = sortedStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
       setRelatedStories(related);
       
       // Only increment view count for non-admin users

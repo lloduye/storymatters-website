@@ -37,7 +37,7 @@ async function verifyUserToken(token) {
 async function getAllStories() {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM stories ORDER BY created_at DESC');
+    const result = await client.query('SELECT * FROM stories ORDER BY publish_date DESC, created_at DESC');
     client.release();
     return result.rows;
   } catch (error) {
@@ -51,7 +51,7 @@ async function getStoriesByUser(author) {
   try {
     const client = await pool.connect();
     const result = await client.query(
-      'SELECT * FROM stories WHERE author = $1 ORDER BY created_at DESC',
+      'SELECT * FROM stories WHERE author = $1 ORDER BY publish_date DESC, created_at DESC',
       [author]
     );
     client.release();
@@ -284,7 +284,7 @@ exports.handler = async (event, context) => {
           // Get only published stories
           const client = await pool.connect();
           const result = await client.query(
-            'SELECT * FROM stories WHERE status = $1 OR status = $2 ORDER BY created_at DESC',
+            'SELECT * FROM stories WHERE status = $1 OR status = $2 ORDER BY publish_date DESC, created_at DESC',
             ['published', 'true']
           );
           client.release();

@@ -29,7 +29,15 @@ const Stories = () => {
         image: story.image,
         imageType: typeof story.image
       })));
-      setStories(response.data);
+      
+      // Sort stories by publish date (latest first)
+      const sortedStories = response.data.sort((a, b) => {
+        const dateA = new Date(a.publish_date || a.publishDate || 0);
+        const dateB = new Date(b.publish_date || b.publishDate || 0);
+        return dateB - dateA; // Latest first
+      });
+      
+      setStories(sortedStories);
     } catch (error) {
       console.error('Error fetching stories:', error);
       setError('Failed to load stories. Please try again later.');
