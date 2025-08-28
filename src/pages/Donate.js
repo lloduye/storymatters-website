@@ -5,7 +5,6 @@ import {
   faShieldAlt, 
   faCheckCircle, 
   faExclamationTriangle, 
-  faTimes,
   faHeart,
   faHandshake,
   faSpinner
