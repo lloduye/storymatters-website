@@ -24,6 +24,7 @@ This document outlines the complete PesaPal payment integration for the Story Ma
 **Domain Configuration:**
 
 The system automatically detects the current domain to avoid domain mismatch errors. This means:
+
 - **Development/Testing**: Uses `storymatters-website.netlify.app`
 - **Production**: Uses `www.storymattersentertainment.org`
 - **Any Custom Domain**: Automatically detected and used
