@@ -70,8 +70,16 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Received request:', {
+      method: event.httpMethod,
+      headers: event.headers,
+      body: event.body
+    });
+    
     const body = JSON.parse(event.body);
     const { action, donationData } = body;
+    
+    console.log('Parsed request data:', { action, donationData });
 
     // PesaPal credentials from environment variables
     const consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2';
@@ -80,6 +88,14 @@ exports.handler = async (event, context) => {
     // PesaPal endpoints (use production or demo based on environment)
     const isProduction = process.env.PESAPAL_ENVIRONMENT === 'production';
     const baseUrl = isProduction ? 'https://www.pesapal.com' : 'https://demo.pesapal.com';
+    
+    console.log('Environment configuration:', {
+      consumerKey: consumerKey ? 'SET' : 'NOT SET',
+      consumerSecret: consumerSecret ? 'SET' : 'NOT SET',
+      environment: process.env.PESAPAL_ENVIRONMENT || 'NOT SET',
+      isProduction,
+      baseUrl
+    });
 
     if (action === 'createPaymentRequest') {
       // Generate OAuth signature for PesaPal API
@@ -239,17 +255,24 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('PesaPal API error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code
+    });
     
     return {
       statusCode: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
-        },
+      },
       body: JSON.stringify({ 
         success: false,
         error: 'Internal server error',
-        message: error.message 
+        message: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       })
     };
   }
