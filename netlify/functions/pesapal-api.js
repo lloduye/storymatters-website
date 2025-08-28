@@ -55,13 +55,13 @@ exports.handler = async (event, context) => {
     // Get PesaPal credentials from environment
     const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
     const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
-    const environment = process.env.PESAPAL_ENVIRONMENT || 'demo';
+    const environment = process.env.PESAPAL_ENVIRONMENT || 'production';
     
     if (!consumerKey || !consumerSecret) {
       throw new Error('PesaPal credentials not configured');
     }
 
-    // Set base URL based on environment
+    // Set base URL based on environment - default to production since PesaPal specified production API
     const baseUrl = environment === 'production' 
       ? 'https://www.pesapal.com' 
       : 'https://demo.pesapal.com';
@@ -108,9 +108,8 @@ exports.handler = async (event, context) => {
       const lastName = donationData.lastName || '';
       const fullName = `${firstName} ${lastName}`.trim();
       
-      // Create a working PesaPal payment URL using their standard format
-      // This bypasses the iframe system and goes directly to their payment page
-      const paymentUrl = `${baseUrl}/api/PostPesapalDirectOrderV3`;
+      // Use PesaPal's production API endpoint as specified
+      const paymentUrl = `${baseUrl}/API/PostPesapalDirectOrderV4`;
       
       // Generate OAuth signature for the request
       const oauthParams = {
@@ -170,7 +169,7 @@ exports.handler = async (event, context) => {
           paymentUrl: workingPaymentUrl,
           formUrl: paymentUrl,
           formData: formData,
-          message: 'Payment request created successfully - use paymentUrl for direct payment'
+          message: 'Payment request created successfully using production API - use paymentUrl for direct payment'
         })
       };
     }
