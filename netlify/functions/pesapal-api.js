@@ -73,12 +73,13 @@ exports.handler = async (event, context) => {
     const body = JSON.parse(event.body);
     const { action, donationData } = body;
 
-    // PesaPal credentials
-    const consumerKey = 'oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2';
-    const consumerSecret = 'K2C+Cp4AFy2XV/ancyeyfbZYbPs=';
+    // PesaPal credentials from environment variables
+    const consumerKey = process.env.PESAPAL_CONSUMER_KEY || 'oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2';
+    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET || 'K2C+Cp4AFy2XV/ancyeyfbZYbPs=';
     
-    // PesaPal endpoints (sandbox for testing)
-    const baseUrl = 'https://demo.pesapal.com';
+    // PesaPal endpoints (use production or demo based on environment)
+    const isProduction = process.env.PESAPAL_ENVIRONMENT === 'production';
+    const baseUrl = isProduction ? 'https://www.pesapal.com' : 'https://demo.pesapal.com';
 
     if (action === 'createPaymentRequest') {
       // Generate OAuth signature for PesaPal API
@@ -162,7 +163,7 @@ exports.handler = async (event, context) => {
           success: true,
           orderId: orderId,
           trackingId: result,
-          iframeUrl: `https://demo.pesapal.com/pesapaliframe3/PesapalIframe3?OrderTrackingId=${result}&amp;merchantReference=${orderId}`
+          iframeUrl: `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${result}&amp;merchantReference=${orderId}`
         })
       };
 
