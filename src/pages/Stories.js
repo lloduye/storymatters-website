@@ -202,7 +202,7 @@ const Stories = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section with Floating Elements */}
-      <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-4 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-blue-600 to-white text-white py-4 overflow-hidden">
         {/* Floating Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
@@ -216,13 +216,13 @@ const Stories = () => {
             {/* Left Side - Title and Description */}
             <div className="flex-1 text-left">
               <div className="flex items-center mb-3">
-                <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl mr-2 animate-pulse" />
-                <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+                <FontAwesomeIcon icon={faGem} className="text-white text-xl mr-2 animate-pulse" />
+                <h1 className="text-2xl md:text-4xl font-bold text-white">
                   Stories That Matter
                 </h1>
-                <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl ml-2 animate-pulse" />
+                <FontAwesomeIcon icon={faGem} className="text-white text-xl ml-2 animate-pulse" />
               </div>
-              <p className="text-base md:text-lg max-w-lg leading-relaxed text-blue-100">
+              <p className="text-base md:text-lg max-w-lg leading-relaxed text-white">
                 Discover inspiring stories of transformation, impact, and community change from around the world.
               </p>
             </div>
@@ -406,7 +406,7 @@ const Stories = () => {
                     
                     {/* Featured Badge */}
                     {story.featured === true && (
-                      <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                      <div className="absolute top-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center">
                         <FontAwesomeIcon icon={faStar} className="mr-1" />
                         Featured
                       </div>
