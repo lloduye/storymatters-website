@@ -7,8 +7,9 @@ exports.handler = async (event, context) => {
     },
     body: JSON.stringify({
       success: true,
-      message: 'Test function is working',
+      message: 'Test function is working - UPDATED',
       timestamp: new Date().toISOString(),
+      deployment: 'forced-redeploy-' + Date.now(),
       event: {
         httpMethod: event.httpMethod,
         path: event.path,
