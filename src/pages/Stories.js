@@ -202,7 +202,7 @@ const Stories = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section with Floating Elements */}
-      <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-8 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-4 overflow-hidden">
         {/* Floating Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
@@ -211,15 +211,15 @@ const Stories = () => {
           <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white bg-opacity-5 rounded-full animate-pulse"></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl mr-3 animate-pulse" />
-            <h1 className="text-3xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
-              Stories That Matter
-            </h1>
-            <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl ml-3 animate-pulse" />
-          </div>
-                      <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed text-blue-100 mb-6">
+                  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl mr-2 animate-pulse" />
+              <h1 className="text-2xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+                Stories That Matter
+              </h1>
+              <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-xl ml-2 animate-pulse" />
+            </div>
+            <p className="text-base md:text-lg max-w-2xl mx-auto leading-relaxed text-blue-100 mb-4">
               Discover inspiring stories of transformation, impact, and community change from around the world.
             </p>
           
@@ -235,7 +235,7 @@ const Stories = () => {
                 className="w-full pl-12 pr-4 py-4 border-0 rounded-full text-lg shadow-lg focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50"
               />
             </div>
-            <div className="flex items-center justify-center mt-4 space-x-2">
+            <div className="flex items-center justify-center mt-2 space-x-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center px-4 py-2 bg-white bg-opacity-20 text-white rounded-full hover:bg-opacity-30 transition-all duration-200"
