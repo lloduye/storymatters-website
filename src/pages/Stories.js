@@ -202,7 +202,7 @@ const Stories = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section with Floating Elements */}
-      <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-8 overflow-hidden">
         {/* Floating Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
@@ -214,14 +214,14 @@ const Stories = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-4">
             <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl mr-3 animate-pulse" />
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
               Stories That Matter
             </h1>
             <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl ml-3 animate-pulse" />
           </div>
-          <p className="text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed text-blue-100 mb-8">
-            Discover inspiring stories of transformation, impact, and community change from around the world.
-          </p>
+                      <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed text-blue-100 mb-6">
+              Discover inspiring stories of transformation, impact, and community change from around the world.
+            </p>
           
           {/* Search and Filter Bar */}
           <div className="max-w-2xl mx-auto">
@@ -271,16 +271,24 @@ const Stories = () => {
               Trending Now
             </h3>
             <div className="space-y-3">
-              {stories.filter(s => s.featured === true).slice(0, 3).map(story => (
-                <div key={story.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+              {stories
+                .sort((a, b) => (parseInt(b.view_count) || 0) - (parseInt(a.view_count) || 0))
+                .slice(0, 3)
+                .map(story => (
+                <Link 
+                  key={story.id} 
+                  to={`/stories/${story.id}`}
+                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                >
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
                     {story.title.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{story.title}</p>
                     <p className="text-xs text-gray-500">{story.author}</p>
+                    <p className="text-xs text-blue-600">{parseInt(story.view_count) || 0} views</p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -493,18 +501,27 @@ const Stories = () => {
               Quick Actions
             </h3>
             <div className="space-y-3">
-              <button className="w-full p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium">
+              <Link 
+                to="/contact"
+                className="w-full p-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium flex items-center justify-center"
+              >
                 <FontAwesomeIcon icon={faMicrophone} className="mr-2" />
                 Share Your Story
-              </button>
-              <button className="w-full p-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-200 font-medium">
+              </Link>
+              <Link 
+                to="/get-involved"
+                className="w-full p-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-200 font-medium flex items-center justify-center"
+              >
                 <FontAwesomeIcon icon={faUsers} className="mr-2" />
                 Join Community
-              </button>
-              <button className="w-full p-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 font-medium">
+              </Link>
+              <Link 
+                to="/programs"
+                className="w-full p-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 font-medium flex items-center justify-center"
+              >
                 <FontAwesomeIcon icon={faGlobe} className="mr-2" />
                 Explore Programs
-              </button>
+              </Link>
             </div>
           </div>
 
