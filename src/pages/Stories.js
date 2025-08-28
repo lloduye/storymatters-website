@@ -22,6 +22,13 @@ const Stories = () => {
     try {
       setIsLoading(true);
       const response = await axios.get('/.netlify/functions/stories?published=true');
+      console.log('Stories data received:', response.data);
+      console.log('Sample story image data:', response.data.map(story => ({
+        id: story.id,
+        title: story.title,
+        image: story.image,
+        imageType: typeof story.image
+      })));
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);
@@ -38,37 +45,46 @@ const Stories = () => {
   };
 
   const getImageUrl = (imagePath) => {
+    console.log('getImageUrl called with:', imagePath, 'Type:', typeof imagePath);
+    
     // If no image path is provided, return null to show no image
     if (!imagePath || imagePath.trim() === '') {
+      console.log('No image path, returning null');
       return null;
     }
     
     // If the image path is already a full URL, use it as is
     if (imagePath.startsWith('http')) {
+      console.log('Full URL detected, using as is:', imagePath);
       return imagePath;
     }
     
     // If the image path starts with /uploads/, it's from the CMS
     if (imagePath.startsWith('/uploads/')) {
+      console.log('Upload path detected, using as is:', imagePath);
       return imagePath;
     }
     
     // If it's a local image in the Images folder, prepend the path
     if (imagePath.includes('Images/') || imagePath.includes('2025-')) {
+      console.log('Local image detected, prepending path:', `/${imagePath}`);
       return `/${imagePath}`;
     }
     
     // For placeholder images or other cases
     if (imagePath.includes('placeholder')) {
+      console.log('Placeholder image detected:', imagePath);
       return imagePath;
     }
     
     // If we have some image path but it doesn't match any pattern, try to use it as is
     if (imagePath.trim()) {
+      console.log('Unknown pattern, trying as is:', imagePath);
       return imagePath;
     }
     
     // Only use default image as last resort
+    console.log('No valid image path found, returning null');
     return null;
   };
 
