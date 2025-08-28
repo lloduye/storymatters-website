@@ -12,6 +12,7 @@ import Contact from './pages/Contact';
 import Impact from './pages/Impact';
 import Stories from './pages/Stories';
 import Donate from './pages/Donate';
+import DonationSuccess from './pages/DonationSuccess';
 import StoryDetail from './pages/StoryDetail';
 import Login from './pages/Login';
 
@@ -111,6 +112,7 @@ function App() {
                     <Route path="/stories/:id" element={<StoryDetail />} />
                     <Route path="/get-involved" element={<GetInvolved />} />
                     <Route path="/donate" element={<Donate />} />
+                    <Route path="/donate/success" element={<DonationSuccess />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/login" element={<Login />} />
 

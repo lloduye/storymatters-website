@@ -3,12 +3,14 @@ import { useScrollToTop } from '../utils/useScrollToTop';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faHandshake, faUsers, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+import DonationModal from '../components/DonationModal';
 
 const Donate = () => {
   useScrollToTop();
   
   const [selectedAmount, setSelectedAmount] = useState('');
   const [customAmount, setCustomAmount] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAmountSelect = (amount) => {
     setSelectedAmount(amount);
@@ -26,14 +28,21 @@ const Donate = () => {
       return;
     }
     
-    // Here you would typically integrate with a payment processor
-    // For now, we'll show a success message
-    alert(`Thank you for your donation of $${amount}! We'll send you a confirmation email shortly.`);
-    
-    // Reset the form
-    setCustomAmount('');
-    setSelectedAmount('');
+    // Open the donation modal with the selected amount
+    setSelectedAmount(amount);
+    setIsModalOpen(true);
   };
+
+  const handleDonationSuccess = (paymentData) => {
+    // Handle successful donation
+    console.log('Donation successful:', paymentData);
+    // You can add analytics tracking here
+  };
+
+  // const openDonationModal = (amount) => {
+  //   setSelectedAmount(amount);
+  //   setIsModalOpen(true);
+  // };
 
   return (
     <div className="min-h-screen bg-white">
@@ -339,6 +348,14 @@ const Donate = () => {
           </div>
         </div>
       </section>
+
+      {/* PesaPal Donation Modal */}
+      <DonationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedAmount={selectedAmount || customAmount}
+        onSuccess={handleDonationSuccess}
+      />
     </div>
   );
 };
