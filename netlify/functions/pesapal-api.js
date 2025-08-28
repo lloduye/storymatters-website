@@ -53,11 +53,12 @@ function makeHttpsRequest(url, options, postData = null) {
 }
 
 exports.handler = async (event, context) => {
-  // Set CORS headers for all responses
+  // Set CORS headers for ALL responses
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Content-Type': 'application/json'
   };
 
   // Handle preflight OPTIONS request
@@ -170,42 +171,42 @@ exports.handler = async (event, context) => {
         
         console.log('Generated order details:', { orderId, origin, ipnUrl });
 
-      const paymentData = {
-        oauth_consumer_key: consumerKey,
-        oauth_nonce: Math.random().toString(36).substr(2, 15),
-        oauth_signature_method: 'HMAC-SHA1',
-        oauth_timestamp: Math.floor(Date.now() / 1000),
-        oauth_version: '1.0',
-        pesapal_request_data: JSON.stringify({
-          id: orderId,
-          currency: 'USD',
-          amount: donationData.amount,
-          description: `Donation to Story Matters: ${donationData.description}`,
-          type: 'MERCHANT',
-          reference: orderId,
-          first_name: donationData.firstName || 'Anonymous',
-          last_name: donationData.lastName || 'Donor',
-          email: donationData.email,
-          phone_number: donationData.phone || '',
-          callback_url: `${origin}/donate/success?order_id=${orderId}`,
-          ipn_url: ipnUrl
-        })
-      };
+        const paymentData = {
+          oauth_consumer_key: consumerKey,
+          oauth_nonce: Math.random().toString(36).substr(2, 15),
+          oauth_signature_method: 'HMAC-SHA1',
+          oauth_timestamp: Math.floor(Date.now() / 1000),
+          oauth_version: '1.0',
+          pesapal_request_data: JSON.stringify({
+            id: orderId,
+            currency: 'USD',
+            amount: donationData.amount,
+            description: `Donation to Story Matters: ${donationData.description}`,
+            type: 'MERCHANT',
+            reference: orderId,
+            first_name: donationData.firstName || 'Anonymous',
+            last_name: donationData.lastName || 'Donor',
+            email: donationData.email,
+            phone_number: donationData.phone || '',
+            callback_url: `${origin}/donate/success?order_id=${orderId}`,
+            ipn_url: ipnUrl
+          })
+        };
 
-      // Generate OAuth signature
-      const signature = generateOAuthSignature('POST', `${baseUrl}/api/PostPesapalOrder`, paymentData);
-      paymentData.oauth_signature = signature;
+        // Generate OAuth signature
+        const signature = generateOAuthSignature('POST', `${baseUrl}/api/PostPesapalOrder`, paymentData);
+        paymentData.oauth_signature = signature;
 
-      // Create authorization header
-      const authHeader = Object.keys(paymentData)
-        .filter(key => key.startsWith('oauth_'))
-        .map(key => `${key}="${encodeURIComponent(paymentData[key])}"`)
-        .join(',');
+        // Create authorization header
+        const authHeader = Object.keys(paymentData)
+          .filter(key => key.startsWith('oauth_'))
+          .map(key => `${key}="${encodeURIComponent(paymentData[key])}"`)
+          .join(',');
 
-      // Prepare POST data
-      const postData = new URLSearchParams(paymentData).toString();
+        // Prepare POST data
+        const postData = new URLSearchParams(paymentData).toString();
 
-              console.log('Making request to PesaPal:', {
+        console.log('Making request to PesaPal:', {
           url: `${baseUrl}/api/PostPesapalOrder`,
           method: 'POST',
           headers: {
@@ -259,72 +260,79 @@ exports.handler = async (event, context) => {
       }
 
     } else if (action === 'checkPaymentStatus') {
-      // Handle payment status check
-      const { trackingId } = donationData;
-      
-      const params = {
-        oauth_consumer_key: consumerKey,
-        oauth_nonce: Math.random().toString(36).substr(2, 15),
-        oauth_signature_method: 'HMAC-SHA1',
-        oauth_timestamp: Math.floor(Date.now() / 1000),
-        oauth_version: '1.0',
-        pesapal_merchant_reference: trackingId
-      };
-
-      const generateOAuthSignature = (method, url, params) => {
-        const sortedParams = Object.keys(params)
-          .sort()
-          .map(key => `${key}=${encodeURIComponent(params[key])}`)
-          .join('&');
-
-        const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+      try {
+        // Handle payment status check
+        const { trackingId } = donationData;
         
-        return crypto.createHmac('sha1', consumerSecret).update(signatureBaseString).digest('base64');
-      };
-
-      const signature = generateOAuthSignature('GET', `${baseUrl}/api/QueryPaymentStatus`, params);
-      params.oauth_signature = signature;
-
-      const authHeader = Object.keys(params)
-        .filter(key => key.startsWith('oauth_'))
-        .map(key => `${key}="${encodeURIComponent(params[key])}"`)
-        .join(',');
-
-      const response = await makeHttpsRequest(`${baseUrl}/api/QueryPaymentStatus?pesapal_merchant_reference=${trackingId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `OAuth ${authHeader}`
+        if (!trackingId) {
+          throw new Error('Tracking ID is required for payment status check');
         }
-      });
+        
+        const params = {
+          oauth_consumer_key: consumerKey,
+          oauth_nonce: Math.random().toString(36).substr(2, 15),
+          oauth_signature_method: 'HMAC-SHA1',
+          oauth_timestamp: Math.floor(Date.now() / 1000),
+          oauth_version: '1.0',
+          pesapal_merchant_reference: trackingId
+        };
 
-      if (response.statusCode !== 200) {
-        throw new Error(`PesaPal API error: ${response.statusCode}`);
+        const generateOAuthSignature = (method, url, params) => {
+          const sortedParams = Object.keys(params)
+            .sort()
+            .map(key => `${key}=${encodeURIComponent(params[key])}`)
+            .join('&');
+
+          const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+          
+          return crypto.createHmac('sha1', consumerSecret).update(signatureBaseString).digest('base64');
+        };
+
+        const signature = generateOAuthSignature('GET', `${baseUrl}/api/QueryPaymentStatus`, params);
+        params.oauth_signature = signature;
+
+        const authHeader = Object.keys(params)
+          .filter(key => key.startsWith('oauth_'))
+          .map(key => `${key}="${encodeURIComponent(params[key])}"`)
+          .join(',');
+
+        const response = await makeHttpsRequest(`${baseUrl}/api/QueryPaymentStatus?pesapal_merchant_reference=${trackingId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `OAuth ${authHeader}`
+          }
+        });
+
+        if (response.statusCode !== 200) {
+          throw new Error(`PesaPal API error: ${response.statusCode}`);
+        }
+
+        const result = response.body;
+        
+        return {
+          statusCode: 200,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            success: true,
+            status: 'Payment status retrieved',
+            trackingId: trackingId,
+            rawResponse: result
+          })
+        };
+      } catch (statusError) {
+        console.error('Payment status check failed:', statusError);
+        throw new Error(`Payment status check failed: ${statusError.message}`);
       }
-
-      const result = response.body;
-      
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          success: true,
-          status: 'Payment status retrieved',
-          trackingId: trackingId,
-          rawResponse: result
-        })
-      };
 
     } else {
       return {
         statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ error: 'Invalid action specified' })
+        headers: corsHeaders,
+        body: JSON.stringify({ 
+          success: false,
+          error: 'Invalid action specified',
+          message: `Unknown action: ${action}`
+        })
       };
     }
 
@@ -339,10 +347,7 @@ exports.handler = async (event, context) => {
     
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ 
         success: false,
         error: 'Internal server error',
