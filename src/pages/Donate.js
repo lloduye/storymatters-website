@@ -85,7 +85,14 @@ const Donate = () => {
       }
     } catch (error) {
       console.error('Donation error:', error);
-      setError(error.message || 'Something went wrong. Please try again.');
+      
+      // Check if it's a Netlify function not found error
+      if (error.message.includes('500') || error.message.includes('Failed to fetch')) {
+        setError('Payment service is temporarily unavailable. Please try again later or contact us directly at info@storymattersentertainment.org');
+      } else {
+        setError(error.message || 'Something went wrong. Please try again.');
+      }
+      
       setPaymentStep('error');
     } finally {
       setIsProcessing(false);
@@ -236,6 +243,12 @@ const Donate = () => {
             <p className="text-sm text-gray-600 mt-2">
               Your donation will be processed securely through PesaPal
             </p>
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Note:</strong> Payment processing is currently being configured. 
+                If you encounter any issues, please contact us directly.
+              </p>
+            </div>
           </div>
         )}
 
