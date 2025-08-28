@@ -1,4 +1,46 @@
 const crypto = require('crypto');
+const https = require('https');
+
+// Helper function to make HTTPS requests
+function makeHttpsRequest(url, options, postData = null) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    
+    const requestOptions = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || 443,
+      path: urlObj.pathname + urlObj.search,
+      method: options.method || 'GET',
+      headers: options.headers || {}
+    };
+
+    const req = https.request(requestOptions, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: data
+        });
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    if (postData) {
+      req.write(postData);
+    }
+    
+    req.end();
+  });
+}
 
 exports.handler = async (event, context) => {
   // Only allow POST requests
@@ -90,21 +132,24 @@ exports.handler = async (event, context) => {
         .map(key => `${key}="${encodeURIComponent(paymentData[key])}"`)
         .join(',');
 
-      // Make the request to PesaPal
-      const response = await fetch(`${baseUrl}/api/PostPesapalOrder`, {
+      // Prepare POST data
+      const postData = new URLSearchParams(paymentData).toString();
+
+      // Make the request to PesaPal using https module
+      const response = await makeHttpsRequest(`${baseUrl}/api/PostPesapalOrder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `OAuth ${authHeader}`
-        },
-        body: new URLSearchParams(paymentData)
-      });
+          'Authorization': `OAuth ${authHeader}`,
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      }, postData);
 
-      if (!response.ok) {
-        throw new Error(`PesaPal API error: ${response.status}`);
+      if (response.statusCode !== 200) {
+        throw new Error(`PesaPal API error: ${response.statusCode}`);
       }
 
-      const result = await response.text();
+      const result = response.body;
       
       // PesaPal returns the order tracking ID
       return {
@@ -153,17 +198,18 @@ exports.handler = async (event, context) => {
         .map(key => `${key}="${encodeURIComponent(params[key])}"`)
         .join(',');
 
-      const response = await fetch(`${baseUrl}/api/QueryPaymentStatus?pesapal_merchant_reference=${trackingId}`, {
+      const response = await makeHttpsRequest(`${baseUrl}/api/QueryPaymentStatus?pesapal_merchant_reference=${trackingId}`, {
+        method: 'GET',
         headers: {
           'Authorization': `OAuth ${authHeader}`
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`PesaPal API error: ${response.status}`);
+      if (response.statusCode !== 200) {
+        throw new Error(`PesaPal API error: ${response.statusCode}`);
       }
 
-      const result = await response.text();
+      const result = response.body;
       
       return {
         statusCode: 200,
@@ -198,7 +244,7 @@ exports.handler = async (event, context) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
-      },
+        },
       body: JSON.stringify({ 
         success: false,
         error: 'Internal server error',
