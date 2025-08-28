@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useScrollToTop } from '../utils/useScrollToTop';
 import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faMapMarkerAlt, faClock, faShare, faBookmark, faComment, faArrowLeft, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarAlt, faMapMarkerAlt, faClock, faShare, faBookmark, faComment, faArrowLeft, faEye, faQuoteLeft } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 

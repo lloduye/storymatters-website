@@ -17,15 +17,13 @@ import {
   faUsers,
   faGlobe,
   faRocket,
-  faSparkles,
+  faGem,
   faFire,
   faChartLine,
   faAward,
   faCompass,
-  faMagicWandSparkles,
+  faWandMagicSparkles,
   faPalette,
-  faMusic,
-  faCamera,
   faVideo,
   faMicrophone
 } from '@fortawesome/free-solid-svg-icons';
@@ -215,11 +213,11 @@ const Stories = () => {
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-4">
-            <FontAwesomeIcon icon={faSparkles} className="text-yellow-300 text-2xl mr-3 animate-pulse" />
+            <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl mr-3 animate-pulse" />
             <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
               Stories That Matter
             </h1>
-            <FontAwesomeIcon icon={faSparkles} className="text-yellow-300 text-2xl ml-3 animate-pulse" />
+            <FontAwesomeIcon icon={faGem} className="text-yellow-300 text-2xl ml-3 animate-pulse" />
           </div>
           <p className="text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed text-blue-100 mb-8">
             Discover inspiring stories of transformation, impact, and community change from around the world.
@@ -338,7 +336,7 @@ const Stories = () => {
         <div className="flex-1 p-6">
           {filteredStories.length === 0 ? (
             <div className="text-center py-20">
-              <FontAwesomeIcon icon={faMagicWandSparkles} className="text-gray-400 text-6xl mb-4" />
+              <FontAwesomeIcon icon={faWandMagicSparkles} className="text-gray-400 text-6xl mb-4" />
               <h3 className="text-2xl font-bold text-gray-900 mb-3">
                 No Stories Found
               </h3>
