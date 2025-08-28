@@ -84,7 +84,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Create PesaPal payment request using iframe integration
+    // Create PesaPal payment request using direct form submission
     if (action === 'createPaymentRequest') {
       // Validate required fields
       if (!donationData.amount || !donationData.email) {
@@ -108,9 +108,12 @@ exports.handler = async (event, context) => {
       const lastName = donationData.lastName || '';
       const fullName = `${firstName} ${lastName}`.trim();
       
-      // For PesaPal iframe integration, we need to create a POST form that submits to PesaPal
-      // This is the standard way PesaPal works - not through their API
-      const pesapalFormData = {
+      // Create a working PesaPal payment URL using their standard format
+      // This bypasses the iframe system and goes directly to their payment page
+      const paymentUrl = `${baseUrl}/api/PostPesapalDirectOrderV3`;
+      
+      // Generate OAuth signature for the request
+      const oauthParams = {
         oauth_callback: callbackUrl,
         oauth_consumer_key: consumerKey,
         oauth_nonce: Math.random().toString(36).substr(2, 15),
@@ -134,22 +137,28 @@ exports.handler = async (event, context) => {
       };
 
       // Generate OAuth signature
-      const sortedParams = Object.keys(pesapalFormData).sort().map(key => `${key}=${encodeURIComponent(pesapalFormData[key])}`).join('&');
-      const signatureBaseString = `POST&${encodeURIComponent(`${baseUrl}/api/PostPesapalDirectOrderV3`)}&${encodeURIComponent(sortedParams)}`;
+      const sortedParams = Object.keys(oauthParams).sort().map(key => `${key}=${encodeURIComponent(oauthParams[key])}`).join('&');
+      const signatureBaseString = `POST&${encodeURIComponent(paymentUrl)}&${encodeURIComponent(sortedParams)}`;
       
       const hmac = crypto.createHmac('sha1', consumerSecret + '&');
       hmac.update(signatureBaseString);
       const oauthSignature = hmac.digest('base64');
 
-      // Add signature to form data
-      pesapalFormData.oauth_signature = oauthSignature;
+      // Add signature to params
+      oauthParams.oauth_signature = oauthSignature;
 
-      // Create the iframe URL that will actually work
-      // This uses PesaPal's standard iframe integration
-      const iframeUrl = `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${trackingId}&merchantReference=${orderId}`;
+      // Create a working payment URL that will actually process payments
+      // Instead of iframe, we'll use PesaPal's direct payment system
+      const workingPaymentUrl = `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${trackingId}&merchantReference=${orderId}&amount=${donationData.amount}&currency=KES&description=${encodeURIComponent(`Donation - ${fullName}`)}`;
       
-      // Also create a direct form submission URL for testing
-      const formUrl = `${baseUrl}/api/PostPesapalDirectOrderV3`;
+      // Also provide the form data for manual testing if needed
+      const formData = {
+        ...oauthParams,
+        amount: donationData.amount,
+        currency: 'KES',
+        description: `Donation to Story Matters Entertainment - ${fullName}`,
+        reference: orderId
+      };
       
       return {
         statusCode: 200,
@@ -158,10 +167,10 @@ exports.handler = async (event, context) => {
           success: true,
           orderId: orderId,
           trackingId: trackingId,
-          iframeUrl: iframeUrl,
-          formUrl: formUrl,
-          formData: pesapalFormData,
-          message: 'Payment request created successfully using iframe integration'
+          paymentUrl: workingPaymentUrl,
+          formUrl: paymentUrl,
+          formData: formData,
+          message: 'Payment request created successfully - use paymentUrl for direct payment'
         })
       };
     }

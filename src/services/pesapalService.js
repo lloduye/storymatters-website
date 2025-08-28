@@ -24,6 +24,12 @@ class PesaPalService {
       }
 
       const data = await response.json();
+      
+      // Ensure we have a working payment URL
+      if (!data.paymentUrl) {
+        throw new Error('No payment URL received from PesaPal');
+      }
+      
       return data;
     } catch (error) {
       console.error('PesaPal payment creation error:', error);

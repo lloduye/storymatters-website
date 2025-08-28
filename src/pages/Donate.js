@@ -295,7 +295,7 @@ const Donate = () => {
 
         <div className="space-y-4">
           <a
-            href={paymentData?.iframeUrl}
+            href={paymentData?.paymentUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition-colors duration-200"
