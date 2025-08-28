@@ -285,13 +285,23 @@ const Stories = () => {
                   to={`/stories/${story.id}`}
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
-                    {story.title.charAt(0)}
+                  <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                    {getImageUrl(story.image) ? (
+                      <img 
+                        src={getImageUrl(story.image)} 
+                        alt={story.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                        {story.title.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{story.title}</p>
-                    <p className="text-xs text-gray-500">{story.author}</p>
-                    <p className="text-xs text-blue-600">{parseInt(story.view_count) || 0} views</p>
+                    <p className="text-sm font-medium text-gray-900 leading-tight mb-1 line-clamp-2">{story.title}</p>
+                    <p className="text-xs text-gray-500 mb-1">{story.author}</p>
+                    <p className="text-xs text-blue-600 font-medium">{parseInt(story.view_count) || 0} views</p>
                   </div>
                 </Link>
               ))}
