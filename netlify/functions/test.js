@@ -7,14 +7,10 @@ exports.handler = async (event, context) => {
     },
     body: JSON.stringify({
       success: true,
-      message: 'Test function is working - UPDATED',
+      message: 'Test function is working',
       timestamp: new Date().toISOString(),
-      deployment: 'forced-redeploy-' + Date.now(),
-      event: {
-        httpMethod: event.httpMethod,
-        path: event.path,
-        headers: event.headers
-      }
+      method: event.httpMethod,
+      path: event.path
     })
   };
 };
