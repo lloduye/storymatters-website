@@ -21,7 +21,7 @@ const Stories = () => {
   const fetchStories = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/.netlify/functions/stories');
+      const response = await axios.get('/.netlify/functions/stories?published=true');
       setStories(response.data);
     } catch (error) {
       console.error('Error fetching stories:', error);

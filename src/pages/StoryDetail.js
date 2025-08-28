@@ -22,8 +22,8 @@ const StoryDetail = () => {
       const response = await axios.get(`/.netlify/functions/stories?storyId=${id}`);
       setStory(response.data);
       
-      // Fetch related stories (excluding current story)
-      const allStoriesResponse = await axios.get('/.netlify/functions/stories');
+      // Fetch related stories (excluding current story and only published ones)
+      const allStoriesResponse = await axios.get('/.netlify/functions/stories?published=true');
       const allStories = allStoriesResponse.data;
       const related = allStories.filter(s => s.id !== parseInt(id)).slice(0, 3);
       setRelatedStories(related);

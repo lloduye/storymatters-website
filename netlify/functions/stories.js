@@ -240,9 +240,9 @@ exports.handler = async (event, context) => {
     
     console.log('Function called:', { httpMethod, path, body: body ? JSON.parse(body) : null });
 
-    // GET /api/stories - Get all stories or specific story
+    // GET /api/stories - Get all stories, specific story, or stories by user
     if (httpMethod === 'GET' && path === '/.netlify/functions/stories') {
-      const { storyId } = event.queryStringParameters || {};
+      const { storyId, published, user } = event.queryStringParameters || {};
       
       if (storyId) {
         // Get specific story
@@ -254,14 +254,46 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ error: 'Story not found' })
           };
         }
+        
+        // If requesting published stories only and this story is not published, return 404
+        if (published === 'true' && story.status !== 'published' && story.status !== 'true') {
+          return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'Story not found' })
+          };
+        }
+        
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify(story)
         };
+      } else if (user) {
+        // Get stories by specific user
+        const userStories = await getStoriesByUser(user);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify(userStories)
+        };
       } else {
-        // Get all stories
-        const stories = await getAllStories();
+        // Get all stories or only published stories
+        let stories;
+        if (published === 'true') {
+          // Get only published stories
+          const client = await pool.connect();
+          const result = await client.query(
+            'SELECT * FROM stories WHERE status = $1 OR status = $2 ORDER BY created_at DESC',
+            ['published', 'true']
+          );
+          client.release();
+          stories = result.rows;
+        } else {
+          // Get all stories
+          stories = await getAllStories();
+        }
+        
         return {
           statusCode: 200,
           headers,
@@ -315,6 +347,11 @@ exports.handler = async (event, context) => {
         storyData.author = user.full_name; // Editors can only create stories under their own name
       }
       
+      // Ensure status is properly set
+      if (!storyData.status || !['draft', 'published'].includes(storyData.status)) {
+        storyData.status = 'draft';
+      }
+      
       await addStoryToSheet(storyData);
       return {
         statusCode: 201,
@@ -366,6 +403,11 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ error: 'You can only edit your own stories' })
           };
         }
+      }
+      
+      // Ensure status is properly set
+      if (!storyData.status || !['draft', 'published'].includes(storyData.status)) {
+        storyData.status = 'draft';
       }
       
       await updateStoryInSheet(storyId, storyData);
@@ -429,7 +471,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // PATCH /api/stories - Update story (featured, status, or increment view)
+        // PATCH /api/stories - Update story (featured, status, or increment view)
     if (httpMethod === 'PATCH' && path === '/.netlify/functions/stories') {
       const { storyId, featured, status, action } = JSON.parse(body);
       
