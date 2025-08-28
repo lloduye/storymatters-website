@@ -26,7 +26,9 @@ class PesaPalService {
   // Create IPN (Instant Payment Notification) URL
   createIPNUrl() {
     // This should be your server endpoint that PesaPal will call with payment updates
-    return `${window.location.origin}/api/pesapal/ipn`;
+    // Use the current domain dynamically to avoid domain mismatch errors
+    const currentDomain = window.location.hostname;
+    return `https://${currentDomain}/.netlify/functions/pesapal-ipn`;
   }
 
   // Generate unique order ID

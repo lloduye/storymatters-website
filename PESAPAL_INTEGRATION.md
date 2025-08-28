@@ -16,15 +16,24 @@ This document outlines the complete PesaPal payment integration for the Story Ma
 ## 🔑 PesaPal Credentials
 
 **Current Configuration:**
+
 - **Consumer Key**: `oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2`
 - **Consumer Secret**: `K2C+Cp4AFy2XV/ancyeyfbZYbPs=`
 - **Environment**: Demo/Sandbox (for testing)
 
+**Domain Configuration:**
+
+The system automatically detects the current domain to avoid domain mismatch errors. This means:
+- **Development/Testing**: Uses `storymatters-website.netlify.app`
+- **Production**: Uses `www.storymattersentertainment.org`
+- **Any Custom Domain**: Automatically detected and used
+
 **Production Setup:**
 When ready for production, update the following in `src/services/pesapalService.js`:
+
 ```javascript
-this.baseUrl = 'https://www.pesapal.com'; // Change from demo.pesapal.com
-this.iframeUrl = 'https://www.pesapal.com/pesapaliframe3/PesapalIframe3';
+this.baseUrl = "https://www.pesapal.com"; // Change from demo.pesapal.com
+this.iframeUrl = "https://www.pesapal.com/pesapaliframe3/PesapalIframe3";
 ```
 
 ## 📁 File Structure
@@ -46,12 +55,15 @@ netlify/
 ## 🛠️ Installation & Setup
 
 ### 1. Install Dependencies
+
 ```bash
 npm install crypto-js
 ```
 
 ### 2. Environment Variables
+
 Add the following to your `.env.local` file:
+
 ```env
 PESAPAL_CONSUMER_KEY=oi8kiBIenB6FYAVE7UoM4XQVV1NkFEQ2
 PESAPAL_CONSUMER_SECRET=K2C+Cp4AFy2XV/ancyeyfbZYbPs=
@@ -59,15 +71,27 @@ PESAPAL_ENVIRONMENT=demo  # Change to 'production' when ready
 ```
 
 ### 3. Netlify Function Setup
+
 The `pesapal-ipn.js` function is automatically deployed with your Netlify site. Ensure your `netlify.toml` includes:
+
 ```toml
 [functions]
   directory = "netlify/functions"
 ```
 
+### 4. PesaPal IPN Configuration
+
+In your PesaPal dashboard, configure the IPN settings:
+
+**Website Domain:** `www.storymattersentertainment.org`
+**IPN Listener URL:** `https://www.storymattersentertainment.org/.netlify/functions/pesapal-ipn`
+
+**Important:** The domain in the IPN settings must match the domain where your website is hosted. The system automatically detects the current domain to avoid mismatch errors.
+
 ## 🔄 How It Works
 
 ### 1. Donation Flow
+
 1. **User Selection**: User selects donation amount or enters custom amount
 2. **Form Submission**: User fills out donation form with personal details
 3. **Payment Request**: System creates PesaPal payment request
@@ -76,6 +100,7 @@ The `pesapal-ipn.js` function is automatically deployed with your Netlify site. 
 6. **Success Confirmation**: User sees success page and receives confirmation
 
 ### 2. Technical Flow
+
 ```
 User → DonationModal → pesapalService.createPaymentRequest() → PesaPal API
                                                                     ↓
@@ -85,6 +110,7 @@ PesaPal → IPN Callback → netlify/functions/pesapal-ipn.js → Database Updat
 ## 📱 Usage
 
 ### For Donors
+
 1. Navigate to `/donate` page
 2. Select donation amount or enter custom amount
 3. Click "Donate" button
@@ -93,17 +119,18 @@ PesaPal → IPN Callback → netlify/functions/pesapal-ipn.js → Database Updat
 6. View success confirmation
 
 ### For Developers
+
 ```javascript
-import pesapalService from '../services/pesapalService';
+import pesapalService from "../services/pesapalService";
 
 // Create payment request
 const result = await pesapalService.createPaymentRequest({
-  amount: 50.00,
-  description: 'Donation to Story Matters',
-  firstName: 'John',
-  lastName: 'Doe',
-  email: 'john@example.com',
-  phone: '+1234567890'
+  amount: 50.0,
+  description: "Donation to Story Matters",
+  firstName: "John",
+  lastName: "Doe",
+  email: "john@example.com",
+  phone: "+1234567890",
 });
 
 // Check payment status
@@ -121,6 +148,7 @@ const status = await pesapalService.checkPaymentStatus(trackingId);
 ## 📊 Payment Methods Supported
 
 PesaPal supports the following payment methods:
+
 - **Mobile Money**: M-Pesa, Airtel Money, MTN Mobile Money
 - **Bank Transfers**: Direct bank transfers
 - **Card Payments**: Credit and debit cards
@@ -129,12 +157,14 @@ PesaPal supports the following payment methods:
 ## 🧪 Testing
 
 ### Sandbox Environment
+
 - Use the demo credentials provided
 - Test with small amounts
 - Verify IPN callbacks work correctly
 - Test all payment methods
 
 ### Test Scenarios
+
 1. **Successful Payment**: Complete donation flow
 2. **Failed Payment**: Test error handling
 3. **Partial Payment**: Test incomplete transactions
@@ -144,12 +174,14 @@ PesaPal supports the following payment methods:
 ## 🚨 Error Handling
 
 ### Common Errors
+
 - **Invalid Amount**: Amount must be greater than 0
 - **Missing Email**: Email is required for donation
 - **API Errors**: PesaPal service unavailable
 - **Payment Failures**: User cancels or payment fails
 
 ### Error Recovery
+
 - Clear error messages for users
 - Automatic retry mechanisms
 - Fallback payment options
@@ -158,12 +190,14 @@ PesaPal supports the following payment methods:
 ## 📈 Monitoring & Analytics
 
 ### Payment Tracking
+
 - Order ID generation and tracking
 - Payment status monitoring
 - Success/failure rate analysis
 - Donor behavior insights
 
 ### Logging
+
 - Payment request logs
 - IPN callback logs
 - Error logging and monitoring
@@ -172,19 +206,25 @@ PesaPal supports the following payment methods:
 ## 🔄 IPN (Instant Payment Notification)
 
 ### What is IPN?
+
 IPN is a webhook that PesaPal sends to notify your system about payment status changes.
 
 ### IPN Endpoint
+
 ```
-POST /api/pesapal/ipn
+POST https://{your-domain}/.netlify/functions/pesapal-ipn
 ```
 
+**Note:** The domain is automatically detected from the current website URL to avoid domain mismatch errors.
+
 ### IPN Data
+
 - `pesapal_merchant_reference`: Your order reference
 - `pesapal_notification_type`: Type of notification
 - `pesapal_order_tracking_id`: PesaPal's tracking ID
 
 ### IPN Response
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <pesapal_response xmlns="http://www.pesapal.com">
@@ -196,12 +236,14 @@ POST /api/pesapal/ipn
 ## 🚀 Deployment
 
 ### Netlify Deployment
+
 1. Push changes to GitHub
 2. Netlify automatically builds and deploys
 3. Functions are deployed to `/.netlify/functions/`
 4. Test IPN endpoint functionality
 
 ### Production Checklist
+
 - [ ] Update PesaPal credentials to production
 - [ ] Change base URLs from demo to production
 - [ ] Test IPN endpoint thoroughly
@@ -212,11 +254,13 @@ POST /api/pesapal/ipn
 ## 📞 Support
 
 ### PesaPal Support
+
 - **Documentation**: [PesaPal Developer Docs](https://developer.pesapal.com)
 - **Support Email**: developer@pesapal.com
 - **Phone**: +254 20 518 0000
 
 ### Technical Issues
+
 - Check browser console for errors
 - Verify Netlify function logs
 - Test IPN endpoint manually
@@ -225,6 +269,7 @@ POST /api/pesapal/ipn
 ## 🔮 Future Enhancements
 
 ### Planned Features
+
 - **Recurring Donations**: Monthly/yearly subscription support
 - **Donor Dashboard**: Personal donation history and impact
 - **Email Notifications**: Automated thank you and update emails
@@ -233,6 +278,7 @@ POST /api/pesapal/ipn
 - **Social Sharing**: Enhanced social media integration
 
 ### Integration Possibilities
+
 - **CRM Integration**: Connect with donor management systems
 - **Accounting Software**: Sync with financial systems
 - **Marketing Tools**: Email marketing and automation
@@ -241,6 +287,7 @@ POST /api/pesapal/ipn
 ## 📝 Changelog
 
 ### Version 1.0.0 (Current)
+
 - Initial PesaPal integration
 - Basic donation flow
 - IPN handling
@@ -250,6 +297,7 @@ POST /api/pesapal/ipn
 ## 🤝 Contributing
 
 When making changes to the PesaPal integration:
+
 1. Test thoroughly in sandbox environment
 2. Update documentation
 3. Follow security best practices
