@@ -146,6 +146,15 @@ exports.handler = async (event, context) => {
 
     // Create real PesaPal payment request
     if (action === 'createPaymentRequest') {
+      // Validate required fields
+      if (!donationData.amount || !donationData.email) {
+        throw new Error('Amount and email are required for donation');
+      }
+      
+      if (!donationData.firstName && !donationData.name) {
+        throw new Error('First name is required for donation');
+      }
+      
       const orderId = `STORY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const trackingId = `TRACK_${Date.now()}`;
       
@@ -156,6 +165,11 @@ exports.handler = async (event, context) => {
 
       // PesaPal API endpoint
       const pesapalUrl = `${baseUrl}/api/PostPesapalDirectOrderV4`;
+      
+      // Safely handle name fields - the form sends firstName and lastName separately
+      const firstName = donationData.firstName || 'Donor';
+      const lastName = donationData.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim();
       
       // Prepare the request data
       const requestData = {
@@ -169,11 +183,11 @@ exports.handler = async (event, context) => {
           id: orderId,
           currency: 'KES',
           amount: donationData.amount,
-          description: `Donation to Story Matters Entertainment - ${donationData.name}`,
+          description: `Donation to Story Matters Entertainment - ${fullName}`,
           type: 'MERCHANT',
           reference: orderId,
-          first_name: donationData.name.split(' ')[0] || donationData.name,
-          last_name: donationData.name.split(' ').slice(1).join(' ') || '',
+          first_name: firstName,
+          last_name: lastName,
           email: donationData.email,
           phone_number: donationData.phone || '',
           ipn_notification_type: 'IPN',
