@@ -52,6 +52,16 @@ function makeHttpsRequest(url, options, postData = null) {
   });
 }
 
+// Generate OAuth 1.0 signature for PesaPal
+function generateOAuthSignature(method, url, params, consumerSecret) {
+  const sortedParams = Object.keys(params).sort().map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+  const signatureBaseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+  
+  const hmac = crypto.createHmac('sha1', consumerSecret + '&');
+  hmac.update(signatureBaseString);
+  return hmac.digest('base64');
+}
+
 exports.handler = async (event, context) => {
   // Set CORS headers for ALL responses
   const corsHeaders = {
@@ -104,6 +114,20 @@ exports.handler = async (event, context) => {
     
     console.log('Processing request:', { action, donationData: { ...donationData, amount: donationData.amount } });
 
+    // Get PesaPal credentials from environment
+    const consumerKey = process.env.PESAPAL_CONSUMER_KEY;
+    const consumerSecret = process.env.PESAPAL_CONSUMER_SECRET;
+    const environment = process.env.PESAPAL_ENVIRONMENT || 'demo';
+    
+    if (!consumerKey || !consumerSecret) {
+      throw new Error('PesaPal credentials not configured');
+    }
+
+    // Set base URL based on environment
+    const baseUrl = environment === 'production' 
+      ? 'https://www.pesapal.com' 
+      : 'https://demo.pesapal.com';
+
     // Add a test endpoint for debugging
     if (action === 'test') {
       return {
@@ -113,28 +137,134 @@ exports.handler = async (event, context) => {
           success: true,
           message: 'PesaPal API function is working',
           timestamp: new Date().toISOString(),
-          environment: process.env.PESAPAL_ENVIRONMENT || 'demo',
-          credentialsConfigured: !!(process.env.PESAPAL_CONSUMER_KEY && process.env.PESAPAL_CONSUMER_SECRET)
+          environment: environment,
+          credentialsConfigured: !!(consumerKey && consumerSecret),
+          baseUrl: baseUrl
         })
       };
     }
 
-    // For now, just return a mock response for createPaymentRequest
+    // Create real PesaPal payment request
     if (action === 'createPaymentRequest') {
       const orderId = `STORY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const trackingId = `TRACK_${Date.now()}`;
       
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          success: true,
-          orderId: orderId,
-          trackingId: trackingId,
-          iframeUrl: `https://demo.pesapal.com/pesapaliframe3/PesapalIframe3?OrderTrackingId=${trackingId}&amp;merchantReference=${orderId}`,
-          message: 'Mock payment request created for testing'
+      // Get the origin from the request headers for dynamic IPN URL
+      const origin = event.headers.origin || event.headers.referer || 'https://storymatters-website.netlify.app';
+      const ipnUrl = `${origin}/.netlify/functions/pesapal-ipn`;
+      const callbackUrl = `${origin}/donate/success?order_id=${orderId}&amount=${donationData.amount}`;
+
+      // PesaPal API endpoint
+      const pesapalUrl = `${baseUrl}/api/PostPesapalDirectOrderV4`;
+      
+      // Prepare the request data
+      const requestData = {
+        oauth_callback: callbackUrl,
+        oauth_consumer_key: consumerKey,
+        oauth_nonce: Math.random().toString(36).substr(2, 15),
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: Math.floor(Date.now() / 1000),
+        oauth_version: '1.0',
+        pesapal_request_data: JSON.stringify({
+          id: orderId,
+          currency: 'KES',
+          amount: donationData.amount,
+          description: `Donation to Story Matters Entertainment - ${donationData.name}`,
+          type: 'MERCHANT',
+          reference: orderId,
+          first_name: donationData.name.split(' ')[0] || donationData.name,
+          last_name: donationData.name.split(' ').slice(1).join(' ') || '',
+          email: donationData.email,
+          phone_number: donationData.phone || '',
+          ipn_notification_type: 'IPN',
+          ipn_id: ipnUrl
         })
       };
+
+      // Generate OAuth signature
+      requestData.oauth_signature = generateOAuthSignature('POST', pesapalUrl, requestData, consumerSecret);
+
+      // Convert to form data
+      const formData = Object.keys(requestData)
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(requestData[key])}`)
+        .join('&');
+
+      try {
+        console.log('Calling PesaPal API:', pesapalUrl);
+        
+        const response = await makeHttpsRequest(pesapalUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(formData)
+          }
+        }, formData);
+
+        console.log('PesaPal API response:', response);
+
+        if (response.statusCode === 200) {
+          // Parse PesaPal response
+          const pesapalResponse = response.body;
+          
+          // Extract tracking ID from PesaPal response
+          const trackingMatch = pesapalResponse.match(/OrderTrackingId=([^&]+)/);
+          const actualTrackingId = trackingMatch ? trackingMatch[1] : trackingId;
+          
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              success: true,
+              orderId: orderId,
+              trackingId: actualTrackingId,
+              iframeUrl: `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${actualTrackingId}&merchantReference=${orderId}`,
+              message: 'Payment request created successfully'
+            })
+          };
+        } else {
+          throw new Error(`PesaPal API returned status ${response.statusCode}: ${response.body}`);
+        }
+      } catch (apiError) {
+        console.error('PesaPal API call failed:', apiError);
+        throw new Error(`PesaPal API call failed: ${apiError.message}`);
+      }
+    }
+
+    // Check payment status
+    if (action === 'checkPaymentStatus') {
+      const { trackingId } = donationData;
+      
+      if (!trackingId) {
+        throw new Error('Tracking ID is required to check payment status');
+      }
+
+      const statusUrl = `${baseUrl}/api/QueryPaymentStatus?pesapal_merchant_reference=${trackingId}`;
+      
+      try {
+        const response = await makeHttpsRequest(statusUrl, {
+          method: 'GET',
+          headers: {
+            'oauth_consumer_key': consumerKey
+          }
+        });
+
+        if (response.statusCode === 200) {
+          return {
+            statusCode: 200,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              success: true,
+              status: response.body,
+              message: 'Payment status retrieved successfully'
+            })
+          };
+        } else {
+          throw new Error(`PesaPal status API returned status ${response.statusCode}`);
+        }
+      } catch (statusError) {
+        console.error('Payment status check failed:', statusError);
+        throw new Error(`Payment status check failed: ${statusError.message}`);
+      }
     }
 
     return {
