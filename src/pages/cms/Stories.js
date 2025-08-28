@@ -173,8 +173,8 @@ const Stories = () => {
     const matchesCategory = categoryFilter === 'all' || story.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || story.status === statusFilter;
     const matchesFeatured = featuredFilter === 'all' || 
-                           (featuredFilter === 'featured' && story.featured === 'true') ||
-                           (featuredFilter === 'not-featured' && story.featured !== 'true');
+                           (featuredFilter === 'featured' && story.featured === true) ||
+                           (featuredFilter === 'not-featured' && story.featured !== true);
     
     return matchesSearch && matchesCategory && matchesStatus && matchesFeatured;
   });
@@ -183,7 +183,7 @@ const Stories = () => {
     total: stories.length,
     published: stories.filter(s => s.status === 'published').length,
     draft: stories.filter(s => s.status === 'draft').length,
-    featured: stories.filter(s => s.featured === 'true').length,
+    featured: stories.filter(s => s.featured === true).length,
     totalViews: stories.reduce((sum, s) => sum + (parseInt(s.view_count) || 0), 0)
   };
 
@@ -342,14 +342,14 @@ const Stories = () => {
                      alt={story.title}
                      className="w-full h-full object-cover"
                    />
-                   {story.featured === 'true' && (
-                     <div className="absolute top-1 right-1">
-                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                         <FontAwesomeIcon icon={faStar} className="mr-1 text-xs" />
-                         Featured
-                       </span>
-                     </div>
-                   )}
+                                        {story.featured === true && (
+                       <div className="absolute top-1 right-1">
+                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                           <FontAwesomeIcon icon={faStar} className="mr-1 text-xs" />
+                           Featured
+                         </span>
+                       </div>
+                     )}
                    <div className="absolute top-1 left-1">
                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold ${
                        story.status === 'published' ? 'bg-green-100 text-green-800' :
@@ -429,9 +429,9 @@ const Stories = () => {
                          <FontAwesomeIcon icon={faEdit} className="text-xs" />
                        </Link>
                        <button
-                         onClick={() => handleToggleFeatured(story.id, story.featured === 'true')}
-                         className={`p-1 ${story.featured === 'true' ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-400 hover:text-yellow-600'}`}
-                         title={story.featured === 'true' ? 'Unfeature' : 'Feature'}
+                         onClick={() => handleToggleFeatured(story.id, story.featured === true)}
+                         className={`p-1 ${story.featured === true ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-400 hover:text-yellow-600'}`}
+                         title={story.featured === true ? 'Unfeature' : 'Feature'}
                        >
                          <FontAwesomeIcon icon={faStar} className="text-xs" />
                        </button>
@@ -484,7 +484,7 @@ const Stories = () => {
                        alt={story.title}
                        className="w-full h-full object-cover"
                      />
-                     {story.featured === 'true' && (
+                     {story.featured === true && (
                        <div className="absolute top-1 right-1">
                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                            <FontAwesomeIcon icon={faStar} className="mr-1 text-xs" />
@@ -571,9 +571,9 @@ const Stories = () => {
                            <FontAwesomeIcon icon={faEdit} className="text-xs" />
                          </Link>
                          <button
-                           onClick={() => handleToggleFeatured(story.id, story.featured === 'true')}
-                           className={`p-1 ${story.featured === 'true' ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-400 hover:text-yellow-600'}`}
-                           title={story.featured === 'true' ? 'Unfeature' : 'Feature'}
+                                                    onClick={() => handleToggleFeatured(story.id, story.featured === true)}
+                         className={`p-1 ${story.featured === true ? 'text-yellow-600 hover:text-yellow-900' : 'text-gray-400 hover:text-yellow-600'}`}
+                         title={story.featured === true ? 'Unfeature' : 'Feature'}
                          >
                            <FontAwesomeIcon icon={faStar} className="text-xs" />
                          </button>
@@ -643,7 +643,7 @@ const Stories = () => {
                     <FontAwesomeIcon icon={faTag} className="mr-2" />
                     {previewStory.category}
                   </span>
-                  {previewStory.featured === 'true' && (
+                  {previewStory.featured === true && (
                     <span className="flex items-center text-yellow-600">
                       <FontAwesomeIcon icon={faStar} className="mr-2" />
                       Featured

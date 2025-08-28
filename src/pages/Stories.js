@@ -167,7 +167,7 @@ const Stories = () => {
                     }
                   }}
                   className={`block bg-white rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer ${
-                    (story.featured === true || story.featured === 'true') ? 'shadow-xl ring-2 ring-blue-500' : 'shadow-md'
+                    story.featured === true ? 'shadow-xl ring-2 ring-blue-500' : 'shadow-md'
                   }`}
                 >
                   <div className="relative">
@@ -189,7 +189,7 @@ const Stories = () => {
                     <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {story.category}
                     </div>
-                    {(story.featured === true || story.featured === 'true') && (
+                    {story.featured === true && (
                       <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                         Featured
                       </div>

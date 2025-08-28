@@ -101,7 +101,7 @@ const StoryEditor = () => {
       
       setValue('category', story.category || '');
       setValue('status', story.status || 'draft');
-      setValue('featured', story.featured === true || story.featured === 'true');
+      setValue('featured', story.featured === true);
       
       // Set content and image
       setContent(story.content || '');
@@ -229,7 +229,7 @@ const StoryEditor = () => {
         status: data.status || 'draft'
       };
 
-      console.log('Submitting story:', { isEditing, storyId, id, storyData });
+      console.log('Submitting story:', { isEditing, storyId, id, storyData, featuredValue: data.featured });
 
              if (isEditing && storyId) {
          console.log('Updating existing story with ID:', storyId);
