@@ -64,7 +64,9 @@ class PesaPalService {
   }
 
   getPaymentIframeUrl(trackingId, orderId) {
-    // This will now be provided by the PesaPal API response
+    // This method is deprecated - we now use direct form submission
+    // to avoid MIME type errors from PesaPal's iframe
+    console.warn('getPaymentIframeUrl is deprecated. Use direct payment form submission instead.');
     return null;
   }
 }

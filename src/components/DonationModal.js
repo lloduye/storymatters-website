@@ -259,16 +259,39 @@ const DonationModal = ({ isOpen, onClose, selectedAmount, onSuccess }) => {
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    // Open PesaPal iframe in new window
-                    window.open(
-                      pesapalService.getPaymentIframeUrl(paymentData.trackingId, paymentData.orderId),
-                      'pesapal_payment',
-                      'width=800,height=600,scrollbars=yes,resizable=yes'
-                    );
+                    // Submit payment directly to PesaPal instead of using iframe
+                    if (paymentData.paymentUrl && paymentData.formData) {
+                      // Create a form and submit it to PesaPal
+                      const form = document.createElement('form');
+                      form.method = 'POST';
+                      form.action = paymentData.paymentUrl;
+                      form.target = '_blank';
+                      
+                      // Add all form data
+                      Object.entries(paymentData.formData).forEach(([key, value]) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = value;
+                        form.appendChild(input);
+                      });
+                      
+                      // Submit the form
+                      document.body.appendChild(form);
+                      form.submit();
+                      document.body.removeChild(form);
+                    } else {
+                      // Fallback: open payment URL in new window
+                      window.open(
+                        paymentData.paymentUrl,
+                        'pesapal_payment',
+                        'width=800,height=600,scrollbars=yes,resizable=yes'
+                      );
+                    }
                   }}
                   className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200"
                 >
-                  Open Payment Window
+                  Continue to Payment
                 </button>
                 
                 <button

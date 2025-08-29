@@ -147,16 +147,19 @@ exports.handler = async (event, context) => {
       oauthParams.oauth_signature = oauthSignature;
 
       // Create a working payment URL that will actually process payments
-      // Instead of iframe, we'll use PesaPal's direct payment system
-      const workingPaymentUrl = `${baseUrl}/pesapaliframe3/PesapalIframe3?OrderTrackingId=${trackingId}&merchantReference=${orderId}&amount=${donationData.amount}&currency=KES&description=${encodeURIComponent(`Donation - ${fullName}`)}`;
+      // Use PesaPal's direct payment form instead of problematic iframe
+      const workingPaymentUrl = `${baseUrl}/API/PostPesapalDirectOrderV4`;
       
-      // Also provide the form data for manual testing if needed
-      const formData = {
-        ...oauthParams,
-        amount: donationData.amount,
-        currency: 'KES',
-        description: `Donation to Story Matters Entertainment - ${fullName}`,
-        reference: orderId
+      // Create a simple payment form data that can be submitted directly
+      const paymentFormData = {
+        oauth_callback: callbackUrl,
+        oauth_consumer_key: consumerKey,
+        oauth_nonce: oauthParams.oauth_nonce,
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: oauthParams.oauth_timestamp,
+        oauth_version: '1.0',
+        oauth_signature: oauthSignature,
+        pesapal_request_data: oauthParams.pesapal_request_data
       };
       
       return {
@@ -167,9 +170,8 @@ exports.handler = async (event, context) => {
           orderId: orderId,
           trackingId: trackingId,
           paymentUrl: workingPaymentUrl,
-          formUrl: paymentUrl,
-          formData: formData,
-          message: 'Payment request created successfully using production API - use paymentUrl for direct payment'
+          formData: paymentFormData,
+          message: 'Payment request created successfully. Use the formData to submit payment directly to PesaPal.'
         })
       };
     }
