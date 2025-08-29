@@ -149,11 +149,28 @@ exports.handler = async (event, context) => {
       oauthParams.oauth_signature = oauthSignature;
 
       // Create the payment form data for direct submission to PesaPal
-      // All OAuth parameters must be included as form fields
+      // All OAuth parameters must be included as form fields - explicitly list them
       const paymentFormData = {
-        ...oauthParams,
+        oauth_callback: callbackUrl,
+        oauth_consumer_key: consumerKey,
+        oauth_nonce: oauthParams.oauth_nonce,
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: oauthParams.oauth_timestamp,
+        oauth_version: '1.0',
+        oauth_signature: oauthSignature,
         pesapal_request_data: JSON.stringify(paymentRequestData)
       };
+      
+      // Debug: Log the exact parameters being sent
+      console.log('OAuth Parameters being sent:', {
+        oauth_callback: callbackUrl,
+        oauth_consumer_key: consumerKey,
+        oauth_nonce: oauthParams.oauth_nonce,
+        oauth_signature_method: 'HMAC-SHA1',
+        oauth_timestamp: oauthParams.oauth_timestamp,
+        oauth_version: '1.0',
+        oauth_signature: oauthSignature
+      });
       
       return {
         statusCode: 200,
@@ -164,7 +181,13 @@ exports.handler = async (event, context) => {
           trackingId: trackingId,
           paymentUrl: paymentUrl,
           formData: paymentFormData,
-          message: 'Payment request created successfully. Use the formData to submit payment directly to PesaPal.'
+          debug: {
+            oauthParams: oauthParams,
+            signature: oauthSignature,
+            timestamp: oauthParams.oauth_timestamp,
+            nonce: oauthParams.oauth_nonce
+          },
+          message: 'Payment request created successfully. All OAuth parameters explicitly included.'
         })
       };
     }
