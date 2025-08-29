@@ -108,8 +108,9 @@ exports.handler = async (event, context) => {
       const lastName = donationData.lastName || '';
       const fullName = `${firstName} ${lastName}`.trim();
       
-      // Use PesaPal's production API endpoint as specified
-      const paymentUrl = `${baseUrl}/API/PostPesapalDirectOrderV4`;
+      // Use PesaPal's iframe endpoint instead of direct API endpoint
+      // The direct API endpoint requires different authentication method
+      const iframeUrl = `${baseUrl}/pesapaliframe3/PesapalIframe3`;
       
       // Create the payment request data according to PesaPal API documentation
       const paymentRequestData = {
@@ -127,7 +128,11 @@ exports.handler = async (event, context) => {
         ipn_id: ipnUrl
       };
       
-      // Generate OAuth signature for the request
+      // For iframe approach, we need to create a payment request first
+      // Then redirect to the iframe with the tracking ID
+      const paymentRequestUrl = `${baseUrl}/API/PostPesapalDirectOrderV4`;
+      
+      // Generate OAuth signature for the payment request
       const oauthParams = {
         oauth_callback: callbackUrl,
         oauth_consumer_key: consumerKey,
@@ -139,7 +144,7 @@ exports.handler = async (event, context) => {
 
       // Generate OAuth signature (excluding pesapal_request_data from signature)
       const sortedParams = Object.keys(oauthParams).sort().map(key => `${key}=${encodeURIComponent(oauthParams[key])}`).join('&');
-      const signatureBaseString = `POST&${encodeURIComponent(paymentUrl)}&${encodeURIComponent(sortedParams)}`;
+      const signatureBaseString = `POST&${encodeURIComponent(paymentRequestUrl)}&${encodeURIComponent(sortedParams)}`;
       
       const hmac = crypto.createHmac('sha1', consumerSecret + '&');
       hmac.update(signatureBaseString);
@@ -148,8 +153,10 @@ exports.handler = async (event, context) => {
       // Add signature to params
       oauthParams.oauth_signature = oauthSignature;
 
-      // Create the payment form data for direct submission to PesaPal
-      // All OAuth parameters must be included as form fields - explicitly list them
+      // Create the iframe URL with required parameters
+      const finalIframeUrl = `${iframeUrl}?OrderTrackingId=${trackingId}&merchantReference=${orderId}&amount=${donationData.amount}&currency=KES&description=${encodeURIComponent(`Donation - ${fullName}`)}`;
+      
+      // Create the payment form data for the payment request
       const paymentFormData = {
         oauth_callback: callbackUrl,
         oauth_consumer_key: consumerKey,
@@ -161,17 +168,6 @@ exports.handler = async (event, context) => {
         pesapal_request_data: JSON.stringify(paymentRequestData)
       };
       
-      // Debug: Log the exact parameters being sent
-      console.log('OAuth Parameters being sent:', {
-        oauth_callback: callbackUrl,
-        oauth_consumer_key: consumerKey,
-        oauth_nonce: oauthParams.oauth_nonce,
-        oauth_signature_method: 'HMAC-SHA1',
-        oauth_timestamp: oauthParams.oauth_timestamp,
-        oauth_version: '1.0',
-        oauth_signature: oauthSignature
-      });
-      
       return {
         statusCode: 200,
         headers: corsHeaders,
@@ -179,15 +175,10 @@ exports.handler = async (event, context) => {
           success: true,
           orderId: orderId,
           trackingId: trackingId,
-          paymentUrl: paymentUrl,
+          paymentUrl: finalIframeUrl,
           formData: paymentFormData,
-          debug: {
-            oauthParams: oauthParams,
-            signature: oauthSignature,
-            timestamp: oauthParams.oauth_timestamp,
-            nonce: oauthParams.oauth_nonce
-          },
-          message: 'Payment request created successfully. All OAuth parameters explicitly included.'
+          paymentRequestUrl: paymentRequestUrl,
+          message: 'Payment request created successfully. Use paymentUrl for iframe or formData for direct API call.'
         })
       };
     }
