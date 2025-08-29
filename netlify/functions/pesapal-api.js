@@ -139,8 +139,10 @@ exports.handler = async (event, context) => {
       };
 
       // Generate OAuth signature (excluding pesapal_request_data from signature)
+      // Note: We're not actually using the OAuth signature for the working payment gateway approach
+      // This is kept for reference but the workingPaymentUrl approach bypasses OAuth issues
       const sortedParams = Object.keys(oauthParams).sort().map(key => `${key}=${encodeURIComponent(oauthParams[key])}`).join('&');
-      const signatureBaseString = `POST&${encodeURIComponent(paymentRequestUrl)}&${encodeURIComponent(sortedParams)}`;
+      const signatureBaseString = `POST&${encodeURIComponent(`${baseUrl}/api/PostPesapalOrder`)}&${encodeURIComponent(sortedParams)}`;
       
       const hmac = crypto.createHmac('sha1', consumerSecret + '&');
       hmac.update(signatureBaseString);
@@ -172,6 +174,7 @@ exports.handler = async (event, context) => {
           success: true,
           orderId: orderId,
           trackingId: trackingId,
+          amount: donationData.amount,
           paymentUrl: workingPaymentUrl,
           formData: paymentFormData,
           message: 'Payment request created successfully. Using working PesaPal payment gateway.'
