@@ -259,9 +259,10 @@ const DonationModal = ({ isOpen, onClose, selectedAmount, onSuccess }) => {
               <div className="space-y-3">
                 <button
                   onClick={() => {
-                    // Use PesaPal's iframe approach instead of direct API POST
+                    // Use PesaPal's working payment gateway instead of broken direct API
                     if (paymentData.paymentUrl) {
-                      // Open PesaPal iframe in new window with the generated URL
+                      // Open PesaPal's working payment gateway in new window
+                      // This approach actually works and doesn't show OAuth parameter errors
                       window.open(
                         paymentData.paymentUrl,
                         'pesapal_payment',
