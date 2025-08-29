@@ -61,10 +61,10 @@ exports.handler = async (event, context) => {
       throw new Error('PesaPal credentials not configured');
     }
 
-    // Set base URL based on environment - default to production since PesaPal specified production API
-    const baseUrl = environment === 'production' 
-      ? 'https://www.pesapal.com' 
-      : 'https://demo.pesapal.com';
+    // Set base URL to ALWAYS use production PesaPal API - no more demo/test redirects
+    const baseUrl = 'https://www.pesapal.com';
+    
+    console.log('Using PesaPal production API:', baseUrl);
 
     // Add a test endpoint for debugging
     if (action === 'test') {
